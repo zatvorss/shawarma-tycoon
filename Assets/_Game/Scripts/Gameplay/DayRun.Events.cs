@@ -153,7 +153,7 @@ namespace ValourGames.Shawarma
         bool SpawnCourier(int biz)
         {
             var free = new List<int>();
-            for (int i = 0; i < _customers.Length; i++) if (_customers[i] == null) free.Add(i);
+            for (int i = 0; i < _customers.Length; i++) if (_customers[i] == null && SlotOpen(i)) free.Add(i);
             if (free.Count == 0) return false;
             int slot = free[Random.Range(0, free.Count)];
             int lvl = _save.biz[biz];

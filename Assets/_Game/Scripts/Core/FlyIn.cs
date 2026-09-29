@@ -97,7 +97,7 @@ namespace ValourGames.Shawarma
             UIKit.Panel(_world, "Counter", UIKit.Wood, 0.37f, 0.27f, 0.63f, 0.31f, false);
             // меню-доска
             var menu = UIKit.Panel(_world, "MenuBoard", UIKit.Hex("#263238"), 0.67f, 0.12f, 0.76f, 0.34f);
-            UIKit.FitLabel(menu.transform, L.T("МЕНЮ\nШаурма\nКола\nАйран", "MENU\nShawarma\nCola\nAyran"), 26, Color.white, 0.08f, 0.05f, 0.92f, 0.95f);
+            UIKit.FitLabel(menu.transform, L.T("МЕНЮ\nШаурма\nКола\nСок", "MENU\nShawarma\nCola\nJuice"), 26, Color.white, 0.08f, 0.05f, 0.92f, 0.95f);
 
             // табличка дня
             var tag = UIKit.Panel(s, "DayTag", UIKit.Alpha(UIKit.Dark, 0.85f), 0.36f, 0.86f, 0.64f, 0.96f);

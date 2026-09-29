@@ -61,16 +61,16 @@ namespace ValourGames.Shawarma
 
                 if (can)
                 {
-                    var lbl = UIKit.FitLabel(card.transform, L.T("Нажми — забрать +", "Tap — claim +") + a.rewards[tier], 22, UIKit.Green, 0.3f, 0.06f, 0.99f, 0.38f);
+                    var lbl = UIKit.FitLabel(card.transform, L.T("Нажми — забрать +", "Tap — claim +") + GameData.Money(Meta.AchReward(_save, i, tier)), 22, UIKit.Green, 0.3f, 0.06f, 0.99f, 0.38f);
                     lbl.gameObject.AddComponent<Bobber>().amp = 3f;
                     int idx = i;
                     UIKit.MakeButton(card, () =>
                     {
-                        int got = Meta.Claim(_save, idx);
+                        long got = Meta.Claim(_save, idx);
                         SaveSystem.Save(_save);
                         Sfx.Play(Sound.Coin);
                         Sfx.Play(Sound.Fanfare);
-                        Notify(a.Name + " — " + L.T("уровень ", "level ") + _save.achTier[idx], "+" + got);
+                        Notify(a.Name + " — " + L.T("уровень ", "level ") + _save.achTier[idx], "+" + GameData.Money(got));
                         ShowAchievements();
                     });
                 }
@@ -80,7 +80,7 @@ namespace ValourGames.Shawarma
                     var fill = UIKit.Bar(card.transform, UIKit.Alpha(UIKit.Dark, 0.15f), UIKit.Green, 0.3f, 0.1f, 0.72f, 0.3f);
                     UIKit.SetFill(fill, (float)v / a.targets[tier]);
                     UIKit.FitLabel(card.transform, AchDef.Fmt(v * a.scale) + "/" + AchDef.Fmt(a.targets[tier] * a.scale), 16, UIKit.Dark, 0.3f, 0.1f, 0.72f, 0.3f);
-                    UIKit.FitLabel(card.transform, "+" + a.rewards[tier], 20, UIKit.Gray, 0.74f, 0.08f, 0.99f, 0.32f);
+                    UIKit.FitLabel(card.transform, "+" + GameData.Money(Meta.AchReward(_save, i, tier)), 20, UIKit.Gray, 0.74f, 0.08f, 0.99f, 0.32f);
                 }
             }
             UIKit.Button(s, L.T("← Назад", "← Back"), UIKit.Steel, () => { Sfx.Play(Sound.Click); ShowMenu(); }, 0.02f, 0.01f, 0.2f, 0.1f, 36);

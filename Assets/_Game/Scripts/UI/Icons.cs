@@ -140,7 +140,7 @@ namespace ValourGames.Shawarma
         public static RectTransform DrinkIcon(Transform parent, Drink d, float ax, float ay, float size)
         {
             if (d == Drink.Fries) return FriesBox(parent, ax, ay, size, 1f);
-            if (d == Drink.Cola || d == Drink.Ayran) return DrinkCup(parent, d, ax, ay, size, 1f);
+            if (d == Drink.Cola || d == Drink.Juice) return DrinkCup(parent, d, ax, ay, size, 1f);
             var b = Box(parent, "Drink_" + d, ax, ay, size);
             var R = UIKit.RoundedSmall;
             if (d == Drink.Cola)
@@ -276,8 +276,8 @@ namespace ValourGames.Shawarma
         {
             var b = Box(parent, "Cup_" + d, ax, ay, size);
             var R = UIKit.RoundedSmall;
-            string liquid = d == Drink.Ayran ? "#F5F5F5" : "#5D1F12";
-            string band = d == Drink.Ayran ? "#1E88E5" : "#E53935";
+            string liquid = d == Drink.Juice ? "#FB8C00" : "#5D1F12";
+            string band = d == Drink.Juice ? "#43A047" : "#E53935";
             S(b, R, "#00000026", 0.53f, 0.42f, 0.5f, 0.7f);
             S(b, R, "#E3F2FD", 0.5f, 0.44f, 0.5f, 0.7f);                           // стакан
             if (fill > 0f)

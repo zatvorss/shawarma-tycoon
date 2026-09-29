@@ -84,12 +84,12 @@ namespace ValourGames.Shawarma
             _root = root;
 
             _dayDuration   = GameData.DayDuration(_day);
-            _spawnInterval = GameData.SpawnInterval(_day) * _loc.spawn;
-            _patience      = GameData.BasePatience(_day) * _loc.patience * GameData.PatienceMult(save.Lvl(Up.Patience));
+            _spawnInterval = GameData.SpawnInterval(_day, _save.location) * _loc.spawn;
+            _patience      = GameData.BasePatience(_day, _save.location) * _loc.patience * GameData.PatienceMult(save.Lvl(Up.Patience));
             _tipMult       = GameData.TipMult(save.Lvl(Up.Tips));
             _priceMult     = GameData.PriceMult(save.Lvl(Up.Price)) * _loc.price * GameData.RankPriceMult(save.rank);
             _drinkChance   = Mathf.Min(0.8f, GameData.DrinkChance * _loc.drink);
-            _maxActive     = GameData.MaxActive(_eday);
+            _maxActive     = GameData.Seats(save.Lvl(Up.Seats));
             _goal          = GameData.Goal(_day, _loc);
             _timeLeft      = _dayDuration;
             _autoAsk       = GameData.AutoAsk(save.Lvl(Up.Tips));
@@ -314,7 +314,7 @@ namespace ValourGames.Shawarma
         int FreeSlot()
         {
             var free = new List<int>();
-            for (int i = 0; i < _customers.Length; i++) if (_customers[i] == null) free.Add(i);
+            for (int i = 0; i < _customers.Length; i++) if (_customers[i] == null && SlotOpen(i)) free.Add(i);
             return free.Count == 0 ? -1 : free[Random.Range(0, free.Count)];
         }
 
@@ -366,7 +366,7 @@ namespace ValourGames.Shawarma
             Drink drink = Drink.None;
             var drinks = new List<Drink>();
             if (GameData.DrinkOpen(Drink.Cola, _eday, _save.location)) drinks.Add(Drink.Cola);
-            if (GameData.DrinkOpen(Drink.Ayran, _eday, _save.location)) drinks.Add(Drink.Ayran);
+            if (GameData.DrinkOpen(Drink.Juice, _eday, _save.location)) drinks.Add(Drink.Juice);
             if (GameData.DrinkOpen(Drink.Fries, _eday, _save.location)) drinks.Add(Drink.Fries);
             if (drinks.Count > 0 && Random.value < Mathf.Min(0.8f, _drinkChance + 0.1f)) drink = drinks[Random.Range(0, drinks.Count)];
 
@@ -832,6 +832,7 @@ namespace ValourGames.Shawarma
                 UIKit.HitArea(s, "Tap", () => OnCustomer(idx));
                 _slots[i] = s;
             }
+            BuildSeatWalls();
 
             var awning = UIKit.Rect(_root, "Awning");
             UIKit.Place(awning, 0, 0.895f, 1, 0.935f);

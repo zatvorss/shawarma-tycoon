@@ -25,8 +25,7 @@ namespace ValourGames.Shawarma
 
         readonly List<TutorStep> _tutorQueue = new List<TutorStep>();
         TutorStep _tutor;
-        RectTransform _tutorRoot, _tutorFrame, _tutorBubble, _tutorArrow;
-        Image[] _tutorShade;
+        RectTransform _tutorRoot, _tutorBubble;
         Text _tutorText;
         bool _basicsRunning;
         int _tutorSlot = -1;
@@ -118,6 +117,20 @@ namespace ValourGames.Shawarma
                             () => Targets(_wrapBtn.transform as RectTransform, _bagBtn.transform as RectTransform, _trayRoot), () => !TrayHasUnpacked());
                         return;
                     }
+            // соус кончился — показать, как долить
+            if (!_save.Tutored("sauce") && !GameData.SauceAuto(_lvSauce))
+                foreach (var b in _bins)
+                {
+                    if (b == null || b.zone == null || b.locked || b.root == null) continue;
+                    int si = (int)b.id;
+                    if (_stock[si] > 0) continue;
+                    int need = Mathf.Min(_cap[si], 3);
+                    string nm = b.id == Ing.Garlic ? L.T("Чесночный соус", "Garlic sauce") : L.T("Острый соус", "Spicy sauce");
+                    Add("sauce", nm + L.T(" кончился!\nЗажми лоток с соусом пальцем и держи — бутылка сама дольёт соус. Отпусти, когда наберётся.",
+                                          " ran out!\nPress and HOLD the sauce bin — the bottle refills it. Let go when it's full enough."),
+                        () => Targets(b.root), () => _stock[si] >= need);
+                    return;
+                }
             // муха
             if (_fly != null && !_save.Tutored("fly"))
             {
@@ -189,9 +202,9 @@ namespace ValourGames.Shawarma
                         () => Targets(_boxCell, BinRoot(Ing.Fries)), () => TrayHas(Drink.Fries) || _customers[si] == null || !_customers[si].needDrink);
                     return;
                 }
-                if ((c.WantsDrink(Drink.Cola) || c.WantsDrink(Drink.Ayran)) && !_save.Tutored("cup") && _cupsCell != null)
+                if ((c.WantsDrink(Drink.Cola) || c.WantsDrink(Drink.Juice)) && !_save.Tutored("cup") && _cupsCell != null)
                 {
-                    var tap = c.WantsDrink(Drink.Cola) ? _tapCola : _tapAyran;
+                    var tap = c.WantsDrink(Drink.Cola) ? _tapCola : _tapJuice;
                     Add("cup", L.T("Клиент хочет напиток. Возьми стакан из стопки и держи под краном, пока не нальётся.",
                                    "The customer wants a drink. Take a cup and hold it under the tap until it fills."),
                         () => Targets(_cupsCell, tap), () => TrayHasDrink() || _customers[si] == null || !_customers[si].needDrink);
@@ -264,7 +277,7 @@ namespace ValourGames.Shawarma
 
         void SkipAllTutor()
         {
-            foreach (var k in new[] { "basics", "ask", "pack", "fly", "dirt", "grill", "grilltake", "fire", "fryload", "fryunload", "friesbox", "cup", "courier", "bulk", "cat" })
+            foreach (var k in new[] { "basics", "ask", "pack", "fly", "dirt", "grill", "grilltake", "fire", "fryload", "fryunload", "friesbox", "cup", "courier", "bulk", "cat", "sauce" })
                 _save.MarkTutored(k);
             SaveSystem.Save(_save);
             _tutorQueue.Clear();
@@ -284,41 +297,20 @@ namespace ValourGames.Shawarma
             }
         }
 
+        // пулы элементов подсветки: несколько отдельных «окон», у каждого своя рамка и своя стрелка
+        readonly List<Image> _shadePool = new List<Image>();
+        readonly List<RectTransform> _framePool = new List<RectTransform>();
+        readonly List<RectTransform> _arrowPool = new List<RectTransform>();
+
         void BuildTutorUI()
         {
             _tutorRoot = UIKit.Full(_root, "Tutor");
             _tutorRoot.SetAsLastSibling();
-            _tutorShade = new Image[4];
-            for (int i = 0; i < 4; i++)
-            {
-                var sh = UIKit.Panel(_tutorRoot, "Shade", new Color(0f, 0f, 0f, 0.62f), 0, 0, 1, 1, false);
-                sh.raycastTarget = true;          // клики мимо подсветки не проходят
-                _tutorShade[i] = sh;
-            }
-            // золотая рамка вокруг цели
-            _tutorFrame = UIKit.Rect(_tutorRoot, "Frame");
-            for (int i = 0; i < 4; i++)
-            {
-                var bar = UIKit.Panel(_tutorFrame, "Edge", UIKit.Gold, 0, 0, 1, 1, false);
-                if (i == 0) UIKit.Place(bar.rectTransform, 0f, 1f, 1f, 1f);
-                if (i == 1) UIKit.Place(bar.rectTransform, 0f, 0f, 1f, 0f);
-                if (i == 2) UIKit.Place(bar.rectTransform, 0f, 0f, 0f, 1f);
-                if (i == 3) UIKit.Place(bar.rectTransform, 1f, 0f, 1f, 1f);
-                var rt = bar.rectTransform;
-                rt.offsetMin = new Vector2(i == 3 ? 0f : -6f, i == 0 ? 0f : -6f);
-                rt.offsetMax = new Vector2(i == 2 ? 0f : 6f, i == 1 ? 0f : 6f);
-                bar.gameObject.AddComponent<Blinker>().speed = 3f;
-            }
-            // стрелка-указатель
-            _tutorArrow = UIKit.Rect(_tutorRoot, "Arrow");
-            UIKit.PlaceFixed(_tutorArrow, 0.5f, 0.5f, 90f, 90f);
-            var inner = UIKit.Rect(_tutorArrow, "Inner");
-            UIKit.PlaceFixed(inner, 0.5f, 0.5f, 90f, 90f);
-            UIKit.Shape(inner, UIKit.Arrow, UIKit.Alpha(UIKit.Dark, 0.5f), 0.53f, 0.47f, 90f, 90f);
-            UIKit.Shape(inner, UIKit.Arrow, UIKit.Gold, 0.5f, 0.5f, 90f, 90f);
-            var sw = inner.gameObject.AddComponent<Swayer>();
-            sw.amp = 12f;
-            sw.speed = 6f;
+            _shadePool.Clear();
+            _framePool.Clear();
+            _arrowPool.Clear();
+            _tutorShadeLayer = UIKit.Full(_tutorRoot, "ShadeLayer");
+            _tutorMarks = UIKit.Full(_tutorRoot, "Marks");
 
             // пузырь с текстом
             var bub = UIKit.Panel(_tutorRoot, "Bubble", UIKit.Hex("#2A1C13"), 0, 0, 1, 1);
@@ -326,7 +318,7 @@ namespace ValourGames.Shawarma
             UIKit.AddOutline(bub, UIKit.Gold, 3f);
             UIKit.AddShadow(bub, 8f, 0.5f);
             _tutorBubble = bub.rectTransform;
-            UIKit.PlaceFixed(_tutorBubble, 0.5f, 0.5f, 820f, _tutor.done == null ? 220f : 170f);
+            UIKit.PlaceFixed(_tutorBubble, 0.5f, 0.5f, BubbleW, BubbleH);
             var chef = UIKit.Rect(_tutorBubble, "Chef");
             UIKit.PlaceFixed(chef, 0.08f, 0.5f, 100f, 100f);
             UIKit.Shape(chef, UIKit.Circle, UIKit.Hex("#E0AC69"), 0.5f, 0.42f, 80f, 80f);
@@ -352,68 +344,213 @@ namespace ValourGames.Shawarma
             Juice.Punch(_tutorBubble, 0.08f, 0.3f);
         }
 
-        /// <summary>Каждый кадр: подсветка следует за целью (клиенты подъезжают, мухи летают).</summary>
+        RectTransform _tutorShadeLayer, _tutorMarks;
+        float BubbleW { get { return 820f; } }
+        float BubbleH { get { return _tutor != null && _tutor.done == null ? 220f : 170f; } }
+
+        Image ShadeAt(int i)
+        {
+            while (_shadePool.Count <= i)
+            {
+                var sh = UIKit.Panel(_tutorShadeLayer, "Shade", new Color(0f, 0f, 0f, 0.62f), 0, 0, 1, 1, false);
+                sh.raycastTarget = true;          // клики мимо подсветки не проходят
+                _shadePool.Add(sh);
+            }
+            return _shadePool[i];
+        }
+
+        RectTransform FrameAt(int i)
+        {
+            while (_framePool.Count <= i)
+            {
+                var f = UIKit.Rect(_tutorMarks, "Frame");
+                for (int e = 0; e < 4; e++)
+                {
+                    var bar = UIKit.Panel(f, "Edge", UIKit.Gold, 0, 0, 1, 1, false);
+                    if (e == 0) UIKit.Place(bar.rectTransform, 0f, 1f, 1f, 1f);
+                    if (e == 1) UIKit.Place(bar.rectTransform, 0f, 0f, 1f, 0f);
+                    if (e == 2) UIKit.Place(bar.rectTransform, 0f, 0f, 0f, 1f);
+                    if (e == 3) UIKit.Place(bar.rectTransform, 1f, 0f, 1f, 1f);
+                    var rt = bar.rectTransform;
+                    rt.offsetMin = new Vector2(e == 3 ? 0f : -6f, e == 0 ? 0f : -6f);
+                    rt.offsetMax = new Vector2(e == 2 ? 0f : 6f, e == 1 ? 0f : 6f);
+                    bar.gameObject.AddComponent<Blinker>().speed = 3f;
+                }
+                _framePool.Add(f);
+            }
+            return _framePool[i];
+        }
+
+        RectTransform ArrowAt(int i)
+        {
+            while (_arrowPool.Count <= i)
+            {
+                var a = UIKit.Rect(_tutorMarks, "Arrow");
+                UIKit.PlaceFixed(a, 0.5f, 0.5f, 90f, 90f);
+                var inner = UIKit.Rect(a, "Inner");
+                UIKit.PlaceFixed(inner, 0.5f, 0.5f, 90f, 90f);
+                UIKit.Shape(inner, UIKit.Arrow, UIKit.Alpha(UIKit.Dark, 0.5f), 0.53f, 0.47f, 90f, 90f);
+                UIKit.Shape(inner, UIKit.Arrow, UIKit.Gold, 0.5f, 0.5f, 90f, 90f);
+                var sw = inner.gameObject.AddComponent<Swayer>();
+                sw.amp = 12f;
+                sw.speed = 6f;
+                _arrowPool.Add(a);
+            }
+            return _arrowPool[i];
+        }
+
+        static bool Hit(Rect a, Rect b) { return a.xMin < b.xMax && a.xMax > b.xMin && a.yMin < b.yMax && a.yMax > b.yMin; }
+        static float OverlapArea(Rect a, Rect b)
+        {
+            float w = Mathf.Min(a.xMax, b.xMax) - Mathf.Max(a.xMin, b.xMin);
+            float h = Mathf.Min(a.yMax, b.yMax) - Mathf.Max(a.yMin, b.yMin);
+            return w > 0f && h > 0f ? w * h : 0f;
+        }
+
+        /// <summary>Каждый кадр: подсветка следует за целями (клиенты подъезжают, мухи летают).</summary>
         void LayoutTutor()
         {
             if (_tutorRoot == null || _tutor == null) return;
             var r = _tutorRoot.rect;
-            bool has = false;
-            Vector2 min = new Vector2(float.MaxValue, float.MaxValue), max = new Vector2(float.MinValue, float.MinValue);
+            if (r.width <= 0f || r.height <= 0f) return;
+
+            // 1) отдельное «окно» для каждой цели (в долях экрана)
+            var holes = new List<Rect>();
             var list = _tutor.targets != null ? _tutor.targets() : null;
             if (list != null)
             {
                 var corners = new Vector3[4];
                 foreach (var t in list)
                 {
-                    if (t == null) continue;
+                    if (t == null || !t.gameObject.activeInHierarchy) continue;
                     t.GetWorldCorners(corners);
+                    Vector2 mn = new Vector2(float.MaxValue, float.MaxValue), mx = new Vector2(float.MinValue, float.MinValue);
                     foreach (var c in corners)
                     {
                         Vector2 lp = _tutorRoot.InverseTransformPoint(c);
-                        min = Vector2.Min(min, lp);
-                        max = Vector2.Max(max, lp);
+                        mn = Vector2.Min(mn, lp);
+                        mx = Vector2.Max(mx, lp);
                     }
-                    has = true;
+                    const float pad = 12f;
+                    float x0 = Mathf.Clamp01((mn.x - pad - r.xMin) / r.width), x1 = Mathf.Clamp01((mx.x + pad - r.xMin) / r.width);
+                    float y0 = Mathf.Clamp01((mn.y - pad - r.yMin) / r.height), y1 = Mathf.Clamp01((mx.y + pad - r.yMin) / r.height);
+                    if (x1 - x0 < 0.002f || y1 - y0 < 0.002f) continue;
+                    var h = Rect.MinMaxRect(x0, y0, x1, y1);
+                    // вложенные/перекрывающиеся окна сливаем, чтобы не было «дырявых» рамок
+                    bool merged = false;
+                    for (int k = 0; k < holes.Count; k++)
+                        if (Hit(holes[k], h))
+                        {
+                            var o = holes[k];
+                            holes[k] = Rect.MinMaxRect(Mathf.Min(o.xMin, h.xMin), Mathf.Min(o.yMin, h.yMin), Mathf.Max(o.xMax, h.xMax), Mathf.Max(o.yMax, h.yMax));
+                            merged = true;
+                            break;
+                        }
+                    if (!merged) holes.Add(h);
                 }
             }
-            float x0, y0, x1, y1;
-            if (has)
+
+            // 2) затемнение сеткой: всё, что не попало ни в одно окно
+            var xs = new List<float> { 0f, 1f };
+            var ys = new List<float> { 0f, 1f };
+            foreach (var h in holes) { xs.Add(h.xMin); xs.Add(h.xMax); ys.Add(h.yMin); ys.Add(h.yMax); }
+            xs.Sort(); ys.Sort();
+            int used = 0;
+            for (int j = 0; j < ys.Count - 1; j++)
             {
-                const float pad = 12f;
-                x0 = Mathf.Clamp01((min.x - pad - r.xMin) / r.width);
-                x1 = Mathf.Clamp01((max.x + pad - r.xMin) / r.width);
-                y0 = Mathf.Clamp01((min.y - pad - r.yMin) / r.height);
-                y1 = Mathf.Clamp01((max.y + pad - r.yMin) / r.height);
+                float ya = ys[j], yb = ys[j + 1];
+                if (yb - ya < 0.0005f) continue;
+                float ym = (ya + yb) * 0.5f;
+                int i = 0;
+                while (i < xs.Count - 1)
+                {
+                    // склеиваем подряд идущие тёмные клетки ряда в одну полосу
+                    float xa = xs[i];
+                    int k = i;
+                    while (k < xs.Count - 1 && !InHole(holes, (xs[k] + xs[k + 1]) * 0.5f, ym)) k++;
+                    if (k > i && xs[k] - xa > 0.0005f)
+                    {
+                        var sh = ShadeAt(used++);
+                        sh.gameObject.SetActive(true);
+                        UIKit.Place(sh.rectTransform, xa, ya, xs[k], yb);
+                    }
+                    i = Mathf.Max(k + 1, i + 1);
+                }
             }
-            else { x0 = x1 = 0.5f; y0 = y1 = 0.5f; }
+            for (int i = used; i < _shadePool.Count; i++) _shadePool[i].gameObject.SetActive(false);
 
-            // четыре тёмные панели вокруг «окна»
-            UIKit.Place(_tutorShade[0].rectTransform, 0f, y1, 1f, 1f);
-            UIKit.Place(_tutorShade[1].rectTransform, 0f, 0f, 1f, y0);
-            UIKit.Place(_tutorShade[2].rectTransform, 0f, y0, x0, y1);
-            UIKit.Place(_tutorShade[3].rectTransform, x1, y0, 1f, y1);
-            _tutorFrame.gameObject.SetActive(has);
-            _tutorArrow.gameObject.SetActive(has);
-            if (has) UIKit.Place(_tutorFrame, x0, y0, x1, y1);
-
-            // пузырь — выше цели, если цель внизу, и ниже, если вверху
-            float cy = (y0 + y1) * 0.5f, cx = Mathf.Clamp((x0 + x1) * 0.5f, 0.24f, 0.76f);
-            float by;
-            if (!has) by = 0.55f;
-            else if (cy < 0.55f) by = Mathf.Min(0.86f, y1 + 0.13f);
-            else by = Mathf.Max(0.14f, y0 - 0.13f);
-            _tutorBubble.anchorMin = _tutorBubble.anchorMax = new Vector2(cx, by);
+            // 3) пузырь — туда, где он не закрывает ни одну цель (с запасом под стрелки)
+            float bw = BubbleW / r.width, bh = BubbleH / r.height;
+            float mxg = 110f / r.width, myg = 110f / r.height;
+            Vector2 best = new Vector2(0.5f, 0.55f);
+            if (holes.Count > 0)
+            {
+                float bestScore = float.MaxValue;
+                float[] cys = { 0.86f, 0.14f, 0.7f, 0.3f, 0.5f };
+                float[] cxs = { 0.5f, 0.27f, 0.73f };
+                foreach (var cy in cys)
+                    foreach (var cx in cxs)
+                    {
+                        var br = Rect.MinMaxRect(cx - bw / 2f - mxg, cy - bh / 2f - myg, cx + bw / 2f + mxg, cy + bh / 2f + myg);
+                        var core = Rect.MinMaxRect(cx - bw / 2f, cy - bh / 2f, cx + bw / 2f, cy + bh / 2f);
+                        float score = 0f;
+                        foreach (var h in holes) score += OverlapArea(core, h) * 100f + OverlapArea(br, h);
+                        // при равенстве — поближе к целям по вертикали
+                        float hc = 0f; foreach (var h in holes) hc += h.center.y; hc /= holes.Count;
+                        score += Mathf.Abs(cy - hc) * 0.001f;
+                        if (score < bestScore - 1e-6f) { bestScore = score; best = new Vector2(cx, cy); }
+                    }
+            }
+            _tutorBubble.anchorMin = _tutorBubble.anchorMax = best;
             _tutorBubble.anchoredPosition = Vector2.zero;
+            var bubRect = Rect.MinMaxRect(best.x - bw / 2f, best.y - bh / 2f, best.x + bw / 2f, best.y + bh / 2f);
 
-            // стрелка между пузырём и целью, остриём к цели
-            if (has)
+            // 4) у каждого окна своя рамка и своя стрелка, остриём точно в цель
+            float aw = 60f / r.width, ah = 60f / r.height;
+            for (int i = 0; i < holes.Count; i++)
             {
-                bool below = by > cy;
-                float ay = below ? Mathf.Min(1f, y1 + 0.05f) : Mathf.Max(0f, y0 - 0.05f);
-                _tutorArrow.anchorMin = _tutorArrow.anchorMax = new Vector2((x0 + x1) * 0.5f, ay);
-                _tutorArrow.anchoredPosition = Vector2.zero;
-                _tutorArrow.localRotation = Quaternion.Euler(0, 0, below ? -90f : 90f);
+                var h = holes[i];
+                var f = FrameAt(i);
+                f.gameObject.SetActive(true);
+                UIKit.Place(f, h.xMin, h.yMin, h.xMax, h.yMax);
+
+                // кандидаты: сверху (вниз), снизу (вверх), слева (вправо), справа (влево)
+                var cand = new[]
+                {
+                    new Vector3(h.center.x, h.yMax + ah, -90f),
+                    new Vector3(h.center.x, h.yMin - ah, 90f),
+                    new Vector3(h.xMin - aw, h.center.y, 0f),
+                    new Vector3(h.xMax + aw, h.center.y, 180f),
+                };
+                // стрелка смотрит со стороны пузыря, если это возможно
+                bool bubbleAbove = best.y > h.center.y;
+                if (!bubbleAbove) { var t0 = cand[0]; cand[0] = cand[1]; cand[1] = t0; }
+                Vector3 pick = cand[0];
+                float pickScore = float.MaxValue;
+                for (int c = 0; c < cand.Length; c++)
+                {
+                    var p = cand[c];
+                    var ar = Rect.MinMaxRect(p.x - aw, p.y - ah, p.x + aw, p.y + ah);
+                    float sc = c * 0.01f;
+                    if (ar.xMin < 0f || ar.xMax > 1f || ar.yMin < 0f || ar.yMax > 1f) sc += 10f;
+                    if (Hit(ar, bubRect)) sc += 5f;
+                    for (int k = 0; k < holes.Count; k++) if (k != i && Hit(ar, holes[k])) sc += 3f;
+                    if (sc < pickScore) { pickScore = sc; pick = p; }
+                }
+                var a = ArrowAt(i);
+                a.gameObject.SetActive(true);
+                a.anchorMin = a.anchorMax = new Vector2(pick.x, pick.y);
+                a.anchoredPosition = Vector2.zero;
+                a.localRotation = Quaternion.Euler(0, 0, pick.z);
             }
+            for (int i = holes.Count; i < _framePool.Count; i++) _framePool[i].gameObject.SetActive(false);
+            for (int i = holes.Count; i < _arrowPool.Count; i++) _arrowPool[i].gameObject.SetActive(false);
+        }
+
+        static bool InHole(List<Rect> holes, float x, float y)
+        {
+            foreach (var h in holes) if (x > h.xMin && x < h.xMax && y > h.yMin && y < h.yMax) return true;
+            return false;
         }
     }
 }

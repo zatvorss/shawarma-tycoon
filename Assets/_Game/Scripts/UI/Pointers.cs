@@ -138,5 +138,27 @@ namespace ValourGames.Shawarma
         {
             return rt != null && RectTransformUtility.RectangleContainsScreenPoint(rt, screenPos, null);
         }
+
+        /// <summary>Попадание с «запасом» вокруг цели: pad — в пикселях эталонного экрана 1920×1080.</summary>
+        public static bool OverPad(RectTransform rt, Vector2 screenPos, float pad)
+        {
+            if (rt == null) return false;
+            var c = new Vector3[4];
+            rt.GetWorldCorners(c);
+            float k = Mathf.Abs(rt.lossyScale.x);
+            if (k <= 0f) k = 1f;
+            float p = pad * k;
+            return screenPos.x >= c[0].x - p && screenPos.x <= c[2].x + p &&
+                   screenPos.y >= c[0].y - p && screenPos.y <= c[2].y + p;
+        }
+
+        /// <summary>Расстояние от точки до центра цели (для выбора ближайшей из пересекающихся зон).</summary>
+        public static float Dist(RectTransform rt, Vector2 screenPos)
+        {
+            if (rt == null) return float.MaxValue;
+            var c = new Vector3[4];
+            rt.GetWorldCorners(c);
+            return Vector2.Distance((Vector2)((c[0] + c[2]) * 0.5f), screenPos);
+        }
     }
 }
