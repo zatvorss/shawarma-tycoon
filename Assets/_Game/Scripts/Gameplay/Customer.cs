@@ -224,7 +224,7 @@ namespace ValourGames.Shawarma
                 UIKit.Shape(_char, C, UIKit.Hex("#FAFAFA"), 0.5f, 0.55f, 160f, 170f);
                 UIKit.Shape(_char, R, UIKit.Hex("#FAFAFA"), 0.5f, 0.4f, 170f, 70f);
             }
-            else if (type == CustType.Surfer || type == CustType.Stewardess || (type != CustType.Granny && type != CustType.Business && !HasHat() && Random.value < 0.4f))
+            else if (type == CustType.Surfer || type == CustType.Stewardess || type == CustType.Socialite || (type != CustType.Granny && type != CustType.Business && !HasHat() && Random.value < 0.4f))
                 UIKit.Shape(_char, R, UIKit.Hex(hair), 0.5f, 0.54f, 150f, 130f);
 
             // голова
@@ -366,7 +366,7 @@ namespace ValourGames.Shawarma
             {
                 case CustType.Police: case CustType.Fireman: case CustType.Rocker: case CustType.Hipster:
                 case CustType.Taxi: case CustType.Grandpa: case CustType.Fisher: case CustType.Pilot:
-                case CustType.Clown: case CustType.Musician: case CustType.Haggler: case CustType.Sheikh:
+                case CustType.Clown: case CustType.Musician: case CustType.Haggler: case CustType.Sheikh: case CustType.Millionaire:
                     return true;
             }
             return false;
@@ -396,6 +396,10 @@ namespace ValourGames.Shawarma
                 case CustType.Haggler: shirt = "#FF8F00"; hair = "#1A1A1A"; break;
                 case CustType.Vegan: shirt = "#66BB6A"; break;
                 case CustType.Sheikh: shirt = "#FAFAFA"; hair = "#1A1A1A"; break;
+                case CustType.Deputy: shirt = "#263238"; break;
+                case CustType.Minister: shirt = "#1A237E"; hair = "#BDBDBD"; break;
+                case CustType.Millionaire: shirt = "#111111"; break;
+                case CustType.Socialite: shirt = "#EC407A"; hair = "#F2D16B"; break;
             }
         }
 
@@ -497,6 +501,31 @@ namespace ValourGames.Shawarma
                 case CustType.Sheikh:
                     UIKit.Shape(body, R, UIKit.Hex("#E0E0E0"), 0.5f, 0.5f, 8f, 170f);
                     break;
+                case CustType.Deputy:
+                case CustType.Minister:
+                    UIKit.Shape(body, R, Color.white, 0.5f, 0.8f, 44f, 56f);
+                    UIKit.Shape(body, R, UIKit.Hex(type == CustType.Deputy ? "#C62828" : "#FFC928"), 0.5f, 0.66f, 16f, 76f);
+                    // значок-флажок на лацкане
+                    UIKit.Shape(body, R, Color.white, 0.24f, 0.78f, 18f, 5f);
+                    UIKit.Shape(body, R, UIKit.Hex("#1565C0"), 0.24f, 0.745f, 18f, 5f);
+                    UIKit.Shape(body, R, UIKit.Hex("#C62828"), 0.24f, 0.71f, 18f, 5f);
+                    if (type == CustType.Minister)
+                    {
+                        UIKit.Shape(body, C, UIKit.Gold, 0.76f, 0.7f, 24f, 24f);
+                        UIKit.Shape(body, R, UIKit.Hex("#C62828"), 0.76f, 0.82f, 14f, 18f);
+                    }
+                    break;
+                case CustType.Millionaire:
+                    UIKit.Shape(body, R, Color.white, 0.5f, 0.78f, 40f, 60f);
+                    UIKit.Shape(body, R, UIKit.Hex("#111111"), 0.43f, 0.88f, 20f, 14f, 20f);
+                    UIKit.Shape(body, R, UIKit.Hex("#111111"), 0.57f, 0.88f, 20f, 14f, -20f);
+                    UIKit.Shape(body, C, UIKit.Gold, 0.5f, 0.88f, 10f, 10f);
+                    UIKit.Shape(body, R, UIKit.Gold, 0.72f, 0.55f, 26f, 6f, 20f);
+                    break;
+                case CustType.Socialite:
+                    for (int i = 0; i < 7; i++) UIKit.Shape(body, C, Color.white, 0.25f + i * 0.083f, 0.86f - Mathf.Abs(i - 3) * 0.035f, 12f, 12f);
+                    UIKit.Shape(body, R, UIKit.Hex("#F48FB1"), 0.5f, 0.4f, 150f, 14f);
+                    break;
             }
         }
 
@@ -583,6 +612,17 @@ namespace ValourGames.Shawarma
                     UIKit.Shape(h, R, UIKit.Hex("#212121"), 0.5f, 0.95f, 140f, 10f);
                     UIKit.Shape(h, R, UIKit.Hex("#212121"), 0.5f, 0.87f, 140f, 10f);
                     return true;
+                case CustType.Millionaire:
+                    // цилиндр с золотой лентой
+                    UIKit.Shape(h, R, UIKit.Hex("#111111"), 0.5f, 0.86f, 170f, 14f);
+                    UIKit.Shape(h, R, UIKit.Hex("#111111"), 0.5f, 1.08f, 100f, 90f);
+                    UIKit.Shape(h, R, UIKit.Gold, 0.5f, 0.92f, 100f, 12f);
+                    return true;
+                case CustType.Socialite:
+                    UIKit.Shape(h, Rr, hc, 0.5f, 0.9f, 136f, 56f);
+                    UIKit.Shape(h, Rr, hc, 0.3f, 0.8f, 66f, 34f, 20f);
+                    UIKit.Shape(h, C, UIKit.Hex("#F48FB1"), 0.78f, 0.95f, 30f, 30f);
+                    return true;
                 case CustType.Vegan:
                     UIKit.Shape(h, Rr, hc, 0.5f, 0.88f, 124f, 48f);
                     UIKit.Shape(h, C, UIKit.Hex("#F48FB1"), 0.2f, 0.9f, 26f, 26f);
@@ -608,6 +648,25 @@ namespace ValourGames.Shawarma
                 case CustType.Hipster:
                     UIKit.Shape(h, C, UIKit.Hex(hair), 0.5f, 0.18f, 104f, 62f).transform.SetSiblingIndex(_mouth.transform.GetSiblingIndex());
                     Glasses(h, "#212121");
+                    break;
+                case CustType.Deputy:
+                    Glasses(h, "#212121");
+                    break;
+                case CustType.Minister:
+                    UIKit.Shape(h, R, UIKit.Hex("#9E9E9E"), 0.5f, 0.36f, 56f, 10f);
+                    break;
+                case CustType.Millionaire:
+                    var mono = UIKit.Shape(h, C, UIKit.Gold, 0.64f, 0.52f, 40f, 40f);
+                    mono.transform.SetSiblingIndex(_eyeR.GetSiblingIndex());
+                    UIKit.Shape(mono.transform, C, UIKit.Alpha(Color.white, 0.55f), 0.5f, 0.5f, 32f, 32f);
+                    UIKit.Shape(h, R, UIKit.Hex("#3E2723"), 0.4f, 0.36f, 34f, 10f, 10f);
+                    UIKit.Shape(h, R, UIKit.Hex("#3E2723"), 0.6f, 0.36f, 34f, 10f, -10f);
+                    break;
+                case CustType.Socialite:
+                    UIKit.Shape(h, R, UIKit.Hex("#4A148C"), 0.36f, 0.52f, 42f, 26f);
+                    UIKit.Shape(h, R, UIKit.Hex("#4A148C"), 0.64f, 0.52f, 42f, 26f);
+                    UIKit.Shape(h, R, UIKit.Hex("#4A148C"), 0.5f, 0.55f, 30f, 6f);
+                    UIKit.Shape(h, R, UIKit.Hex("#D81B60"), 0.5f, 0.28f, 30f, 10f);
                     break;
                 case CustType.Inspector:
                     Glasses(h, "#37474F");
@@ -703,6 +762,21 @@ namespace ValourGames.Shawarma
                 case CustType.Police:
                     UIKit.Shape(_char, R, UIKit.Hex("#FAFAFA"), 0.88f, 0.34f, 12f, 50f, -30f);
                     break;
+                case CustType.Deputy:
+                case CustType.Minister:
+                    var brief = UIKit.Shape(_char, R, UIKit.Hex(type == CustType.Deputy ? "#4E342E" : "#212121"), 0.88f, 0.16f, 60f, 44f);
+                    UIKit.Shape(brief.transform, R, UIKit.Gold, 0.5f, 0.55f, 14f, 6f);
+                    UIKit.Shape(_char, R, UIKit.Hex("#3E2723"), 0.88f, 0.26f, 26f, 8f);
+                    break;
+                case CustType.Millionaire:
+                    UIKit.Shape(_char, R, UIKit.Hex("#212121"), 0.9f, 0.25f, 10f, 170f);
+                    UIKit.Shape(_char, C, UIKit.Gold, 0.9f, 0.53f, 20f, 20f);
+                    break;
+                case CustType.Socialite:
+                    var bag = UIKit.Shape(_char, R, UIKit.Hex("#F8BBD0"), 0.88f, 0.2f, 50f, 40f);
+                    UIKit.Shape(bag.transform, R, UIKit.Gold, 0.5f, 0.6f, 20f, 6f);
+                    UIKit.Shape(_char, R, UIKit.Hex("#F8BBD0"), 0.88f, 0.3f, 30f, 6f);
+                    break;
             }
         }
 
@@ -723,59 +797,77 @@ namespace ValourGames.Shawarma
                 UIKit.Label(_strip, L.T("Опт: жми на меня, когда лаваш готов", "Bulk: tap me when lavash is ready"), 18, UIKit.Hex("#E65100"), TextAnchor.MiddleLeft, 0.03f, 0f, 1f, 1f, true);
                 return;
             }
-            var items = new List<int>(); // >=0 — Ing, -1 — напиток
+            // слева — что кладём В ШАУРМУ, справа отдельной колонкой — что отдаём ОТДЕЛЬНО (напиток или коробка фри)
+            var items = new List<int>();
             for (int i = 0; i < order.Length; i++) if (order[i] > 0) items.Add(i);
-            if (drink != Drink.None) items.Add(-1);
+            bool side = drink != Drink.None;
+            float leftW = side ? 0.66f : 1f;
 
+            var left = UIKit.Rect(_content, "InShawarma");
+            UIKit.Place(left, 0f, 0f, leftW, 1f);
+            if (side)
+            {
+                var cap = UIKit.FitLabel(left, L.T("в шаурму", "in the wrap"), 16, UIKit.Alpha(UIKit.Dark, 0.55f), 0.02f, 0.86f, 0.98f, 1f);
+                cap.fontStyle = FontStyle.Italic;
+            }
             int n = items.Count;
-            int cols = n <= 2 ? n : 3;
-            int rows = Mathf.CeilToInt(n / (float)cols);
-            float bw = 250f, bh = 264f;
-            float cellW = 1f / cols, cellH = 1f / rows;
-            float iconSize = Mathf.Min(bw * cellW, bh * cellH * 0.75f) * 0.72f;
+            int cols = n <= 2 ? Mathf.Max(n, 1) : (side ? 2 : 3);
+            if (side && n > 4) cols = 3;
+            int rows = Mathf.Max(1, Mathf.CeilToInt(n / (float)cols));
+            float top = side ? 0.86f : 1f;
+            float bw = 250f * leftW, bh = 264f * top;
+            float cellW = 1f / cols, cellH = top / rows;
+            float iconSize = Mathf.Min(bw * cellW, bh / rows * 0.75f) * 0.72f;
             iconSize = Mathf.Min(iconSize, 90f);
-
             for (int k = 0; k < n; k++)
             {
                 int col = k % cols, row = k / cols;
-                float cx = (col + 0.5f) * cellW;
-                float cy = 1f - (row + 0.5f) * cellH;
-                bool isDrink = items[k] < 0;
-                bool delivered = isDrink ? !needDrink : !needShawarma;
-
-                var cell = UIKit.Rect(_content, "Cell");
-                UIKit.Place(cell, col * cellW, 1f - (row + 1) * cellH, (col + 1) * cellW, 1f - row * cellH);
+                var cell = UIKit.Rect(left, "Cell");
+                UIKit.Place(cell, col * cellW, top - (row + 1) * cellH, (col + 1) * cellW, top - row * cellH);
                 var cg = cell.gameObject.AddComponent<CanvasGroup>();
-                cg.alpha = delivered ? 0.35f : 1f;
+                cg.alpha = !needShawarma ? 0.35f : 1f;
+                var ing = (Ing)items[k];
+                Icons.Ingredient(cell, ing, 0.5f, 0.6f, iconSize);
+                UIKit.FitLabel(cell, GameData.Get(ing).Short, 18, UIKit.Dark, 0f, 0.02f, 1f, 0.28f);
+                int cnt = order[(int)ing];
+                if (cnt > 1)
+                {
+                    var badge = UIKit.Shape(cell, UIKit.Circle, UIKit.Red, 0.82f, 0.82f, 36f, 36f);
+                    UIKit.FitLabel(badge.transform, "×" + cnt, 22, Color.white, 0.05f, 0.1f, 0.95f, 0.9f);
+                    Juice.Punch(badge.transform, 0.3f, 0.4f);
+                }
+                if (!needShawarma) Check(cell, 0.5f, 0.55f, iconSize * 0.7f);
+            }
 
-                if (isDrink)
-                {
-                    UIKit.Panel(cell, "DrinkBg", UIKit.Hex("#E3F2FD"), 0.06f, 0.06f, 0.94f, 0.94f);
-                    Icons.DrinkIcon(cell, drink, 0.5f, 0.6f, iconSize);
-                    UIKit.FitLabel(cell, GameData.Get(drink).Name, 20, UIKit.Dark, 0f, 0.04f, 1f, 0.28f);
-                }
-                else
-                {
-                    var ing = (Ing)items[k];
-                    Icons.Ingredient(cell, ing, 0.5f, 0.6f, iconSize);
-                    UIKit.FitLabel(cell, GameData.Get(ing).Short, 20, UIKit.Dark, 0f, 0.04f, 1f, 0.28f);
-                    int cnt = order[(int)ing];
-                    if (cnt > 1)
-                    {
-                        var badge = UIKit.Shape(cell, UIKit.Circle, UIKit.Red, 0.82f, 0.82f, 40f, 40f);
-                        UIKit.FitLabel(badge.transform, "×" + cnt, 24, Color.white, 0.05f, 0.1f, 0.95f, 0.9f);
-                        Juice.Punch(badge.transform, 0.3f, 0.4f);
-                    }
-                }
-                if (delivered) Check(cell, 0.5f, 0.55f, iconSize * 0.7f);
+            if (side)
+            {
+                var right = UIKit.Panel(_content, "Side", drink == Drink.Fries ? UIKit.Hex("#FFF3E0") : UIKit.Hex("#E3F2FD"), 0.68f, 0.04f, 0.99f, 0.98f);
+                UIKit.AddOutline(right, UIKit.Alpha(UIKit.Dark, 0.25f), 2f);
+                var r = right.transform;
+                var cap2 = UIKit.FitLabel(r, L.T("отдельно", "separate"), 16, UIKit.Alpha(UIKit.Dark, 0.6f), 0.04f, 0.84f, 0.96f, 0.99f);
+                cap2.fontStyle = FontStyle.Italic;
+                var cg2 = right.gameObject.AddComponent<CanvasGroup>();
+                cg2.alpha = !needDrink ? 0.35f : 1f;
+                Icons.DrinkIcon(r, drink, 0.5f, 0.52f, 66f);
+                UIKit.FitLabel(r, drink == Drink.Fries ? L.T("Фри", "Fries") : GameData.Get(drink).Name, 18, UIKit.Dark, 0.02f, 0.02f, 0.98f, 0.22f);
+                if (!needDrink) Check(r, 0.5f, 0.52f, 46f);
             }
             BuildStrip();
         }
+
+        /// <summary>На 1-й локации упаковки нет: не спрашиваем «здесь или с собой».</summary>
+        public static bool PackingOn = true;
 
         void BuildStrip()
         {
             UIKit.Clear(_strip);
             if (!needShawarma) return;
+            if (!PackingOn && !IsCourier && !boss && type != CustType.Glutton)
+            {
+                UIKit.Label(_strip, L.T("Шаурма", "Shawarma") + (qty > 1 ? " ×" + qty : ""), 20, UIKit.Wood, TextAnchor.MiddleLeft, 0.05f, 0f, 1f, 1f, true);
+                if (type == CustType.Critic) Icons.Star(_strip, 0.93f, 0.5f, 36f, true);
+                return;
+            }
             if (!modeKnown)
             {
                 Icons.Question(_strip, 0.09f, 0.5f, 40f);

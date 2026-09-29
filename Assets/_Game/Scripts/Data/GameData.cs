@@ -15,11 +15,12 @@ namespace ValourGames.Shawarma
     {
         Regular, Student, Business, Granny, Blogger, Critic, Athlete, Tourist, Builder, Kid,
         Police, Doctor, Fireman, Rocker, Gamer, Hipster, Taxi, Grandpa, Fisher, Surfer,
-        Pilot, Stewardess, Fan, Clown, Musician, Glutton, Inspector, Haggler, Vegan, Sheikh
+        Pilot, Stewardess, Fan, Clown, Musician, Glutton, Inspector, Haggler, Vegan, Sheikh,
+        Deputy, Minister, Millionaire, Socialite
     }
 
     /// <summary>Улучшения. Порядок = индекс в SaveData.upgrades. Уровни 0..3 (в игре "Ур. 1..4").</summary>
-    public enum Up { Spit, Knife, Fryer, Grill, Sauce, Bins, Patience, Tips, Price, Pack, Flies, Board, Fire, Queue, Grills, FryBox, VegFeed, FryLoad, FryUnload }
+    public enum Up { Spit, Knife, Fryer, Grill, Sauce, Bins, Patience, Tips, Price, Pack, Flies, Board, Fire, Queue, Grills, FryBox, VegFeed, FryLoad, FryUnload, Drinks, Premium, Lounge, TurboGrill }
 
     /// <summary>Где будут есть: здесь (обёртка) или с собой (обёртка + пакет).</summary>
     public enum ServeMode { Here, ToGo }
@@ -169,13 +170,13 @@ namespace ValourGames.Shawarma
         {
             new IngredientDef(Ing.Meat,     "Мясо",             "Meat",          "Мясо",      "Meat",     "#B5542D", 60, 0, Restock.Spit),
             new IngredientDef(Ing.Tomato,   "Помидор",          "Tomato",        "Помидор",   "Tomato",   "#E0413A", 15, 0, Restock.Chop),
-            new IngredientDef(Ing.Cucumber, "Огурец",           "Cucumber",      "Огурец",    "Cucumber", "#3E9B3E", 15, 1, Restock.Chop),
-            new IngredientDef(Ing.Cabbage,  "Капуста",          "Cabbage",       "Капуста",   "Cabbage",  "#8DBF4A", 10, 3, Restock.Chop),
-            new IngredientDef(Ing.Cheese,   "Сыр",              "Cheese",        "Сыр",       "Cheese",   "#F2C94C", 30, 5, Restock.Chop),
-            new IngredientDef(Ing.Onion,    "Маринованный лук", "Pickled onion", "Лук",       "Onion",    "#AB47BC", 20, 6, Restock.Chop),
-            new IngredientDef(Ing.Fries,    "Картошка",         "Fries",         "Картошка",  "Fries",    "#E8B321", 25, 2, Restock.Fryer),
+            new IngredientDef(Ing.Cucumber, "Огурец",           "Cucumber",      "Огурец",    "Cucumber", "#3E9B3E", 15, 4, Restock.Chop),
+            new IngredientDef(Ing.Cabbage,  "Капуста",          "Cabbage",       "Капуста",   "Cabbage",  "#8DBF4A", 10, 5, Restock.Chop),
+            new IngredientDef(Ing.Cheese,   "Сыр",              "Cheese",        "Сыр",       "Cheese",   "#F2C94C", 30, 7, Restock.Chop),
+            new IngredientDef(Ing.Onion,    "Маринованный лук", "Pickled onion", "Лук",       "Onion",    "#AB47BC", 20, 8, Restock.Chop),
+            new IngredientDef(Ing.Fries,    "Картошка",         "Fries",         "Картошка",  "Fries",    "#E8B321", 25, 3, Restock.Fryer),
             new IngredientDef(Ing.Garlic,   "Чесночный соус",   "Garlic sauce",  "Чесночный", "Garlic",   "#E9E1C8", 10, 0, Restock.Sauce),
-            new IngredientDef(Ing.Spicy,    "Острый соус",      "Hot sauce",     "Острый",    "Hot",      "#C62828", 15, 4, Restock.Sauce),
+            new IngredientDef(Ing.Spicy,    "Острый соус",      "Hot sauce",     "Острый",    "Hot",      "#C62828", 15, 6, Restock.Sauce),
         };
 
         public static readonly DrinkDef[] Drinks =
@@ -213,7 +214,11 @@ namespace ValourGames.Shawarma
             N(CustType.Stewardess, "Стюардесса",  "Flight attendant", 0.8f, 1.4f, 1.5f, 10, 2, 6),
             N(CustType.Fan,        "Болельщик",   "Sports fan",     0.9f, 1.1f, 0.9f, 7, 3, 5),
             N(CustType.Haggler,    "Торгаш",      "Haggler",        1.5f, 0.7f, 0.3f, 2, 2, 1),
-            N(CustType.Sheikh,     "Шейх",        "Sheikh",         1.0f, 2.2f, 3.0f, 14, 1, 6, 9),
+            N(CustType.Sheikh,     "Шейх",        "Sheikh",         1.0f, 2.2f, 3.0f, 14, 2, 6, 9, 11),
+            N(CustType.Deputy,     "Депутат",     "Deputy",         0.9f, 1.4f, 1.6f, 30, 0, 10),
+            N(CustType.Minister,   "Министр",     "Minister",       0.85f, 1.8f, 2.2f, 30, 0, 10),
+            N(CustType.Millionaire, "Миллионер",  "Millionaire",    0.9f, 2.0f, 2.8f, 25, 0, 9, 11),
+            N(CustType.Socialite,  "Светская львица", "Socialite",  0.9f, 1.8f, 2.5f, 33, 0, 11),
             // --- новые ОСОБЕННЫЕ (со своей механикой) ---
             S(N(CustType.Fireman,  "Пожарный",    "Firefighter",    1.0f, 1.1f, 1.0f, 6, 2, 5),
                 "Пока он у окна — любой пожар на гриле гаснет сам", "While he's at the window, grill fires go out by themselves"),
@@ -249,11 +254,11 @@ namespace ValourGames.Shawarma
             if (i < loc.weights.Length) return loc.weights[i];
             var d = Get(t);
             if (d.favLocs != null)
-                foreach (var l in d.favLocs) if (l == loc.id) return d.w * 4;
+                foreach (var l in d.favLocs) if (l == loc.id) return d.w > 0 ? d.w * 4 : 14;  // w = 0 — гость бывает только на своих локациях
             return d.w;
         }
 
-        static UpgradeDef U(Up id, string ru, string en, string[] lr, string[] le, int[] c) { return new UpgradeDef(id, ru, en, lr, le, c); }
+        static UpgradeDef U(Up id, string ru, string en, string[] lr, string[] le, int[] c, int[] reqLoc = null) { return new UpgradeDef(id, ru, en, lr, le, c) { reqLoc = reqLoc }; }
 
         // 5 уровней: ур.1 (старт) → ур.2 → ур.3 → ур.4 (автоматика) → ур.5 «Легенда» (с 7-й локации).
         // Цены умножаются на цены локации (см. Game.UpCost).
@@ -270,11 +275,11 @@ namespace ValourGames.Shawarma
             U(Up.Fryer, "Фритюр", "Fryer",
                 new[] { "Жарит 9 сек, выходит 3 порции", "Жарит 6 сек, 4 порции", "Жарит 4 сек, 6 порций", "Термостат: картошка больше не подгорает", "ЛЕГЕНДА: жарит на 40% быстрее" },
                 new[] { "Fries in 9 s, 3 portions", "6 s, 4 portions", "4 s, 6 portions", "Thermostat: fries never burn", "LEGEND: 40% faster" },
-                new[] { 900, 5000, 22000, 80000 }),
+                new[] { 900, 5000, 22000, 80000 }, new[] { 3, 4, 6, 9 }),
             U(Up.Grill, "Гриль", "Grill",
                 new[] { "Жарит 6 сек", "Жарит 4.5 сек", "Жарит 3.5 сек", "АВТО-таймер: сам переворачивает и снимает", "ЛЕГЕНДА: на 30% быстрее" },
                 new[] { "Grills 6 s", "Grills 4.5 s", "Grills 3.5 s", "AUTO-timer: flips and takes off", "LEGEND: 30% faster" },
-                new[] { 1200, 6500, 28000, 100000 }),
+                new[] { 1200, 6500, 28000, 100000 }, new[] { 2, 3, 5, 8 }),
             U(Up.Sauce, "Соусы", "Sauces",
                 new[] { "Бутылка на 6", "Бутылка на 10", "Бутылка на 14", "АВТО-дозатор", "ЛЕГЕНДА: дозатор ×2 быстрее" },
                 new[] { "Bottle of 6", "Bottle of 10", "Bottle of 14", "AUTO-dispenser", "LEGEND: dispenser 2× faster" },
@@ -298,31 +303,31 @@ namespace ValourGames.Shawarma
             U(Up.Pack, "Упаковка", "Packing",
                 new[] { "3 касания на обёртку/пакет", "2 касания", "1 касание", "АВТО-упаковщик (обёртка сама)", "ЛЕГЕНДА: пакует всё разом" },
                 new[] { "3 taps per wrap/bag", "2 taps", "1 tap", "AUTO-packer (wraps by itself)", "LEGEND: packs everything at once" },
-                new[] { 500, 2800, 13000, 50000 }),
+                new[] { 500, 2800, 13000, 50000 }, new[] { 1, 2, 4, 7 }),
             U(Up.Flies, "Мухи", "Flies",
                 new[] { "Муху бить 3 раза", "Мухобойка: 1 удар", "Венерина мухоловка: ловит муху раз в 30 сек", "УФ-ловушка: мухи сгорают сами", "ЛЕГЕНДА: за каждую муху — монеты" },
                 new[] { "3 hits per fly", "Swatter: 1 hit", "Venus flytrap: a fly every 30 s", "UV zapper: flies burn by themselves", "LEGEND: coins for every fly" },
-                new[] { 600, 3000, 14000, 50000 }),
+                new[] { 600, 3000, 14000, 50000 }, new[] { 1, 2, 4, 7 }),
             U(Up.Board, "Чистота доски", "Clean board",
                 new[] { "Грязнится каждые 4 шаурмы", "Губка: трёшь вдвое быстрее", "Антипригарная: грязнится вдвое реже", "Робо-губка: чистит сама", "ЛЕГЕНДА: доска не пачкается" },
                 new[] { "Dirty every 4 wraps", "Sponge: wipe 2× faster", "Non-stick: dirty 2× less", "Robo-sponge: cleans itself", "LEGEND: never gets dirty" },
-                new[] { 500, 2500, 12000, 45000 }),
+                new[] { 500, 2500, 12000, 45000 }, new[] { 2, 3, 5, 8 }),
             U(Up.Fire, "Пожарная безопасность", "Fire safety",
                 new[] { "Тушить 3 нажатиями", "Огнетушитель: 1 нажатие", "Спринклер: тушит сам за 3 сек", "Датчик дыма: пожаров не бывает", "ЛЕГЕНДА: сгоревшее убирается само" },
                 new[] { "3 taps to put out", "Extinguisher: 1 tap", "Sprinkler: auto in 3 s", "Smoke sensor: no fires", "LEGEND: burnt food clears itself" },
-                new[] { 500, 2500, 12000, 45000 }),
+                new[] { 500, 2500, 12000, 45000 }, new[] { 3, 4, 6, 9 }),
             U(Up.Queue, "Уют для очереди", "Queue comfort",
                 new[] { "Очередь ждёт недолго", "Навес: ждут ×1.4", "Лавочка: ждут ×1.8, очередь до 8", "Кофе в очереди: ждут ×2.5", "ЛЕГЕНДА: ждут ×3.5, очередь до 10" },
                 new[] { "Queue is impatient", "Awning: wait ×1.4", "Bench: wait ×1.8, queue up to 8", "Free coffee: wait ×2.5", "LEGEND: wait ×3.5, queue up to 10" },
                 new[] { 700, 3500, 15000, 55000 }),
-            new UpgradeDef(Up.Grills, "Грили", "Grills",
+            U(Up.Grills, "Грили", "Grills",
                 new[] { "1 гриль", "2 гриля (с 4-й локации)", "3 гриля (с 8-й локации)" },
                 new[] { "1 grill", "2 grills (from location 4)", "3 grills (from location 8)" },
-                new[] { 4000, 25000 }) { reqLoc = new[] { 3, 7 } },
+                new[] { 4000, 25000 }, new[] { 3, 7 }),
             U(Up.FryBox, "Коробки фри", "Fries boxes",
                 new[] { "Достань коробку и держи над картошкой 1 сек", "Наполняется за 0.5 сек", "Наполняется мгновенно", "АВТО: коробка сама наполняется и встаёт на выдачу", "ЛЕГЕНДА: коробка сама отдаётся клиенту" },
                 new[] { "Take a box and hold it over the fries for 1 s", "Fills in 0.5 s", "Fills instantly", "AUTO: box fills itself and goes to the tray", "LEGEND: box is handed to the customer by itself" },
-                new[] { 700, 4000, 18000, 65000 }),
+                new[] { 700, 4000, 18000, 65000 }, new[] { 3, 4, 6, 9 }),
             U(Up.VegFeed, "Подача овощей", "Veggie feeder",
                 new[] { "Овощ перетаскиваешь из ящика на доску сам", "Касание ящика — овощ сам ложится на доску", "АВТО: помощник кладёт на доску то, что кончается" },
                 new[] { "You drag veggies from the crate to the board", "Tap the crate — the veggie lands on the board", "AUTO: a helper puts whatever runs out on the board" },
@@ -330,11 +335,27 @@ namespace ValourGames.Shawarma
             U(Up.FryLoad, "Засыпка фритюра", "Fryer loader",
                 new[] { "Сырую картошку перетаскиваешь во фритюр сам", "Касание ящика — картошка высыпается во фритюр", "АВТО: помощник сам засыпает картошку во фритюр" },
                 new[] { "You drag raw fries into the fryer", "Tap the crate — fries pour into the fryer", "AUTO: a helper loads the fryer by itself" },
-                new[] { 1500, 20000 }),
+                new[] { 1500, 20000 }, new[] { 3, 4 }),
             U(Up.FryUnload, "Выгрузка фритюра", "Fryer unloader",
                 new[] { "Готовую корзину перетаскиваешь в лоток сам", "Касание корзины — картошка пересыпается в лоток", "АВТО: помощник сам пересыпает готовую картошку в лоток" },
                 new[] { "You drag the cooked basket to the bin", "Tap the basket — fries pour into the bin", "AUTO: a helper empties cooked fries into the bin" },
-                new[] { 1500, 20000 }),
+                new[] { 1500, 20000 }, new[] { 3, 4 }),
+            U(Up.Drinks, "Напитки", "Drinks",
+                new[] { "Возьми стакан и держи под краном 2 сек", "Наливается за 1.4 сек", "Наливается за 0.8 сек", "Касание крана — стакан наливается и встаёт на выдачу сам", "ЛЕГЕНДА: стакан сам наливается и отдаётся клиенту" },
+                new[] { "Take a cup and hold it under the tap for 2 s", "Fills in 1.4 s", "Fills in 0.8 s", "Tap the tap — the cup fills and goes to the tray by itself", "LEGEND: the cup fills and is handed to the customer by itself" },
+                new[] { 800, 4500, 20000, 70000 }, new[] { 2, 3, 5, 8 }),
+            U(Up.Premium, "Золотая подача", "Golden service",
+                new[] { "Обычная подача", "Фарфор и салфетки: цены +25%", "Золотые приборы: цены +60%" },
+                new[] { "Regular service", "Porcelain and napkins: prices +25%", "Golden cutlery: prices +60%" },
+                new[] { 3000, 6000 }, new[] { 10, 11 }),
+            U(Up.Lounge, "VIP-лаунж", "VIP lounge",
+                new[] { "Обычная очередь", "Бархатные канаты: терпение +25%, чаевые +25%", "Лаунж с диванами: терпение +50%, чаевые +60%" },
+                new[] { "Regular queue", "Velvet ropes: patience +25%, tips +25%", "Lounge with sofas: patience +50%, tips +60%" },
+                new[] { 3000, 6000 }, new[] { 10, 11 }),
+            U(Up.TurboGrill, "Турбо-жар", "Turbo heat",
+                new[] { "Обычный жар", "Индукция: гриль и фритюр на 25% быстрее", "Плазма: гриль и фритюр на 45% быстрее" },
+                new[] { "Regular heat", "Induction: grill and fryer 25% faster", "Plasma: grill and fryer 45% faster" },
+                new[] { 3000, 6000 }, new[] { 10, 11 }),
         };
 
         // Локации идут по очереди. Переезд на следующую = РЕБЁРТ (как в Roblox):
@@ -353,34 +374,40 @@ namespace ValourGames.Shawarma
         {
             Loc(0, "Ларёк во дворе", "Backyard kiosk", "Здесь всё началось. Ларёк дяди Ашота.", "Where it all began. Uncle Ashot's kiosk.",
                 0, 1, 1f, 1.0f, 1.0f, 1f, "#6EC6F0", "#FDE7C4", "#C4BBAA", "#C0392B", false, "city",
-                new[] { 40, 20, 10, 12, 6, 2, 4, 2, 4, 10 }, 0.08f, 0.36f),
+                new[] { 40, 20, 10, 12, 6, 2, 4, 2, 4, 10 }, 0.06f, 0.36f),
             Loc(1, "Рынок", "Market", "Шумно, торгуются, но народу — тьма.", "Noisy, lots of haggling, huge crowds.",
                 11000, 6, 1.3f, 1.0f, 0.95f, 1f, "#81D4FA", "#FFF3E0", "#BCAAA4", "#E67E22", false, "market",
-                new[] { 35, 10, 10, 20, 5, 3, 3, 4, 10, 8 }, 0.18f, 0.66f),
+                new[] { 35, 10, 10, 20, 5, 3, 3, 4, 10, 8 }, 0.14f, 0.68f),
             Loc(2, "Вокзал", "Train station", "Все торопятся, но платят больше.", "Everyone rushes but pays more.",
                 40000, 11, 1.7f, 0.95f, 0.9f, 1.2f, "#9EC9E8", "#F2E3CF", "#A7A7A7", "#2E86AB", false, "city",
-                new[] { 25, 8, 35, 8, 4, 4, 4, 8, 4, 4 }, 0.29f, 0.36f),
+                new[] { 25, 8, 35, 8, 4, 4, 4, 8, 4, 4 }, 0.22f, 0.36f),
             Loc(3, "Пляж", "Beach", "Жарко! Все хотят пить. Много блогеров и туристов.", "Hot! Everyone is thirsty. Bloggers and tourists.",
                 145000, 18, 2.2f, 1.0f, 0.9f, 2f, "#29B6F6", "#FFF3C4", "#E8D39A", "#F39C12", false, "beach",
-                new[] { 25, 10, 4, 6, 20, 4, 10, 18, 0, 8 }, 0.4f, 0.68f),
+                new[] { 25, 10, 4, 6, 20, 4, 10, 18, 0, 8 }, 0.3f, 0.68f),
             Loc(4, "Кампус", "Campus", "Толпы студентов: платят мало, но их очень много.", "Crowds of students: cheap but many.",
                 250000, 18, 2.6f, 1.1f, 0.8f, 1f, "#81C784", "#FFF8E1", "#B8B0A0", "#8E44AD", false, "city",
-                new[] { 10, 55, 4, 3, 10, 2, 8, 2, 2, 8 }, 0.5f, 0.36f),
+                new[] { 10, 55, 4, 3, 10, 2, 8, 2, 2, 8 }, 0.38f, 0.36f),
             Loc(5, "Стадион", "Stadium", "Финал кубка! Болельщики и спортсмены.", "Cup final! Fans and athletes.",
                 310000, 18, 3.2f, 0.95f, 0.85f, 1.4f, "#4FC3F7", "#E1F5FE", "#9E9E9E", "#1565C0", false, "stadium",
-                new[] { 25, 10, 5, 2, 10, 3, 35, 5, 5, 5 }, 0.6f, 0.68f),
+                new[] { 25, 10, 5, 2, 10, 3, 35, 5, 5, 5 }, 0.46f, 0.68f),
             Loc(6, "Аэропорт", "Airport", "Туристы со всего мира и бизнес-класс.", "Tourists from all over the world.",
                 460000, 18, 4f, 0.95f, 0.85f, 1.3f, "#B3E5FC", "#ECEFF1", "#B0BEC5", "#00838F", false, "airport",
-                new[] { 15, 5, 30, 4, 6, 6, 4, 30, 0, 0 }, 0.7f, 0.36f),
+                new[] { 15, 5, 30, 4, 6, 6, 4, 30, 0, 0 }, 0.54f, 0.36f),
             Loc(7, "Ночной центр", "Downtown night", "Ночь, неон, критики и блогеры.", "Night, neon, critics and bloggers.",
                 640000, 18, 5f, 0.95f, 0.85f, 1.5f, "#0B1633", "#3A2F5B", "#4A4A5A", "#E91E63", true, "city",
-                new[] { 30, 10, 15, 0, 25, 10, 5, 5, 0, 0 }, 0.8f, 0.68f),
+                new[] { 30, 10, 15, 0, 25, 10, 5, 5, 0, 0 }, 0.62f, 0.68f),
             Loc(8, "Фудкорт ТЦ", "Mall food court", "Высшая лига. Безумный поток.", "The big league. Insane traffic.",
                 900000, 18, 6.5f, 0.95f, 0.8f, 1.3f, "#F5E6D3", "#E0CDB5", "#D7CCC8", "#16A085", false, "mall",
-                new[] { 20, 15, 15, 8, 12, 8, 6, 6, 2, 8 }, 0.88f, 0.36f),
+                new[] { 20, 15, 15, 8, 12, 8, 6, 6, 2, 8 }, 0.7f, 0.36f),
             Loc(9, "Небоскрёб", "Skyscraper", "Вершина города. Отсюда виден миллиард.", "The top of the city. A billion in sight.",
                 1280000, 18, 9f, 0.9f, 0.8f, 1.5f, "#1A237E", "#FF8A65", "#546E7A", "#FFC928", true, "towers",
-                new[] { 15, 5, 35, 2, 12, 15, 4, 10, 0, 2 }, 0.94f, 0.7f),
+                new[] { 15, 5, 35, 2, 12, 15, 4, 10, 0, 2 }, 0.78f, 0.68f),
+            Loc(10, "Правительственная столовая", "Government canteen", "Депутаты и министры. Строгий протокол и щедрые чаевые.", "Deputies and ministers. Strict protocol, generous tips.",
+                1970000, 18, 60f, 0.95f, 0.8f, 1.2f, "#ECE3D0", "#D7C7A6", "#8D6E63", "#B71C1C", false, "gov",
+                new[] { 10, 0, 30, 5, 5, 10, 2, 3, 0, 0 }, 0.86f, 0.36f),
+            Loc(11, "Дубай", "Dubai", "Финал пути: шейхи, миллионеры и светские львицы платят золотом.", "The finale: sheikhs, millionaires and socialites pay in gold.",
+                13800000, 18, 1200f, 0.95f, 0.8f, 2f, "#FFB74D", "#FFE0B2", "#E8D39A", "#FFC928", false, "dubai",
+                new[] { 5, 0, 25, 0, 20, 8, 5, 25, 0, 2 }, 0.94f, 0.68f),
         };
 
         // ---------- ребёрты ----------
@@ -463,7 +490,7 @@ namespace ValourGames.Shawarma
             float dur = DayDuration(day);
             float interval = SpawnInterval(day) * L.spawn * 0.956f;
             float arrivals = dur / interval;
-            int tops = loc + 2;
+            int tops = Mathf.Min(loc, 7) + 2;
             float m = Mathf.Min(MaxToppings(e), tops);
             float k = (1f + m) / 2f;
             float dm = DoubleMeatChance(e);
@@ -475,7 +502,7 @@ namespace ValourGames.Shawarma
         }
 
         /// <summary>Сколько игрок зарабатывает за всё время на локации до переезда (по модели выше).</summary>
-        static readonly float[] _stayIncome = { 14281f, 51502f, 182910f, 311336f, 390860f, 574465f, 801379f, 1137344f, 1596296f, 2462597f };
+        static readonly float[] _stayIncome = { 14069f, 51213f, 182179f, 311092f, 390860f, 574465f, 801379f, 1137344f, 1596296f, 2462597f, 17273142f, 402726656f };
 
         /// <summary>Во сколько раз дневной доход на локации больше, чем в самом начале. Для цен бустеров и т.п.</summary>
         public static float EconScale(int loc) { return ExpectedDayIncome(loc, 5) / ExpectedDayIncome(0, 5); }
@@ -550,6 +577,13 @@ namespace ValourGames.Shawarma
         public static float BoxFillTime(int l)      { return l >= 2 ? 0f : (l == 1 ? 0.5f : 1f); }
         public static bool  BoxAuto(int l)          { return l >= 3; }
         public static bool  BoxDeliver(int l)       { return l >= 4; }
+        public static float CupFillTime(int l)      { return l >= 2 ? 0.8f : (l == 1 ? 1.4f : 2f); }
+        public static bool  CupTap(int l)           { return l >= 3; }
+        public static bool  CupDeliver(int l)       { return l >= 4; }
+        public static float PremiumMult(int l)      { return l >= 2 ? 1.6f : (l == 1 ? 1.25f : 1f); }
+        public static float LoungePatience(int l)   { return l >= 2 ? 1.5f : (l == 1 ? 1.25f : 1f); }
+        public static float LoungeTips(int l)       { return l >= 2 ? 1.6f : (l == 1 ? 1.25f : 1f); }
+        public static float TurboMult(int l)        { return l >= 2 ? 0.55f : (l == 1 ? 0.75f : 1f); }
         public static bool  HelperTap(int l)        { return l >= 1; }
         public static bool  HelperAuto(int l)       { return l >= 2; }
         public static bool  AutoAsk(int tipsLvl)    { return tipsLvl >= 3; }
@@ -569,8 +603,30 @@ namespace ValourGames.Shawarma
         public static bool DrinkOpen(Drink id, int eday, int loc)
         {
             if (id == Drink.Fries) return IngOpen(Ing.Fries, loc);
-            return Unlocked(id, eday);
+            if (id == Drink.Cola) return loc >= 2;
+            if (id == Drink.Ayran) return loc >= 5;
+            return false;
         }
+
+        // =====================================================================
+        //  ЧТО ОТКРЫВАЕТСЯ ПО ЛОКАЦИЯМ (индекс локации: 0 — ларёк во дворе)
+        //  0: мясо, помидор, чесночный соус — и больше ничего, никаких «гадостей»
+        //  1: упаковка «здесь / с собой», мухи
+        //  2: гриль, грязная доска, кола в стаканах
+        //  3: фритюр и картошка, пожары на гриле
+        //  4: огурцы, кот
+        //  5: капуста, айран, дождь и час пик
+        //  6: острый соус, босс-день
+        //  7: сыр     8: маринованный лук
+        // =====================================================================
+        public static bool PackingOn(int loc) { return loc >= 1; }
+        public static bool FliesOn(int loc)   { return loc >= 1; }
+        public static bool GrillOn(int loc)   { return loc >= 2; }
+        public static bool DirtOn(int loc)    { return loc >= 2; }
+        public static bool FireOn(int loc)    { return loc >= 3; }
+        public static bool CatOn(int loc)     { return loc >= 4; }
+        public static bool EventsOn(int loc)  { return loc >= 5; }
+        public static bool BossOn(int loc)    { return loc >= 6; }
 
         // ---------- заказы: массив количеств по Ing ----------
         public static int[] NewCounts() { return new int[IngCount]; }
@@ -615,7 +671,14 @@ namespace ValourGames.Shawarma
         {
             var parts = new List<string>();
             foreach (var d in Ingredients) if (d.unlockLoc == loc && loc > 0 && localDay == 1) parts.Add(d.Name);
-            for (int i = 1; i < Drinks.Length; i++) if (i != (int)Drink.Fries && Drinks[i].unlockDay == day) parts.Add(Drinks[i].Name);
+            if (localDay == 1)
+            {
+                string[] featRu = { "", "упаковка «здесь / с собой», мухи", "гриль, кола в стаканах, грязная доска", "фритюр и картошка фри, пожары на гриле",
+                                    "кот у ларька", "айран, дождь и час пик", "босс-день с Мистером Мегой" };
+                string[] featEn = { "", "here / to-go packing, flies", "grill, cola in cups, dirty board", "fryer and fries, grill fires",
+                                    "a cat at the kiosk", "ayran, rain and rush hour", "boss day with Mr. Mega" };
+                if (loc > 0 && loc < featRu.Length) parts.Add(L.T(featRu[loc], featEn[loc]));
+            }
             foreach (var c in Customers) if (c.unlockDay == day && day > 1) parts.Add(L.T("клиент: ", "customer: ") + c.Name);
             if (day == 4) parts.Add(L.T("двойное мясо в заказах", "double meat orders"));
             return string.Join(", ", parts);

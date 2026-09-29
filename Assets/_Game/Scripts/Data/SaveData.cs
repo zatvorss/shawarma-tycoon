@@ -7,7 +7,7 @@ namespace ValourGames.Shawarma
     public class SaveData
     {
         public int day = 1;
-        public int money = 0;
+        public long money = 0;
         public int totalServed = 0;
         public int bestDay = 0;
         public int stars = 0;
@@ -16,7 +16,7 @@ namespace ValourGames.Shawarma
         public bool sound = true;
         public bool music = true;
         public string lang = "";   // "" = авто, "ru", "en"
-        public int[] upgrades = new int[19];
+        public int[] upgrades = new int[23];
 
         // статистика для достижений
         public int totalPerfect = 0;
@@ -54,6 +54,11 @@ namespace ValourGames.Shawarma
         public int[] skins = new int[8];
         public int[] charms = new int[6];   // талисманы из Шаурма-Пасса (навсегда)
         public int bizVer = 0;       // 1 = состояния достижений: 0 нет, 1 можно забрать, 2 забрано
+
+        // v0.13: второй ларёк (бизнес без работы: закупаешь продукты — он продаёт, забираешь выручку)
+        public int kiosk2Stock = 0;
+        public long kiosk2Cash = 0;
+        public int kiosk2LastSold = 0;
 
         // ежедневный бонус
         public string lastLogin = "";

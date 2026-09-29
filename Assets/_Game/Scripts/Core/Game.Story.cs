@@ -17,7 +17,7 @@ namespace ValourGames.Shawarma
             if (_save.story[0] == 0) ch = 0;
             else if (_save.location == 0 && _save.day >= 3 && _save.story[1] == 0) ch = 1;
             else if (_save.location >= 1 && _save.story[1 + _save.location] == 0) ch = 1 + _save.location;
-            else if (_save.lifetime >= 1000000000L && _save.story[11] == 0) ch = 11;
+            else if (_save.lifetime >= 1000000000L && _save.story[13] == 0) ch = 13;
             if (ch < 0) return false;
             _save.story[ch] = 1;
             SaveSystem.Save(_save);
@@ -146,13 +146,13 @@ namespace ValourGames.Shawarma
             int next = _save.location + 1;
             float oldMult = GameData.RebirthMult(_save.rebirths);
             int fame = GameData.FameFor(next);
-            int keep = Mathf.RoundToInt(_save.money * 0.1f * Meta.P(_save, Perk.Legacy));
+            long keep = (long)(_save.money * 0.1 * Meta.P(_save, Perk.Legacy));
 
             _save.rebirths++;
             _save.fame += fame;
             _save.location = next;
             _save.day = 1;
-            _save.money = keep + 1000 * Meta.P(_save, Perk.Capital);
+            _save.money = keep + (long)(1000f * GameData.EconScale(next)) * Meta.P(_save, Perk.Capital);
             for (int i = 0; i < _save.upgrades.Length; i++) _save.upgrades[i] = 0;
             for (int i = 0; i < _save.boostOn.Length; i++) _save.boostOn[i] = 0;
             _save.rep = 3f;

@@ -47,18 +47,16 @@ namespace ValourGames.Shawarma
             _bakeT = 0f;
             if (_bakeLvl > 0)
                 for (int k = 0; k < (_bakeLvl >= 3 ? 2 : 1); k++) _bulkAt.Add(Random.Range(0.15f, 0.8f) * _dayDuration);
-            // drive-thru: машины в течение дня
-            _sauceLvl = _save.biz[Meta.BizSauce];
 
             // босс: каждый 5-й день приходит сам Мистер Мега
-            if (_day % 5 == 0 && _eday >= 5) _bossAt = Random.Range(0.3f, 0.5f) * _dayDuration;
+            if (_day % 5 == 0 && GameData.BossOn(_save.location)) _bossAt = Random.Range(0.3f, 0.5f) * _dayDuration;
 
             // мухи
             _flyLvl = _save.Lvl(Up.Flies);
-            if (_eday >= 2) _nextFly = Random.Range(12f, 20f);
+            if (GameData.FliesOn(_save.location)) _nextFly = Random.Range(12f, 20f);
 
             // кот
-            if (_day >= 2)
+            if (GameData.CatOn(_save.location))
             {
                 _catsLeft = Meta.Has(_save, Meta.CharmBowl) ? 3 : 2;
                 _nextCat = Random.Range(0.1f, 0.45f) * _dayDuration;
@@ -71,7 +69,7 @@ namespace ValourGames.Shawarma
             if (_bossAt >= 0f) { text.Add(L.T("БОСС-ДЕНЬ: придёт сам Мистер Мега!", "BOSS DAY: Mr. Mega himself is coming!")); col.Add("#FFD54F"); }
             if (_bakeLvl > 0) { text.Add(L.T("Тандыр горячий: шаурма на свежем лаваше +", "The tandoor is hot: shawarma on fresh lavash +") + Mathf.RoundToInt(Meta.BakeBonus(_bakeLvl) * 100f) + "%"); col.Add("#FFB74D"); }
             if (_bulkAt.Count > 0) { text.Add(L.T("Конкуренты придут за лавашом оптом", "Rivals will come to buy lavash in bulk")); col.Add("#FF8A65"); }
-            if (_sauceLvl > 0) { text.Add(L.T("Фирменный соус: гости будут просить бутылку с собой — жми на неё!", "Signature sauce: guests will ask for a bottle — tap it!")); col.Add("#EF9A9A"); }
+            if (_save.biz[Meta.BizKiosk2] > 0) { text.Add(L.T("Второй ларёк работает: на складе порций — ", "Second kiosk is open: portions in stock — ") + _save.kiosk2Stock); col.Add("#A5D6A7"); }
             if (_courierBiz.Count > 0) { text.Add(L.T("Сегодня приедут курьеры за оптовыми заказами", "Couriers will come for bulk orders today")); col.Add("#81C784"); }
         }
 
@@ -544,62 +542,6 @@ namespace ValourGames.Shawarma
         // =====================================================================
         //  DRIVE-THRU: машины у окна — спешат, сигналят, платят больше
         // =====================================================================
-        // =====================================================================
-        //  ФИРМЕННЫЙ СОУС: довольный гость просит бутылку с собой — успей нажать
-        // =====================================================================
-        int _sauceLvl;
-        public int SauceSold { get; private set; }
-
-        void TryOfferSauce(int slot, Customer c)
-        {
-            if (_sauceLvl <= 0 || c.IsCourier || c.boss || c.IsBulk) return;
-            if (Random.value > Meta.SauceChance(_sauceLvl)) return;
-            int price = Mathf.Max(20, Mathf.RoundToInt(80f * Meta.SauceMult(_sauceLvl) * _priceMult / 10f) * 10);
-
-            var offer = UIKit.Rect(_fx, "SauceOffer");
-            UIKit.PlaceFixed(offer, 0.5f, 0.5f, 150f, 170f);
-            offer.position = _slots[slot].position + new Vector3(60f, 110f, 0f);
-            var glow = UIKit.Shape(offer, UIKit.CircleHD, UIKit.Alpha(UIKit.Gold, 0.35f), 0.5f, 0.6f, 150f, 150f);
-            glow.gameObject.AddComponent<Blinker>().speed = 4f;
-            SauceBottle(offer, 0.5f, 0.62f, 96f);
-            var tag = UIKit.Panel(offer, "Price", UIKit.Green, 0.05f, 0f, 0.95f, 0.24f);
-            UIKit.AddOutline(tag, Color.white, 2f);
-            UIKit.FitLabel(tag.transform, "+" + GameData.Money(price), 26, Color.white, 0.05f, 0.08f, 0.95f, 0.92f);
-            offer.gameObject.AddComponent<Bobber>().amp = 6f;
-            Juice.Punch(offer, 0.3f, 0.3f);
-            var go = offer.gameObject;
-            bool sold = false;
-            UIKit.HitArea(offer, "Tap", () =>
-            {
-                if (sold || go == null || _paused) return;
-                sold = true;
-                _save.money += price;
-                _save.lifetime += price;
-                Earned += price;
-                SauceSold++;
-                Juice.FloatText(_root, L.T("Соус продан! +", "Sauce sold! +") + price, UIKit.Gold, 34, 0.5f, 0.8f);
-                SpawnCoins(offer.position, 4);
-                Sfx.Play(Sound.Coin);
-                _game.OnStatsChanged();
-                Destroy(go);
-            }).transform.SetAsLastSibling();
-            c.Say(L.T("А соус с собой продадите?", "Can I buy the sauce to go?"), 2f);
-            StartCoroutine(FadeAway(go, Meta.SauceOfferTime(_sauceLvl)));
-        }
-
-        /// <summary>Бутылка фирменного соуса с этикеткой.</summary>
-        static void SauceBottle(Transform p, float ax, float ay, float size)
-        {
-            var b = UIKit.Rect(p, "Bottle");
-            UIKit.PlaceFixed(b, ax, ay, size, size);
-            UIKit.Shape(b, UIKit.RoundedSmall, UIKit.Hex("#FAFAFA"), 0.5f, 0.92f, size * 0.2f, size * 0.12f);
-            UIKit.Shape(b, UIKit.RoundedSmall, UIKit.Hex("#B71C1C"), 0.5f, 0.78f, size * 0.22f, size * 0.2f);
-            UIKit.Shape(b, UIKit.Rounded, UIKit.Hex("#C62828"), 0.5f, 0.4f, size * 0.5f, size * 0.6f);
-            UIKit.Shape(b, UIKit.RoundedSmall, UIKit.Hex("#FFF8E1"), 0.5f, 0.4f, size * 0.42f, size * 0.26f);
-            UIKit.Shape(b, UIKit.Circle, UIKit.Hex("#FFB300"), 0.5f, 0.4f, size * 0.14f, size * 0.14f);
-            UIKit.Shape(b, UIKit.RoundedSmall, UIKit.Alpha(Color.white, 0.35f), 0.34f, 0.44f, size * 0.06f, size * 0.4f);
-        }
-
         // =====================================================================
         //  КОТ У ЛАРЬКА
         // =====================================================================
