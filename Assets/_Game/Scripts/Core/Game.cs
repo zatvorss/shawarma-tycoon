@@ -254,6 +254,7 @@ namespace ValourGames.Shawarma
             SideButton(s, 0.83f, 0.22f, L.T("Колесо удачи", "Lucky wheel"), UIKit.Purple, 2, Meta.WheelFree(_save) ? 1 : 0, () => ShowWheel());
             int passReady = Mathf.Max(0, Meta.PassLevel(_save.passXp) - _save.passClaimed);
             SideButton(s, 0.01f, 0.46f, L.T("Шаурма-Пасс", "Shawarma Pass"), UIKit.Hex("#6A1B9A"), 3, passReady, () => ShowPass());
+            AdminButton(s);
 
             Button soundBtn = null, musicBtn = null;
             soundBtn = UIKit.Button(s, SoundLabel(), UIKit.Blue, () =>

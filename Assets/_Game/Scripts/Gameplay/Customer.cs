@@ -29,11 +29,16 @@ namespace ValourGames.Shawarma
         public int qty;                 // сколько шаурм ещё нужно (у курьера несколько)
         public readonly int qtyTotal;
         public readonly bool special;   // заказал "Хит дня"
-        public readonly bool boss;      // сам Мистер Кинг
+        public readonly bool boss;      // сам Мистер Мега
         public bool IsCourier { get { return bizIndex >= 0; } }
         public readonly bool car;       // машина у окна Drive-Thru
         public bool honked;
         public bool gotFresh;           // шаурма на горячем лаваше из тандыра
+        public int lavashQty;           // оптовик из соседнего кафе: сколько горячих лавашей ещё нужно
+        public readonly int lavashTotal;
+        public bool IsBulk { get { return lavashTotal > 0; } }
+        string rivalName = "";
+        static readonly string[] RivalRu = { "«Донер №1»", "«Шаурма у Гоши»", "«Кебаб-Хаус»", "«Восточный дворик»", "«Лаваш-Экспресс»", "«Гриль-Бар»" };
         Image _aura;
         public float leaveT;
         public RectTransform root;
@@ -51,13 +56,16 @@ namespace ValourGames.Shawarma
         bool _happyLeave;
 
         public float PatienceFrac { get { return Mathf.Clamp01(patience / maxPatience); } }
-        public bool Done { get { return !needShawarma && !needDrink; } }
+        public bool Done { get { return !needShawarma && !needDrink && lavashQty <= 0; } }
         public Vector3 BubbleWorld { get { return _bubble.position; } }
 
         public Customer(RectTransform slot, CustType type, int[] order, Drink drink, float patienceSeconds, ServeMode mode, bool modeKnown, bool golden,
-            int bizIndex = -1, int qty = 1, bool special = false, bool boss = false, bool car = false)
+            int bizIndex = -1, int qty = 1, bool special = false, bool boss = false, bool car = false, int lavash = 0)
         {
             this.car = car;
+            lavashTotal = lavash;
+            lavashQty = lavash;
+            if (lavash > 0) rivalName = RivalRu[Random.Range(0, RivalRu.Length)];
             this.type = type;
             this.order = order;
             this.drink = drink;
@@ -70,6 +78,7 @@ namespace ValourGames.Shawarma
             this.special = special;
             this.boss = boss;
             needDrink = drink != Drink.None;
+            if (lavash > 0) needShawarma = false;
             maxPatience = patienceSeconds;
             patience = patienceSeconds;
             Build(slot);
@@ -133,8 +142,9 @@ namespace ValourGames.Shawarma
             // --- кто это ---
             string nm = golden ? L.T("Золотой клиент", "Golden customer") : GameData.Get(type).Name;
             if (IsCourier) nm = L.T("Курьер: ", "Courier: ") + Meta.Businesses[bizIndex].Name;
-            if (boss) nm = L.T("БОСС: Мистер Кинг", "BOSS: Mr. King");
-            if (car) nm = "Drive-Thru";
+            if (boss) nm = L.T("БОСС: Мистер Мега", "BOSS: Mr. Mega");
+            if (car) nm = L.T("ШаурмаАвто", "ShawarmaAuto");
+            if (IsBulk) nm = L.T("Оптовик: ", "Buyer: ") + rivalName;
             bool sp = GameData.Get(type).special && !IsCourier && !boss && !golden;
             if (sp) nm = "★ " + nm;
             var name = UIKit.Label(root, nm, 22, golden ? UIKit.Gold : (sp ? UIKit.Hex("#E1BEE7") : UIKit.Cream), TextAnchor.MiddleCenter, 0f, 0f, 0.44f, 0.08f, true);
@@ -297,9 +307,12 @@ namespace ValourGames.Shawarma
             if (boss)
             {
                 UIKit.Shape(h, UIKit.RoundedSmall, UIKit.Hex("#111111"), 0.5f, 0.54f, 120f, 26f);
-                UIKit.Shape(h, UIKit.RoundedSmall, UIKit.Gold, 0.5f, 1.02f, 110f, 34f);
-                for (int cr = 0; cr < 3; cr++) UIKit.Shape(h, UIKit.RoundedSmall, UIKit.Gold, 0.3f + cr * 0.2f, 1.1f, 22f, 22f, 45f);
-                UIKit.Shape(h, UIKit.Circle, UIKit.Red, 0.5f, 1.02f, 16f, 16f);
+                // Мистер Мега: зализанный чуб, золотая цепь с медальоном «М»
+                UIKit.Shape(h, UIKit.Rounded, UIKit.Hex("#111111"), 0.6f, 0.95f, 110f, 40f, -8f);
+                var med = UIKit.Shape(_char, UIKit.Circle, UIKit.Gold, 0.5f, 0.3f, 46f, 46f);
+                UIKit.AddOutline(med, UIKit.Hex("#B8860B"), 2f);
+                UIKit.FitLabel(med.transform, "M", 30, UIKit.Hex("#6A1B9A"), 0.1f, 0.1f, 0.9f, 0.9f);
+                for (int ch = 0; ch < 5; ch++) UIKit.Shape(_char, UIKit.Circle, UIKit.Gold, 0.36f + ch * 0.07f, 0.4f - Mathf.Abs(ch - 2) * 0.025f, 10f, 10f);
             }
             if (type == CustType.Kid) { _char.pivot = new Vector2(0.5f, 0f); _char.localScale = new Vector3(0.82f, 0.82f, 1f); }
 
@@ -693,6 +706,19 @@ namespace ValourGames.Shawarma
         public void BuildOrderView()
         {
             UIKit.Clear(_content);
+            if (IsBulk)
+            {
+                // оптовый заказ горячего лаваша
+                for (int k = 0; k < 3; k++) Icons.Lavash(_content, 0.32f, 0.42f + k * 0.08f, 120f);
+                var steam = UIKit.Shape(_content, UIKit.Circle, UIKit.Alpha(Color.white, 0.6f), 0.32f, 0.78f, 24f, 30f);
+                steam.gameObject.AddComponent<Bobber>().amp = 5f;
+                var qb = UIKit.Shape(_content, UIKit.Circle, UIKit.Red, 0.74f, 0.55f, 96f, 96f);
+                UIKit.FitLabel(qb.transform, "×" + lavashQty, 40, Color.white, 0.05f, 0.15f, 0.95f, 0.85f);
+                UIKit.FitLabel(_content, L.T("горячий лаваш", "hot lavash"), 22, UIKit.Dark, 0.02f, 0.02f, 0.98f, 0.2f);
+                UIKit.Clear(_strip);
+                UIKit.Label(_strip, L.T("Опт: жми на меня, когда лаваш готов", "Bulk: tap me when lavash is ready"), 18, UIKit.Hex("#E65100"), TextAnchor.MiddleLeft, 0.03f, 0f, 1f, 1f, true);
+                return;
+            }
             var items = new List<int>(); // >=0 — Ing, -1 — напиток
             for (int i = 0; i < order.Length; i++) if (order[i] > 0) items.Add(i);
             if (drink != Drink.None) items.Add(-1);
@@ -780,11 +806,6 @@ namespace ValourGames.Shawarma
                 UIKit.Label(_strip, L.T("Оптом с собой: ещё ", "Bulk to go: ") + qty + L.T(" шт.", " left"), 20, UIKit.Wood, TextAnchor.MiddleLeft, 0.2f, 0f, 0.8f, 1f, true);
                 var qb = UIKit.Shape(_strip, UIKit.Circle, UIKit.Red, 0.9f, 0.5f, 44f, 44f);
                 UIKit.FitLabel(qb.transform, "×" + qty, 24, Color.white, 0f, 0.1f, 1f, 0.9f);
-            }
-            else if (special)
-            {
-                var tag = UIKit.Panel(_strip, "Hit", UIKit.Red, 0.72f, 0.05f, 1f, 0.95f);
-                UIKit.FitLabel(tag.transform, L.T("ХИТ ×1.8", "HIT ×1.8"), 18, Color.white, 0.05f, 0.05f, 0.95f, 0.95f);
             }
         }
 
@@ -895,6 +916,14 @@ namespace ValourGames.Shawarma
         public bool WantsShawarma(int[] item)
         {
             return needShawarma && GameData.Same(order, item);
+        }
+
+        /// <summary>Отдали оптовику n горячих лавашей.</summary>
+        public void GiveLavash(int n)
+        {
+            lavashQty = Mathf.Max(0, lavashQty - n);
+            BuildOrderView();
+            Juice.Punch(_bubble, 0.15f, 0.25f);
         }
 
         public void Deliver(bool isDrink)

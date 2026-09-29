@@ -180,13 +180,13 @@ namespace ValourGames.Shawarma
             }
             else if (next)
             {
-                // РЕБЁРТ
+                // ПЕРЕЕЗД
                 string why;
                 bool can = CanRebirth(out why);
                 var info = UIKit.Panel(c, "Rebirth", UIKit.Hex("#EDE7F6"), 0f, 0f, 1f, 0.28f);
-                string txt = L.T("ПЕРЕЕЗД = как ребёрт: монеты, день и улучшения сбросятся.\nНавсегда: доход ×", "MOVING = rebirth: coins, day and upgrades reset.\nForever: income ×") +
-                             GameData.RebirthMult(_save.rebirths + 1).ToString("0.00") + ", +" + Meta.FamePts(GameData.FameFor(l.id)) +
-                             L.T(". Нужно: ", ". Need: ") + GameData.Money(l.cost) + L.T(" и день ", " and day ") + l.minDay;
+                string txt = L.T("Переезд: начнёшь здесь с нуля — монеты, день и улучшения обнулятся.\nЗато навсегда: доход ×", "Moving: you start here from scratch — coins, day and upgrades reset.\nBut forever: income ×") +
+                             GameData.RebirthMult(_save.rebirths + 1).ToString("0.00") + L.T(" и +", " and +") + Meta.FamePts(GameData.FameFor(l.id)) +
+                             L.T(".\nНужно: ", ".\nNeed: ") + GameData.Money(l.cost) + L.T(" и день ", " and day ") + l.minDay;
                 UIKit.Label(info.transform, txt, 24, UIKit.Dark, TextAnchor.MiddleLeft, 0.02f, 0.05f, 0.6f, 0.95f);
                 var btn = UIKit.Button(info.transform, can ? L.T("ПЕРЕЕХАТЬ!", "MOVE!") : why, can ? UIKit.Purple : UIKit.Gray, () =>
                 {
@@ -274,7 +274,7 @@ namespace ValourGames.Shawarma
             UIKit.Label(c, def.Desc, 34, UIKit.Dark, TextAnchor.UpperLeft, 0.4f, 0.55f, 1f, 0.86f, true);
             string how = def.id == Boost.Speed ? L.T("Вертел и нож режут в 2 раза быстрее, гриль и фритюр готовят на 20% быстрее.", "Spit and knife cut 2× faster, grill and fryer cook 20% faster.")
                 : (def.id == Boost.Ads ? L.T("Клиенты приходят на 25% чаще, у окна может стоять на 1 человека больше.", "Customers come 25% more often, one extra spot at the window.")
-                : L.T("Каждый заказ стоит на 25% дороже. Отлично вместе с «Хитом дня»!", "Every order costs 25% more. Great with the Hit of the day!"));
+                : L.T("Каждый заказ стоит на 25% дороже. Отлично вместе с золотыми клиентами!", "Every order costs 25% more. Great with golden customers!"));
             UIKit.Label(c, how, 24, UIKit.Wood, TextAnchor.UpperLeft, 0.4f, 0.36f, 1f, 0.56f);
             UIKit.Label(c, L.T("У тебя: ", "You have: ") + _save.boosts[i] + L.T(" шт.  Тратится 1 в начале дня, если включён.", ".  Uses 1 at day start if ON."),
                 22, UIKit.Dark, TextAnchor.MiddleLeft, 0f, 0.24f, 1f, 0.34f, true);

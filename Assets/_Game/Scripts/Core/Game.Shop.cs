@@ -27,17 +27,54 @@ namespace ValourGames.Shawarma
 
         static readonly Spot[] Spots2 =
         {
-            new Spot { id = Up.Flies,  x = 0.155f, y = 0.33f, size = 165f },
-            new Spot { id = Up.Board,  x = 0.3f,   y = 0.33f, size = 165f },
-            new Spot { id = Up.Fire,   x = 0.445f, y = 0.33f, size = 165f },
-            new Spot { id = Up.Queue,  x = 0.59f,  y = 0.33f, size = 165f },
-            new Spot { id = Up.Grills, x = 0.735f, y = 0.33f, size = 165f },
-            new Spot { id = Up.FryBox, x = 0.88f,  y = 0.33f, size = 165f },
+            new Spot { id = Up.Flies,  x = 0.17f,  y = 0.33f, size = 180f },
+            new Spot { id = Up.Board,  x = 0.335f, y = 0.33f, size = 180f },
+            new Spot { id = Up.Fire,   x = 0.5f,   y = 0.33f, size = 180f },
+            new Spot { id = Up.Queue,  x = 0.665f, y = 0.33f, size = 180f },
+            new Spot { id = Up.Grills, x = 0.83f,  y = 0.33f, size = 180f },
+        };
+
+        // экран «Помощники»: всё, что переносит продукты само
+        static readonly Spot[] Spots3 =
+        {
+            new Spot { id = Up.VegFeed,   x = 0.2f, y = 0.33f, size = 190f },
+            new Spot { id = Up.FryLoad,   x = 0.4f, y = 0.33f, size = 190f },
+            new Spot { id = Up.FryUnload, x = 0.6f, y = 0.33f, size = 190f },
+            new Spot { id = Up.FryBox,    x = 0.8f, y = 0.33f, size = 190f },
         };
 
         int _shopTab;
+        const int ShopPages = 3;
 
-        static bool Automatable(Up id) { return id <= Up.Sauce || id == Up.Pack || id == Up.Tips || id == Up.Flies || id == Up.Board || id == Up.Fire || id == Up.FryBox; }
+        static Spot[] PageSpots(int page) { return page == 0 ? Spots : (page == 1 ? Spots2 : Spots3); }
+
+        static string PageName(int page)
+        {
+            return page == 0 ? L.T("Кухня", "Kitchen") : (page == 1 ? L.T("Порядок", "Order") : L.T("Помощники", "Helpers"));
+        }
+
+        static int PageOf(Up id)
+        {
+            for (int p = 0; p < ShopPages; p++)
+                foreach (var sp in PageSpots(p)) if (sp.id == id) return p;
+            return 0;
+        }
+
+        /// <summary>На каком уровне (индекс) предмет начинает работать сам. -1 — никогда.</summary>
+        static int AutoLevel(Up id)
+        {
+            switch (id)
+            {
+                case Up.Spit: case Up.Knife: case Up.Grill: case Up.Sauce: case Up.Pack: case Up.Tips:
+                case Up.Flies: case Up.Board: case Up.Fire: case Up.FryBox:
+                    return 3;
+                case Up.VegFeed: case Up.FryLoad: case Up.FryUnload:
+                    return 2;
+            }
+            return -1;
+        }
+
+        static bool IsAuto(Up id, int lvl) { int a = AutoLevel(id); return a >= 0 && lvl >= a; }
 
         /// <summary>Цена улучшения растёт вместе с ценами локации: на дорогих локациях и шаурма дороже, и прокачка.</summary>
         int UpCost(Up id, int lvl)
@@ -67,8 +104,8 @@ namespace ValourGames.Shawarma
 
         void ShowShop(int openId)
         {
-            if (openId >= (int)Up.Flies) _shopTab = 1;
-            else if (openId >= 0) _shopTab = 0;
+            if (openId >= 0) _shopTab = PageOf((Up)openId);
+            _shopTab = Mathf.Clamp(_shopTab, 0, ShopPages - 1);
             var s = NewScreen("Shop");
 
             BuildKioskInterior(s);
@@ -79,24 +116,33 @@ namespace ValourGames.Shawarma
             UIKit.Label(top.transform, L.T("Мой ларёк", "My kiosk"), 40, UIKit.Cream, TextAnchor.MiddleLeft, 0.02f, 0, 0.22f, 1, true);
             // какой экран сейчас
             var pageBox = UIKit.Panel(top.transform, "Page", UIKit.Alpha(Color.black, 0.3f), 0.2f, 0.1f, 0.42f, 0.9f);
-            UIKit.FitLabel(pageBox.transform, (_shopTab == 0 ? L.T("Кухня", "Kitchen") : L.T("Порядок", "Order")) + "  " + (_shopTab + 1) + "/2",
+            UIKit.FitLabel(pageBox.transform, PageName(_shopTab) + "  " + (_shopTab + 1) + "/" + ShopPages,
                 30, UIKit.Cream, 0.04f, 0.1f, 0.96f, 0.9f);
             int cap = UpgradeDef.CapAt(_save.location) + 1;
-            UIKit.Label(top.transform, (_shopTab == 0
-                    ? L.T("Нажми на предмет — откроется улучшение.", "Tap an item to upgrade it.")
-                    : L.T("Мухи, грязь, пожары, очередь, грили и коробки фри", "Flies, dirt, fires, queue, grills and fries boxes")) +
+            string sub = _shopTab == 0 ? L.T("Нажми на предмет — откроется улучшение", "Tap an item to upgrade it")
+                : (_shopTab == 1 ? L.T("Мухи, грязь, пожары, очередь и грили", "Flies, dirt, fires, queue and grills")
+                                 : L.T("Помощники сами переносят продукты", "Helpers move food for you"));
+            UIKit.Label(top.transform, sub +
                     "\n<size=18><color=#FFE082>" + L.T("На этой локации — максимум до ур. ", "Max level at this location: ") + cap + "</color></size>",
                 22, UIKit.Gold, TextAnchor.MiddleCenter, 0.46f, 0, 0.81f, 1, true);
             Icons.Coin(top.transform, 0.83f, 0.5f, 46f);
             UIKit.Label(top.transform, _save.money.ToString(), 38, UIKit.Gold, TextAnchor.MiddleLeft, 0.85f, 0, 0.99f, 1, true);
 
-            if (_shopTab == 0) foreach (var sp in Spots) BuildSpot(s, sp);
-            else foreach (var sp in Spots2) BuildSpot(s, sp);
+            foreach (var sp in PageSpots(_shopTab)) BuildSpot(s, sp);
 
-            // большая стрелка прямо в ларьке: → на экран «Порядок», ← обратно на «Кухню»
-            int readyOther = 0;
-            foreach (var sp2 in (_shopTab == 0 ? Spots2 : Spots)) if (UpReady(sp2.id)) readyOther++;
-            BigArrow(s, _shopTab == 0, readyOther);
+            // большие стрелки прямо в ларьке: листать экраны улучшений
+            if (_shopTab < ShopPages - 1)
+            {
+                int ready = 0;
+                for (int pg = _shopTab + 1; pg < ShopPages; pg++) foreach (var sp2 in PageSpots(pg)) if (UpReady(sp2.id)) ready++;
+                BigArrow(s, true, ready);
+            }
+            if (_shopTab > 0)
+            {
+                int ready = 0;
+                for (int pg = 0; pg < _shopTab; pg++) foreach (var sp2 in PageSpots(pg)) if (UpReady(sp2.id)) ready++;
+                BigArrow(s, false, ready);
+            }
 
             // низ
             UIKit.Button(s, L.T("← На карту", "← To the map"), UIKit.Steel, () => { Sfx.Play(Sound.Click); ShowMap(); }, 0.01f, 0.015f, 0.2f, 0.1f, 36);
@@ -115,7 +161,7 @@ namespace ValourGames.Shawarma
             if (openId >= 0) UpgradePopup(s, (Up)openId, true);
         }
 
-        /// <summary>Жирная стрелка-кнопка внутри ларька для перелистывания экранов улучшений.</summary>
+        /// <summary>Жирная ровная стрелка-кнопка внутри ларька для перелистывания экранов улучшений.</summary>
         void BigArrow(RectTransform s, bool right, int badge)
         {
             float ax = right ? 0.955f : 0.045f;
@@ -127,19 +173,12 @@ namespace ValourGames.Shawarma
             UIKit.Shape(body, UIKit.CircleHD, UIKit.Hex("#3E2723"), 0.5f, 0.5f, 136f, 136f);
             UIKit.Shape(body, UIKit.CircleHD, UIKit.Orange, 0.5f, 0.5f, 120f, 120f);
             UIKit.Shape(body, UIKit.CircleHD, UIKit.Alpha(Color.white, 0.18f), 0.5f, 0.62f, 90f, 50f);
-            float cx = right ? 0.47f : 0.53f, off = 0.15f, ang = right ? -45f : 45f;
-            // тень шеврона
-            UIKit.Shape(body, UIKit.RoundedSmall, UIKit.Alpha(UIKit.Dark, 0.35f), cx + 0.02f, 0.5f + off - 0.03f, 64f, 24f, ang);
-            UIKit.Shape(body, UIKit.RoundedSmall, UIKit.Alpha(UIKit.Dark, 0.35f), cx + 0.02f, 0.5f - off - 0.03f, 64f, 24f, -ang);
-            // сам шеврон
-            UIKit.Shape(body, UIKit.RoundedSmall, Color.white, cx, 0.5f + off, 64f, 24f, ang);
-            UIKit.Shape(body, UIKit.RoundedSmall, Color.white, cx, 0.5f - off, 64f, 24f, -ang);
+            float rot = right ? 0f : 180f;
+            UIKit.Shape(body, UIKit.Arrow, UIKit.Alpha(UIKit.Dark, 0.35f), 0.52f, 0.46f, 96f, 96f, rot);
+            UIKit.Shape(body, UIKit.Arrow, Color.white, 0.5f, 0.5f, 96f, 96f, rot);
             var sw = body.gameObject.AddComponent<Swayer>();
             sw.amp = 7f;
             sw.speed = 3f;
-
-            var plate = UIKit.Panel(holder, "Plate", UIKit.Alpha(UIKit.Dark, 0.9f), -0.05f, -0.28f, 1.05f, -0.04f);
-            UIKit.FitLabel(plate.transform, right ? L.T("Порядок", "Order") : L.T("Кухня", "Kitchen"), 24, UIKit.Cream, 0.05f, 0.08f, 0.95f, 0.92f);
 
             if (badge > 0)
             {
@@ -150,7 +189,7 @@ namespace ValourGames.Shawarma
             }
             UIKit.HitArea(holder, "Tap", () =>
             {
-                _shopTab = right ? 1 : 0;
+                _shopTab = Mathf.Clamp(_shopTab + (right ? 1 : -1), 0, ShopPages - 1);
                 Sfx.Play(Sound.Click);
                 ShowShop(-1);
             }).transform.SetAsLastSibling();
@@ -337,64 +376,115 @@ namespace ValourGames.Shawarma
             }).transform.SetAsLastSibling();
         }
 
+        /// <summary>Карточка улучшения: тёмная «вывеска», прожектор на предмете, лестница уровней.</summary>
         void UpgradePopup(RectTransform s, Up id, bool justBought)
         {
             var def = GameData.Upgrades[(int)id];
             int lvl = _save.upgrades[(int)id];
             bool maxed = lvl >= def.MaxLevel;
-            var c = UIKit.Popup(s, def.Name + "  •  " + L.T("уровень ", "level ") + (lvl + 1), UIKit.Purple, 0.16f, 0.12f, 0.84f, 0.88f, null);
+            int total = def.MaxLevel + 1;
 
-            var pic = UIKit.Panel(c, "Pic", UIKit.Hex("#EDE6DA"), 0f, 0.2f, 0.36f, 1f);
-            UIKit.AddShadow(pic, 5f, 0.25f);
-            DrawStation(pic.transform, id, lvl, 0.5f, 0.64f, 240f);
-            if (!maxed)
-            {
-                UIKit.Label(pic.transform, L.T("Следующий уровень:", "Next level:"), 22, UIKit.Wood, TextAnchor.MiddleLeft, 0.05f, 0.1f, 0.6f, 0.3f, true);
-                DrawStation(pic.transform, id, lvl + 1, 0.8f, 0.2f, 110f);
-            }
+            // затемнение: тап мимо — закрыть
+            var ov = UIKit.Panel(s, "Popup", new Color(0, 0, 0, 0.6f), 0, 0, 1, 1, false);
+            ov.raycastTarget = true;
+            var overlay = ov.gameObject;
+            UnityEngine.Events.UnityAction close = () => { Sfx.Play(Sound.Click); Destroy(overlay); };
+            UIKit.HitArea(ov.transform, "Outside", close);
+
+            var card = UIKit.Panel(ov.transform, "Card", UIKit.Hex("#2A1C13"), 0.13f, 0.08f, 0.87f, 0.92f);
+            card.raycastTarget = true;
+            UIKit.AddShadow(card, 16f, 0.5f);
+            UIKit.AddOutline(card, UIKit.Hex("#C98A2E"), 3f);
+            var ct = card.transform;
+            UIKit.Panel(ct, "Inner", UIKit.Hex("#3A2819"), 0.012f, 0.015f, 0.988f, 0.985f);
+            Juice.Punch(card.rectTransform, 0.06f, 0.25f);
+
+            // шапка: название + «уровень N из M»
+            var title = UIKit.Label(ct, def.Name.ToUpper(), 50, UIKit.Gold, TextAnchor.MiddleLeft, 0.04f, 0.87f, 0.8f, 0.97f, true);
+            UIKit.AddOutline(title, UIKit.Hex("#1A0F08"), 3f);
+            UIKit.AddShadow(title, 4f, 0.6f);
+            var sub = UIKit.Label(ct, L.T("Уровень ", "Level ") + (lvl + 1) + L.T(" из ", " of ") + total, 26, UIKit.Alpha(UIKit.Cream, 0.8f),
+                TextAnchor.MiddleLeft, 0.04f, 0.81f, 0.6f, 0.87f, true);
+            UIKit.AddShadow(sub, 2f, 0.5f);
+            UIKit.Panel(ct, "Line", UIKit.Alpha(UIKit.Gold, 0.35f), 0.03f, 0.805f, 0.97f, 0.81f, false);
+            var xb = UIKit.Button(ct, "X", UIKit.Red, close, 0.92f, 0.885f, 0.975f, 0.965f, 34);
+            xb.transform.SetAsLastSibling();
+
+            // слева — предмет под «прожектором»
+            UIKit.Shape(ct, UIKit.CircleHD, UIKit.Alpha(UIKit.Gold, 0.16f), 0.19f, 0.52f, 420f, 420f);
+            UIKit.Shape(ct, UIKit.CircleHD, UIKit.Alpha(UIKit.Gold, 0.14f), 0.19f, 0.52f, 300f, 300f);
+            var pic = UIKit.Rect(ct, "Pic");
+            UIKit.Place(pic, 0.03f, 0.2f, 0.35f, 0.8f);
+            DrawStation(pic, id, lvl, 0.5f, 0.55f, 260f);
             if (justBought)
             {
-                Juice.Punch(pic.rectTransform, 0.2f, 0.4f);
-                Juice.Burst(pic.transform, UIKit.Gold, 14, 0.5f, 0.5f, 18f);
+                Juice.Punch(pic, 0.2f, 0.4f);
+                Juice.Burst(pic, UIKit.Gold, 16, 0.5f, 0.55f, 18f);
+            }
+            if (!maxed)
+            {
+                var nb = UIKit.Panel(ct, "Next", UIKit.Alpha(Color.black, 0.35f), 0.05f, 0.2f, 0.33f, 0.33f);
+                var nl = UIKit.Label(nb.transform, L.T("Дальше:", "Next:"), 24, UIKit.Cream, TextAnchor.MiddleLeft, 0.06f, 0f, 0.45f, 1f, true);
+                UIKit.AddShadow(nl, 2f, 0.5f);
+                UIKit.Shape(nb.transform, UIKit.Arrow, UIKit.Gold, 0.5f, 0.5f, 44f, 44f);
+                DrawStation(nb.transform, id, lvl + 1, 0.8f, 0.5f, 100f);
             }
 
-            // все уровни
-            int nRows = def.MaxLevel + 1;
-            float rh = 0.8f / nRows;
+            // справа — лестница уровней
+            float top = 0.79f, bottom = 0.19f;
+            float rh = (top - bottom) / total;
+            UIKit.Panel(ct, "Rail", UIKit.Alpha(UIKit.Gold, 0.3f), 0.397f, bottom + rh * 0.5f, 0.403f, top - rh * 0.5f, false);
             for (int l = 0; l <= def.MaxLevel; l++)
             {
-                float y1 = 1f - l * rh, y0 = y1 - rh + 0.012f;
+                float y1 = top - l * rh, y0 = y1 - rh + 0.01f;
                 bool done = l < lvl, now = l == lvl, next = l == lvl + 1;
                 bool reach = l == 0 || _save.location >= def.LocFor(l - 1);
-                bool legend = l == 4 && def.reqLoc == null;
-                bool auto = l == 3 && Automatable(id) && def.reqLoc == null;
-                Color bg = now ? UIKit.Hex("#FFE082") : (done ? UIKit.Hex("#C8E6C9") : (reach ? Color.white : UIKit.Hex("#D6D6D6")));
-                if (legend && !done && !now && reach) bg = UIKit.Hex("#FFF3E0");
-                var row = UIKit.Panel(c, "Lvl", bg, 0.39f, y0, 1f, y1);
-                if (next && reach) UIKit.AddOutline(row, UIKit.Green, 3f);
-                if (legend) UIKit.AddOutline(row, UIKit.Gold, 2f);
-                UIKit.Shape(row.transform, UIKit.Circle, done || now ? UIKit.Green : UIKit.Alpha(UIKit.Dark, 0.25f), 0.06f, 0.5f, 46f, 46f);
-                UIKit.FitLabel(row.transform, (l + 1).ToString(), 26, Color.white, 0.02f, 0.2f, 0.1f, 0.8f);
+                bool legend = l == 4 && def.MaxLevel == 4;
+                bool auto = AutoLevel(id) == l;
+
+                Color bg = now ? UIKit.Hex("#6B4A12") : (done ? UIKit.Hex("#2F4A2B") : (reach ? UIKit.Hex("#4A3524") : UIKit.Hex("#2E2620")));
+                var row = UIKit.Panel(ct, "Lvl", bg, 0.425f, y0, 0.97f, y1);
+                if (now) UIKit.AddOutline(row, UIKit.Gold, 3f);
+                else if (next && reach) UIKit.AddOutline(row, UIKit.Hex("#7CB342"), 2f);
+                // узел на рельсе
+                Color node = done || now ? UIKit.Gold : (reach ? UIKit.Hex("#8D6E63") : UIKit.Hex("#4E4038"));
+                float ny = (y0 + y1) * 0.5f;
+                UIKit.Shape(ct, UIKit.CircleHD, UIKit.Hex("#1A0F08"), 0.4f, ny, 58f, 58f);
+                UIKit.Shape(ct, UIKit.CircleHD, node, 0.4f, ny, 48f, 48f);
+                var num = UIKit.FitLabel(ct, (l + 1).ToString(), 28, done || now ? UIKit.Dark : UIKit.Cream, 0.385f, ny - 0.025f, 0.415f, ny + 0.025f);
+
                 string desc = def.LevelDesc(l);
+                var dl = UIKit.Label(row.transform, desc, 26, reach ? UIKit.Cream : UIKit.Alpha(UIKit.Cream, 0.4f), TextAnchor.MiddleLeft, 0.04f, reach ? 0.05f : 0.35f, 0.76f, 0.95f, now);
+                UIKit.AddShadow(dl, 2f, 0.6f);
                 if (!reach)
-                    desc += "\n<size=18><color=#6D4C41>" + L.T("откроется на локации ", "unlocks at location ") + (def.LocFor(l - 1) + 1) +
-                            " — " + LocName(def.LocFor(l - 1)) + "</color></size>";
-                UIKit.Label(row.transform, desc, 24, reach ? UIKit.Dark : UIKit.Alpha(UIKit.Dark, 0.6f), TextAnchor.MiddleLeft, 0.13f, 0f, 0.8f, 1f, now);
+                {
+                    var ul = UIKit.Label(row.transform, L.T("откроется на локации ", "unlocks at location ") + (def.LocFor(l - 1) + 1) + " — " + LocName(def.LocFor(l - 1)),
+                        18, UIKit.Hex("#FFB74D"), TextAnchor.MiddleLeft, 0.04f, 0.02f, 0.76f, 0.4f, false);
+                    UIKit.AddShadow(ul, 2f, 0.6f);
+                }
+
                 string tag = now ? L.T("СЕЙЧАС", "NOW") : (next && reach ? L.T("ДАЛЕЕ", "NEXT") : "");
-                Color tagCol = now ? UIKit.Orange : UIKit.Green;
-                if (auto) { tag = L.T("АВТО", "AUTO"); tagCol = UIKit.Gold; }
-                if (legend) { tag = L.T("ЛЕГЕНДА", "LEGEND"); tagCol = UIKit.Hex("#FFB300"); }
-                if (!reach && !done && !now) { tag = L.T("ЗАКРЫТО", "LOCKED"); tagCol = UIKit.Gray; }
+                Color tagCol = now ? UIKit.Gold : UIKit.Hex("#7CB342");
+                if (auto && !now) { tag = L.T("АВТО", "AUTO"); tagCol = UIKit.Hex("#4FC3F7"); }
+                if (legend && !now) { tag = L.T("ЛЕГЕНДА", "LEGEND"); tagCol = UIKit.Hex("#FF8F00"); }
+                if (!reach && !done && !now) { tag = L.T("ЗАКРЫТО", "LOCKED"); tagCol = UIKit.Hex("#6D6D6D"); }
                 if (tag.Length > 0)
                 {
-                    var t = UIKit.Panel(row.transform, "Tag", tagCol, 0.8f, 0.2f, 0.98f, 0.8f);
-                    UIKit.FitLabel(t.transform, tag, 18, UIKit.Dark, 0.05f, 0.1f, 0.95f, 0.9f);
+                    var t = UIKit.Panel(row.transform, "Tag", tagCol, 0.78f, 0.22f, 0.97f, 0.78f);
+                    UIKit.FitLabel(t.transform, tag, 18, UIKit.Dark, 0.06f, 0.1f, 0.94f, 0.9f);
                 }
             }
 
+            // низ: кошелёк и кнопка
+            var wal = UIKit.Panel(ct, "Wallet", UIKit.Alpha(Color.black, 0.35f), 0.05f, 0.04f, 0.33f, 0.15f);
+            Icons.Coin(wal.transform, 0.14f, 0.5f, 46f);
+            var wl = UIKit.Label(wal.transform, GameData.Money(_save.money), 34, UIKit.Gold, TextAnchor.MiddleLeft, 0.26f, 0f, 0.98f, 1f, true);
+            UIKit.AddShadow(wl, 2f, 0.6f);
+
             if (maxed)
             {
-                UIKit.Label(c, L.T("Максимальный уровень!", "Max level!"), 36, UIKit.Green, TextAnchor.MiddleCenter, 0.39f, 0f, 1f, 0.17f, true);
+                var mx = UIKit.Label(ct, L.T("МАКСИМУМ!", "MAXED!"), 40, UIKit.Gold, TextAnchor.MiddleCenter, 0.425f, 0.04f, 0.97f, 0.15f, true);
+                UIKit.AddOutline(mx, UIKit.Dark, 3f);
             }
             else
             {
@@ -402,20 +492,24 @@ namespace ValourGames.Shawarma
                 if (!UpOpen(id))
                 {
                     int need = def.LocFor(lvl);
-                    var lk = UIKit.Panel(c, "Locked", UIKit.Gray, 0.39f, 0f, 1f, 0.17f);
+                    var lk = UIKit.Panel(ct, "Locked", UIKit.Hex("#4E4038"), 0.425f, 0.04f, 0.97f, 0.15f);
                     UIKit.FitLabel(lk.transform, L.T("Следующий уровень — на локации ", "Next level — at location ") + (need + 1) + " (" + LocName(need) + ")",
-                        30, Color.white, 0.03f, 0.1f, 0.97f, 0.9f);
+                        28, UIKit.Cream, 0.03f, 0.1f, 0.97f, 0.9f);
                 }
                 else
                 {
                     bool can = _save.money >= cost;
-                    var b = UIKit.PriceButton(c, L.T("Улучшить", "Upgrade"), cost, can ? UIKit.Green : UIKit.Gray, () => BuyUpgrade(id), 0.39f, 0f, 1f, 0.17f, 38);
-                    b.interactable = can;
-                    if (!can)
-                        UIKit.Label(c, L.T("Не хватает: ", "Need more: ") + GameData.Money(cost - _save.money), 24, UIKit.Red, TextAnchor.MiddleCenter, 0f, 0.08f, 0.36f, 0.18f, true);
+                    var bt = UIKit.PriceButton(ct, L.T("Улучшить", "Upgrade"), cost, can ? UIKit.Green : UIKit.Gray, () => BuyUpgrade(id), 0.425f, 0.04f, 0.97f, 0.15f, 38);
+                    bt.interactable = can;
+                    if (can) bt.gameObject.AddComponent<Bobber>().amp = 2f;
+                    else
+                    {
+                        var nm = UIKit.Label(ct, L.T("не хватает ", "need ") + GameData.Money(cost - _save.money), 22, UIKit.Hex("#FF8A80"),
+                            TextAnchor.MiddleCenter, 0.425f, 0.15f, 0.97f, 0.19f, true);
+                        UIKit.AddShadow(nm, 2f, 0.6f);
+                    }
                 }
             }
-            UIKit.Label(c, L.T("У тебя: ", "You have: ") + GameData.Money(_save.money), 26, UIKit.Dark, TextAnchor.MiddleCenter, 0f, 0f, 0.36f, 0.09f, true);
         }
 
         void BuyUpgrade(Up id)
@@ -450,7 +544,7 @@ namespace ValourGames.Shawarma
             }
             if (lvl >= 3) st.gameObject.AddComponent<Blinker>().speed = 1.2f;
             DrawStationBody(b, id, lvl, u);
-            if (lvl >= 3 && Automatable(id)) StationLook.Auto(b, id, 0.82f, 0.78f, u * 0.4f);
+            if (IsAuto(id, lvl)) StationLook.Auto(b, id, 0.82f, 0.78f, u * 0.4f);
             if (lvl >= 4 && id != Up.Grills) Icons.Star(b, 0.14f, 0.86f, u * 0.22f, true);
         }
 
@@ -568,6 +662,28 @@ namespace ValourGames.Shawarma
                             r.color = Icons.Toast(0.8f);
                         }
                     }
+                    break;
+                case Up.VegFeed:
+                    UIKit.Panel(b, "Crate", UIKit.Hex("#8D6E63"), 0.05f, 0.5f, 0.5f, 0.8f);
+                    Icons.Ingredient(b, Ing.Tomato, 0.2f, 0.72f, u * 0.2f);
+                    Icons.Ingredient(b, Ing.Cucumber, 0.36f, 0.7f, u * 0.18f);
+                    UIKit.Panel(b, "Board", UIKit.Hex("#D7B07A"), 0.45f, 0.15f, 0.95f, 0.42f);
+                    Icons.Ingredient(b, Ing.Tomato, 0.7f, 0.32f, u * 0.22f);
+                    UIKit.Shape(b, UIKit.Arrow, UIKit.Hex("#43A047"), 0.52f, 0.56f, u * 0.3f, u * 0.3f, -35f);
+                    break;
+                case Up.FryLoad:
+                    UIKit.Panel(b, "Crate", UIKit.Hex("#8D6E63"), 0.05f, 0.55f, 0.45f, 0.8f);
+                    for (int i = 0; i < 5; i++) UIKit.Shape(b, UIKit.RoundedSmall, UIKit.Hex("#FFF3C4"), 0.12f + i * 0.06f, 0.78f, u * 0.04f, u * 0.2f, i * 7f - 14f);
+                    UIKit.Panel(b, "Fryer", UIKit.SteelLight, 0.45f, 0.1f, 0.95f, 0.45f);
+                    UIKit.Panel(b, "Oil", UIKit.Hex("#C9951B"), 0.5f, 0.14f, 0.9f, 0.32f);
+                    UIKit.Shape(b, UIKit.Arrow, UIKit.Hex("#43A047"), 0.5f, 0.55f, u * 0.3f, u * 0.3f, -35f);
+                    break;
+                case Up.FryUnload:
+                    UIKit.Panel(b, "Fryer", UIKit.SteelLight, 0.05f, 0.45f, 0.5f, 0.8f);
+                    Icons.Ingredient(b, Ing.Fries, 0.27f, 0.7f, u * 0.3f);
+                    UIKit.Panel(b, "Bin", UIKit.Hex("#E4E9EC"), 0.5f, 0.1f, 0.95f, 0.4f);
+                    Icons.Ingredient(b, Ing.Fries, 0.72f, 0.28f, u * 0.3f);
+                    UIKit.Shape(b, UIKit.Arrow, UIKit.Hex("#43A047"), 0.5f, 0.5f, u * 0.3f, u * 0.3f, -35f);
                     break;
                 case Up.FryBox:
                     Icons.FriesBox(b, 0.3f, 0.3f, u * 0.4f, 0f);

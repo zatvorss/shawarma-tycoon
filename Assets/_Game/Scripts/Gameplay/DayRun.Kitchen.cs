@@ -95,7 +95,9 @@ namespace ValourGames.Shawarma
         DragSource _fryDrag;
 
         // --- коробки фри ---
-        int _lvBox;
+        int _lvBox, _lvVeg, _lvFryLoad, _lvFryUnload;
+        float _autoVegT;
+        RectTransform[] _vegCells;
         DragSource _boxSrc;
         RectTransform _boxCell;
         float _boxFill, _autoBoxT;
@@ -143,6 +145,9 @@ namespace ValourGames.Shawarma
             _lvGrill = _save.Lvl(Up.Grill);
             _lvSauce = _save.Lvl(Up.Sauce);
             _lvBox = _save.Lvl(Up.FryBox);
+            _lvVeg = _save.Lvl(Up.VegFeed);
+            _lvFryLoad = _save.Lvl(Up.FryLoad);
+            _lvFryUnload = _save.Lvl(Up.FryUnload);
 
             int n = GameData.IngCount;
             _stock = new int[n];
@@ -234,13 +239,25 @@ namespace ValourGames.Shawarma
             }
             if (_knife.gameObject.activeSelf && !_spitZone.Held) _knife.gameObject.SetActive(false);
 
-            // --- авто-слайсер ---
-            if (GameData.KnifeAuto(_lvKnife))
+            // --- авто-нож: сам рубит то, что лежит на доске ---
+            if (GameData.KnifeAuto(_lvKnife) && _boardVeg >= 0)
             {
                 _autoChopT += dt;
-                if (_autoChopT >= GameData.AutoChopInterval * GameData.Legend2x(_lvKnife))
+                if (_autoChopT >= 0.35f * GameData.Legend2x(_lvKnife))
                 {
                     _autoChopT = 0f;
+                    _chopCd = 0f;
+                    OnChop();
+                }
+            }
+
+            // --- подача овощей: помощник кладёт на доску то, что кончается ---
+            if (GameData.HelperAuto(_lvVeg) && _boardVeg < 0)
+            {
+                _autoVegT += dt;
+                if (_autoVegT >= 1.2f)
+                {
+                    _autoVegT = 0f;
                     int best = -1;
                     float bestK = 1f;
                     foreach (var v in Choppables)
@@ -250,14 +267,7 @@ namespace ValourGames.Shawarma
                         float k = (float)_stock[i] / _cap[i];
                         if (k < bestK) { bestK = k; best = i; }
                     }
-                    if (best >= 0)
-                    {
-                        _stock[best] = Mathf.Min(_cap[best], _stock[best] + GameData.AutoChopAmount);
-                        Sfx.Play(Sound.Chop);
-                        Juice.Burst(_chopPanel, GameData.Ingredients[best].color, 4, 0.5f, 0.4f, 12f);
-                        RefreshBin((Ing)best);
-                        PunchBin((Ing)best);
-                    }
+                    if (best >= 0) FeedVeg((Ing)best);
                 }
             }
 
@@ -299,9 +309,9 @@ namespace ValourGames.Shawarma
             if (autoSauce && _autoSauceT >= GameData.AutoSauceInterval * GameData.Legend2x(_lvSauce)) _autoSauceT = 0f;
 
             // --- фритюр ---
-            bool autoFry = GameData.FryerAuto(_lvFryer);
+            bool autoLoad = GameData.HelperAuto(_lvFryLoad), autoUnload = GameData.HelperAuto(_lvFryUnload);
             int f = (int)Ing.Fries;
-            if (_friesUnlocked && autoFry && _fry == FryState.Empty && _stock[f] < _cap[f]) LoadFryer(true);
+            if (_friesUnlocked && autoLoad && _fry == FryState.Empty && _stock[f] < _cap[f]) LoadFryer(true);
             if (_fry == FryState.Frying)
             {
                 _fryT += dt;
@@ -313,7 +323,7 @@ namespace ValourGames.Shawarma
                     Sfx.Play(Sound.Done);
                     Juice.Punch(_basket.transform, 0.15f, 0.3f);
                     RefreshFryer();
-                    if (autoFry && _stock[f] < _cap[f]) UnloadFryer(true);
+                    if (autoUnload && _stock[f] < _cap[f]) UnloadFryer(true);
                 }
             }
             else if (_fry == FryState.Ready)
@@ -322,7 +332,7 @@ namespace ValourGames.Shawarma
                 UIKit.SetFill(_fryFill, 1f - _fryT / _fryBurn);
                 float blink = Mathf.PingPong(Time.time * 4f, 1f);
                 _fryTint.color = new Color(1f, 0.85f, 0.2f, 0.15f + 0.25f * blink);
-                if (autoFry && _stock[f] < _cap[f]) UnloadFryer(true);
+                if (autoUnload && _stock[f] < _cap[f]) UnloadFryer(true);
                 else if (_fryT >= _fryBurn)
                 {
                     _fry = FryState.Burnt;
@@ -503,6 +513,16 @@ namespace ValourGames.Shawarma
             Juice.Punch(_chopHolder, 0.2f, 0.25f);
         }
 
+        /// <summary>Овощ сам перелетает из ящика на доску (подача овощей).</summary>
+        void FeedVeg(Ing id)
+        {
+            if (_paused || _ended) return;
+            var cell = _vegCells != null ? _vegCells[(int)id] : null;
+            if (_boardVeg < 0 && cell != null && _stock[(int)id] < _cap[(int)id])
+                Juice.Fly(Icons.Ingredient(_fx, id, 0.5f, 0.5f, 70f), cell.position, _chopBoard.position, 0.25f, 0f, null);
+            OnPickVeg(id);
+        }
+
         void OnChop()
         {
             if (_paused || _ended) return;
@@ -533,7 +553,7 @@ namespace ValourGames.Shawarma
             UIKit.Clear(_chopHolder);
             if (_boardVeg < 0)
             {
-                _chopText.text = GameData.KnifeAuto(_lvKnife) ? L.T("Слайсер режет сам", "Slicer works by itself") : L.T("Тащи овощ из ящика ↑", "Drag a veggie from the crate ↑");
+                _chopText.text = GameData.HelperAuto(_lvVeg) ? L.T("Помощник подаёт овощи", "Helper brings veggies") : L.T("Тащи овощ из ящика ↑", "Drag a veggie from the crate ↑");
                 return;
             }
             var id = (Ing)_boardVeg;
@@ -592,14 +612,14 @@ namespace ValourGames.Shawarma
             switch (_fry)
             {
                 case FryState.Empty:
-                    if (GameData.FryerTap(_lvFryer)) LoadFryer(true);
+                    if (GameData.HelperTap(_lvFryLoad)) LoadFryer(true);
                     else { Toast(L.T("Перетащи сырую картошку из ящика во фритюр", "Drag raw fries from the crate into the fryer")); Juice.Punch(_rawCrate, 0.15f, 0.3f); }
                     break;
                 case FryState.Frying:
                     Toast(L.T("Ещё жарится...", "Still frying..."));
                     break;
                 case FryState.Ready:
-                    if (GameData.FryerTap(_lvFryer)) UnloadFryer(true);
+                    if (GameData.HelperTap(_lvFryUnload)) UnloadFryer(true);
                     else { Toast(L.T("Перетащи готовую картошку в лоток «Картошка»", "Drag the cooked fries to the Fries bin")); var bin = BinOf(Ing.Fries); if (bin != null) Juice.Punch(bin.root, 0.15f, 0.3f); }
                     break;
                 case FryState.Burnt:
@@ -613,7 +633,7 @@ namespace ValourGames.Shawarma
         void OnRawCrateTap()
         {
             if (_paused || _ended || !_friesUnlocked) return;
-            if (GameData.FryerTap(_lvFryer)) LoadFryer(true);
+            if (GameData.HelperTap(_lvFryLoad)) LoadFryer(true);
             else Toast(L.T("Потяни ящик с картошкой во фритюр", "Drag the fries crate into the fryer"));
         }
 
@@ -751,7 +771,7 @@ namespace ValourGames.Shawarma
             switch (_fry)
             {
                 case FryState.Empty:
-                    _fryText.text = GameData.FryerAuto(_lvFryer) ? L.T("Авто-корзина", "Auto-basket")
+                    _fryText.text = GameData.HelperAuto(_lvFryLoad) ? L.T("Помощник засыпает", "Helper loads it")
                         : L.T("Тащи сырую сюда ↑", "Drag raw fries here ↑");
                     break;
                 case FryState.Frying:
@@ -1269,7 +1289,7 @@ namespace ValourGames.Shawarma
             var stationCol = UIKit.Hex("#3F4A52");
             BuildSpit(Station("Spit", L.T("Вертел", "Spit"), 0.006f, 0.118f, stationCol, _lvSpit, GameData.SpitAuto(_lvSpit)));
             BuildChop(Station("Chop", L.T("Нарезка", "Chopping"), 0.124f, 0.3f, stationCol, _lvKnife, GameData.KnifeAuto(_lvKnife)));
-            BuildFryer(Station("Fryer", L.T("Фритюр", "Fryer"), 0.306f, 0.412f, stationCol, _lvFryer, GameData.FryerAuto(_lvFryer)));
+            BuildFryer(Station("Fryer", L.T("Фритюр", "Fryer"), 0.306f, 0.412f, stationCol, _lvFryer, GameData.HelperAuto(_lvFryLoad) && GameData.HelperAuto(_lvFryUnload)));
             BuildAssembly(Station("Assembly", L.T("Сборка", "Assembly"), 0.418f, 0.772f, UIKit.Hex("#56636C"), -1, GameData.SauceAuto(_lvSauce)));
             BuildGrill(Station("Grill", L.T("Гриль", "Grill"), 0.778f, 0.888f, stationCol, _lvGrill, GameData.GrillAuto(_lvGrill)));
             BuildServe(Station("Serve", L.T("Выдача", "Serve"), 0.894f, 0.994f, UIKit.Hex("#5B4636"), -1, false));
@@ -1328,6 +1348,7 @@ namespace ValourGames.Shawarma
             _chopPanel = p;
             var list = new List<Ing>();
             foreach (var v in Choppables) if (IsUnlocked(v)) list.Add(v);
+            _vegCells = new RectTransform[GameData.IngCount];
             var crate = UIKit.Panel(p, "Crate", UIKit.Hex("#8D6E63"), 0.04f, 0.66f, 0.96f, 0.86f);
             for (int i = 0; i < list.Count; i++)
             {
@@ -1339,6 +1360,7 @@ namespace ValourGames.Shawarma
                 Icons.Ingredient(cell.transform, id, 0.62f, 0.45f, 46f);
                 cell.raycastTarget = true;
                 var cellRt = cell.rectTransform;
+                _vegCells[(int)id] = cellRt;
                 var ds = cell.gameObject.AddComponent<DragSource>();
                 ds.canDrag = () => !_paused && !_ended;
                 ds.makeGhost = () => Icons.Ingredient(_fx, id, 0.5f, 0.5f, 90f);
@@ -1350,11 +1372,7 @@ namespace ValourGames.Shawarma
                 ds.onTap = () =>
                 {
                     if (_paused || _ended) return;
-                    if (GameData.KnifeTapCrate(_lvKnife))
-                    {
-                        if (_boardVeg < 0) Juice.Fly(Icons.Ingredient(_fx, id, 0.5f, 0.5f, 70f), cellRt.position, _chopBoard.position, 0.25f, 0f, null);
-                        OnPickVeg(id);
-                    }
+                    if (GameData.HelperTap(_lvVeg)) FeedVeg(id);
                     else
                     {
                         Toast(L.T("Перетащи овощ из ящика на доску", "Drag the veggie from the crate onto the board"));
@@ -1363,6 +1381,7 @@ namespace ValourGames.Shawarma
                 };
             }
 
+            if (GameData.HelperAuto(_lvVeg)) StationLook.Auto(crate.transform, Up.VegFeed, 0.96f, 0.2f, 46f);
             var board = UIKit.Panel(p, "Board", UIKit.Hex("#D7B07A"), 0.05f, 0.13f, 0.95f, 0.62f);
             UIKit.AddShadow(board, 5f, 0.3f);
             _chopBoard = board.rectTransform;
@@ -1395,7 +1414,7 @@ namespace ValourGames.Shawarma
             _fryTint = UIKit.Panel(body.transform, "Tint", new Color(0, 0, 0, 0), 0f, 0f, 1f, 1f);
             if (_lvFryer >= 1) body.color = UIKit.Hex("#CFD8DC");
             if (_lvFryer >= 2) UIKit.Shape(body.transform, UIKit.RoundedSmall, UIKit.Dark, 0.5f, 0.97f, 90f, 10f);
-            if (GameData.FryerAuto(_lvFryer))
+            if (GameData.HelperAuto(_lvFryLoad) && GameData.HelperAuto(_lvFryUnload))
             {
                 StationLook.Auto(p, Up.Fryer, 0.85f, 0.62f, 70f);
                 var bb = _basket.gameObject.AddComponent<Bobber>();
@@ -1437,6 +1456,8 @@ namespace ValourGames.Shawarma
                 else Toast(L.T("Брось сырую картошку во фритюр", "Drop the raw fries into the fryer"));
             };
             rds.onTap = OnRawCrateTap;
+            if (GameData.HelperAuto(_lvFryLoad)) StationLook.Auto(crate.transform, Up.FryLoad, 0.9f, 0.7f, 44f);
+            if (GameData.HelperAuto(_lvFryUnload)) StationLook.Auto(body.transform, Up.FryUnload, 0.08f, 0.8f, 44f);
 
             _fryFill = UIKit.Bar(p, new Color(0, 0, 0, 0.4f), UIKit.Gold, 0.08f, 0.145f, 0.92f, 0.175f);
             UIKit.SetFill(_fryFill, 0f);

@@ -38,6 +38,61 @@ namespace ValourGames.Shawarma
             }
         }
 
+        /// <summary>Коллекция талисманов: шесть карточек-«витрин».</summary>
+        void ShowCharms(RectTransform s)
+        {
+            var ov = UIKit.Panel(s, "Charms", new Color(0, 0, 0, 0.65f), 0, 0, 1, 1, false);
+            ov.raycastTarget = true;
+            var overlay = ov.gameObject;
+            UnityEngine.Events.UnityAction close = () => { Sfx.Play(Sound.Click); Destroy(overlay); };
+            UIKit.HitArea(ov.transform, "Outside", close);
+
+            var card = UIKit.Panel(ov.transform, "Card", UIKit.Hex("#2A1446"), 0.1f, 0.08f, 0.9f, 0.92f);
+            card.raycastTarget = true;
+            UIKit.AddShadow(card, 16f, 0.5f);
+            UIKit.AddOutline(card, UIKit.Gold, 3f);
+            var ct = card.transform;
+            Juice.Punch(card.rectTransform, 0.06f, 0.25f);
+            var t = UIKit.Label(ct, L.T("ТАЛИСМАНЫ", "CHARMS"), 54, UIKit.Gold, TextAnchor.MiddleCenter, 0.1f, 0.86f, 0.9f, 0.97f, true);
+            UIKit.AddOutline(t, UIKit.Hex("#12091F"), 3f);
+            var st = UIKit.Label(ct, L.T("Вечные бонусы из Шаурма-Пасса. Работают всегда, даже после переезда.", "Permanent bonuses from the Shawarma Pass. Always active, even after moving."),
+                24, UIKit.Alpha(UIKit.Cream, 0.85f), TextAnchor.MiddleCenter, 0.05f, 0.8f, 0.95f, 0.87f, true);
+            UIKit.AddShadow(st, 2f, 0.5f);
+            UIKit.Button(ct, "X", UIKit.Red, close, 0.925f, 0.88f, 0.98f, 0.97f, 34);
+
+            for (int i = 0; i < Meta.Charms.Length; i++)
+            {
+                var d = Meta.Charms[i];
+                bool has = Meta.Has(_save, i);
+                int col = i % 3, row = i / 3;
+                float x0 = 0.035f + col * 0.315f, y1 = 0.77f - row * 0.375f;
+                var c = UIKit.Panel(ct, "Charm", has ? UIKit.Hex("#43286B") : UIKit.Hex("#2E2240"), x0, y1 - 0.35f, x0 + 0.3f, y1);
+                UIKit.AddShadow(c, 6f, 0.4f);
+                if (has) UIKit.AddOutline(c, UIKit.Hex(d.color), 3f);
+                var cc = c.transform;
+                // витрина с подсветкой
+                if (has)
+                {
+                    var glow = UIKit.Shape(cc, UIKit.CircleHD, UIKit.Alpha(UIKit.Hex(d.color), 0.25f), 0.5f, 0.64f, 170f, 170f);
+                    glow.gameObject.AddComponent<Blinker>().speed = 1.2f;
+                }
+                CharmIcon(cc, i, 0.5f, 0.64f, 120f);
+                if (!has)
+                {
+                    UIKit.Shape(cc, UIKit.CircleHD, UIKit.Alpha(Color.black, 0.6f), 0.5f, 0.6f, 112f, 112f);
+                    UIKit.Shape(cc, UIKit.Circle, UIKit.Gold, 0.5f, 0.66f, 34f, 34f);
+                    UIKit.Shape(cc, UIKit.Circle, UIKit.Hex("#2E2240"), 0.5f, 0.66f, 20f, 20f);
+                    UIKit.Shape(cc, UIKit.RoundedSmall, UIKit.Gold, 0.5f, 0.57f, 46f, 34f);
+                }
+                var nm = UIKit.FitLabel(cc, d.Name, 30, has ? UIKit.Gold : UIKit.Alpha(UIKit.Cream, 0.7f), 0.05f, 0.3f, 0.95f, 0.42f);
+                UIKit.AddShadow(nm, 2f, 0.6f);
+                var ds = UIKit.FitLabel(cc, d.Desc, 22, has ? UIKit.Cream : UIKit.Alpha(UIKit.Cream, 0.5f), 0.06f, 0.16f, 0.94f, 0.3f, false);
+                UIKit.AddShadow(ds, 2f, 0.6f);
+                var pill = UIKit.Panel(cc, "Pill", has ? UIKit.Green : UIKit.Hex("#5E4B7A"), 0.2f, 0.03f, 0.8f, 0.13f);
+                UIKit.FitLabel(pill.transform, has ? L.T("ЕСТЬ!", "OWNED!") : L.T("Пасс, уровень ", "Pass, level ") + d.passLevel, 20, Color.white, 0.05f, 0.08f, 0.95f, 0.92f);
+            }
+        }
+
         // =====================================================================
         //  ШАУРМА-ПАСС
         // =====================================================================
@@ -105,19 +160,18 @@ namespace ValourGames.Shawarma
                 else if (!reached)
                     UIKit.Panel(card.transform, "Lock", UIKit.Alpha(Color.black, 0.15f), 0, 0, 1, 1);
             }
-            // полученные талисманы
-            var ch = UIKit.Panel(s, "Charms", UIKit.Alpha(UIKit.Dark, 0.85f), 0.22f, 0.015f, 0.98f, 0.115f);
-            UIKit.Label(ch.transform, L.T("Талисманы:", "Charms:"), 24, UIKit.Gold, TextAnchor.MiddleLeft, 0.01f, 0f, 0.12f, 1f, true);
+            // кнопка коллекции талисманов
+            int got = 0;
+            for (int i = 0; i < Meta.Charms.Length; i++) if (Meta.Has(_save, i)) got++;
+            var cb = UIKit.Button(s, "", UIKit.Hex("#6A1B9A"), () => { Sfx.Play(Sound.Click); ShowCharms(s); }, 0.62f, 0.02f, 0.98f, 0.11f, 30);
             for (int i = 0; i < Meta.Charms.Length; i++)
             {
-                bool has = Meta.Has(_save, i);
-                float x0 = 0.12f + i * 0.147f;
-                var cg = UIKit.Rect(ch.transform, "Charm");
-                UIKit.Place(cg, x0, 0.05f, x0 + 0.14f, 0.95f);
-                CharmIcon(cg, i, 0.12f, 0.5f, 44f);
-                if (!has) UIKit.Panel(cg, "Dim", UIKit.Alpha(Color.black, 0.5f), 0f, 0f, 0.25f, 1f);
-                UIKit.Label(cg, Meta.Charms[i].Desc, 16, has ? Color.white : UIKit.Alpha(Color.white, 0.4f), TextAnchor.MiddleLeft, 0.25f, 0f, 1f, 1f);
+                float x = 0.08f + i * 0.075f;
+                CharmIcon(cb.transform, i, x, 0.5f, 56f);
+                if (!Meta.Has(_save, i)) UIKit.Shape(cb.transform, UIKit.Circle, UIKit.Alpha(Color.black, 0.55f), x, 0.45f, 52f, 52f);
             }
+            var cl = UIKit.FitLabel(cb.transform, L.T("Талисманы ", "Charms ") + got + "/" + Meta.Charms.Length, 32, UIKit.Gold, 0.52f, 0.1f, 0.97f, 0.9f);
+            UIKit.AddShadow(cl, 2f, 0.6f);
             UIKit.Button(s, L.T("← Назад", "← Back"), UIKit.Steel, () => { Sfx.Play(Sound.Click); ShowMenu(); }, 0.02f, 0.02f, 0.2f, 0.11f, 36);
         }
 
