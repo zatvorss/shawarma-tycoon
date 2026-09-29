@@ -300,6 +300,16 @@ namespace ValourGames.Shawarma
             return t;
         }
 
+        /// <summary>Сумма денег в одну строку: чем длиннее число, тем мельче шрифт (миллиарды не переносятся).</summary>
+        public static void SetMoney(Text t, long v, int maxSize)
+        {
+            string s = GameData.Money(v);
+            t.horizontalOverflow = HorizontalWrapMode.Overflow;
+            t.resizeTextForBestFit = false;
+            t.fontSize = s.Length >= 10 ? Mathf.RoundToInt(maxSize * 0.62f) : (s.Length >= 8 ? Mathf.RoundToInt(maxSize * 0.75f) : maxSize);
+            t.text = s;
+        }
+
         /// <summary>Делает из картинки кнопку: реакция на нажатие + "пружинка".</summary>
         public static Button MakeButton(Image img, UnityAction onClick)
         {

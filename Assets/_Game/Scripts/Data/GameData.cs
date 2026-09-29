@@ -376,37 +376,37 @@ namespace ValourGames.Shawarma
                 0, 1, 1f, 1.0f, 1.0f, 1f, "#6EC6F0", "#FDE7C4", "#C4BBAA", "#C0392B", false, "city",
                 new[] { 40, 20, 10, 12, 6, 2, 4, 2, 4, 10 }, 0.06f, 0.36f),
             Loc(1, "Рынок", "Market", "Шумно, торгуются, но народу — тьма.", "Noisy, lots of haggling, huge crowds.",
-                11000, 6, 1.3f, 1.0f, 0.95f, 1f, "#81D4FA", "#FFF3E0", "#BCAAA4", "#E67E22", false, "market",
+                11000, 5, 1.87f, 1.0f, 0.95f, 1f, "#81D4FA", "#FFF3E0", "#BCAAA4", "#E67E22", false, "market",
                 new[] { 35, 10, 10, 20, 5, 3, 3, 4, 10, 8 }, 0.14f, 0.68f),
             Loc(2, "Вокзал", "Train station", "Все торопятся, но платят больше.", "Everyone rushes but pays more.",
-                40000, 11, 1.7f, 0.95f, 0.9f, 1.2f, "#9EC9E8", "#F2E3CF", "#A7A7A7", "#2E86AB", false, "city",
+                70000, 11, 3.51f, 0.95f, 0.9f, 1.2f, "#9EC9E8", "#F2E3CF", "#A7A7A7", "#2E86AB", false, "city",
                 new[] { 25, 8, 35, 8, 4, 4, 4, 8, 4, 4 }, 0.22f, 0.36f),
             Loc(3, "Пляж", "Beach", "Жарко! Все хотят пить. Много блогеров и туристов.", "Hot! Everyone is thirsty. Bloggers and tourists.",
-                145000, 18, 2.2f, 1.0f, 0.9f, 2f, "#29B6F6", "#FFF3C4", "#E8D39A", "#F39C12", false, "beach",
+                420000, 18, 6.58f, 1.0f, 0.9f, 2f, "#29B6F6", "#FFF3C4", "#E8D39A", "#F39C12", false, "beach",
                 new[] { 25, 10, 4, 6, 20, 4, 10, 18, 0, 8 }, 0.3f, 0.68f),
             Loc(4, "Кампус", "Campus", "Толпы студентов: платят мало, но их очень много.", "Crowds of students: cheap but many.",
-                250000, 18, 2.6f, 1.1f, 0.8f, 1f, "#81C784", "#FFF8E1", "#B8B0A0", "#8E44AD", false, "city",
+                1190000, 18, 12.33f, 1.1f, 0.8f, 1f, "#81C784", "#FFF8E1", "#B8B0A0", "#8E44AD", false, "city",
                 new[] { 10, 55, 4, 3, 10, 2, 8, 2, 2, 8 }, 0.38f, 0.36f),
             Loc(5, "Стадион", "Stadium", "Финал кубка! Болельщики и спортсмены.", "Cup final! Fans and athletes.",
-                310000, 18, 3.2f, 0.95f, 0.85f, 1.4f, "#4FC3F7", "#E1F5FE", "#9E9E9E", "#1565C0", false, "stadium",
+                2670000, 18, 23.1f, 0.95f, 0.85f, 1.4f, "#4FC3F7", "#E1F5FE", "#9E9E9E", "#1565C0", false, "stadium",
                 new[] { 25, 10, 5, 2, 10, 3, 35, 5, 5, 5 }, 0.46f, 0.68f),
             Loc(6, "Аэропорт", "Airport", "Туристы со всего мира и бизнес-класс.", "Tourists from all over the world.",
-                460000, 18, 4f, 0.95f, 0.85f, 1.3f, "#B3E5FC", "#ECEFF1", "#B0BEC5", "#00838F", false, "airport",
+                6630000, 18, 43.29f, 0.95f, 0.85f, 1.3f, "#B3E5FC", "#ECEFF1", "#B0BEC5", "#00838F", false, "airport",
                 new[] { 15, 5, 30, 4, 6, 6, 4, 30, 0, 0 }, 0.54f, 0.36f),
             Loc(7, "Ночной центр", "Downtown night", "Ночь, неон, критики и блогеры.", "Night, neon, critics and bloggers.",
-                640000, 18, 5f, 0.95f, 0.85f, 1.5f, "#0B1633", "#3A2F5B", "#4A4A5A", "#E91E63", true, "city",
+                15300000, 18, 81.11f, 0.95f, 0.85f, 1.5f, "#0B1633", "#3A2F5B", "#4A4A5A", "#E91E63", true, "city",
                 new[] { 30, 10, 15, 0, 25, 10, 5, 5, 0, 0 }, 0.62f, 0.68f),
             Loc(8, "Фудкорт ТЦ", "Mall food court", "Высшая лига. Безумный поток.", "The big league. Insane traffic.",
-                900000, 18, 6.5f, 0.95f, 0.8f, 1.3f, "#F5E6D3", "#E0CDB5", "#D7CCC8", "#16A085", false, "mall",
+                35400000, 18, 151.99f, 0.95f, 0.8f, 1.3f, "#F5E6D3", "#E0CDB5", "#D7CCC8", "#16A085", false, "mall",
                 new[] { 20, 15, 15, 8, 12, 8, 6, 6, 2, 8 }, 0.7f, 0.36f),
             Loc(9, "Небоскрёб", "Skyscraper", "Вершина города. Отсюда виден миллиард.", "The top of the city. A billion in sight.",
-                1280000, 18, 9f, 0.9f, 0.8f, 1.5f, "#1A237E", "#FF8A65", "#546E7A", "#FFC928", true, "towers",
+                77600000, 18, 284.8f, 0.9f, 0.8f, 1.5f, "#1A237E", "#FF8A65", "#546E7A", "#FFC928", true, "towers",
                 new[] { 15, 5, 35, 2, 12, 15, 4, 10, 0, 2 }, 0.78f, 0.68f),
             Loc(10, "Правительственная столовая", "Government canteen", "Депутаты и министры. Строгий протокол и щедрые чаевые.", "Deputies and ministers. Strict protocol, generous tips.",
-                1970000, 18, 60f, 0.95f, 0.8f, 1.2f, "#ECE3D0", "#D7C7A6", "#8D6E63", "#B71C1C", false, "gov",
+                175000000, 18, 533.67f, 0.95f, 0.8f, 1.2f, "#ECE3D0", "#D7C7A6", "#8D6E63", "#B71C1C", false, "gov",
                 new[] { 10, 0, 30, 5, 5, 10, 2, 3, 0, 0 }, 0.86f, 0.36f),
             Loc(11, "Дубай", "Dubai", "Финал пути: шейхи, миллионеры и светские львицы платят золотом.", "The finale: sheikhs, millionaires and socialites pay in gold.",
-                13800000, 18, 1200f, 0.95f, 0.8f, 2f, "#FFB74D", "#FFE0B2", "#E8D39A", "#FFC928", false, "dubai",
+                369000000, 18, 1000f, 0.95f, 0.8f, 2f, "#FFB74D", "#FFE0B2", "#E8D39A", "#FFC928", false, "dubai",
                 new[] { 5, 0, 25, 0, 20, 8, 5, 25, 0, 2 }, 0.94f, 0.68f),
         };
 
@@ -473,16 +473,20 @@ namespace ValourGames.Shawarma
         {
             // цель — примерно треть того, что заработает средний игрок; первые два дня — мягче
             float k = day <= 2 ? 0.25f : 0.35f;
-            return Mathf.Max(100, Mathf.RoundToInt(k * ExpectedDayIncome(loc.id, day) / 10f) * 10);
+            return Mathf.Max(100, Mathf.RoundToInt(k * ExpectedDayIncome(loc.id, day, false) / 10f) * 10);
         }
 
         // =====================================================================
         //  ЭКОНОМИКА. Модель среднего игрока без улучшений и рекламы:
         //  1-я → 2-я локация ≈ 15 минут, 2-я → 3-я ≈ 30 минут, дальше ≈ час на локацию.
+        //  Цены локаций растут плавно — ×1.87 на каждой (1 → 1000 в Дубае), без резких скачков.
         // =====================================================================
 
         /// <summary>Сколько в среднем зарабатывает игрок за день на локации (без улучшений).</summary>
-        public static float ExpectedDayIncome(int loc, int day)
+        public static float ExpectedDayIncome(int loc, int day) { return ExpectedDayIncome(loc, day, true); }
+
+        /// <summary>withUpgrades — с учётом обычной прокачки игрока (+20% за каждую локацию пути).</summary>
+        public static float ExpectedDayIncome(int loc, int day, bool withUpgrades)
         {
             loc = Mathf.Clamp(loc, 0, Locations.Length - 1);
             var L = Locations[loc];
@@ -498,11 +502,12 @@ namespace ValourGames.Shawarma
             float torder = 8f + 0.8f * items;
             float served = 0.9f * Mathf.Min(arrivals, dur / torder);
             float price = (40f + 60f * (1f + dm) + k * 15f + Mathf.Min(0.8f, 0.4f * L.drink) * 50f) * L.price * RebirthMult(loc) * 1.15f * 1.05f * 1.12f;
-            return served * price;
+            float uf = withUpgrades ? 1f + 0.2f * loc : 1f;
+            return served * price * uf;
         }
 
         /// <summary>Сколько игрок зарабатывает за всё время на локации до переезда (по модели выше).</summary>
-        static readonly float[] _stayIncome = { 14069f, 51213f, 182179f, 311092f, 390860f, 574465f, 801379f, 1137344f, 1596296f, 2462597f, 17273142f, 402726656f };
+        static readonly float[] _stayIncome = { 14069f, 88583f, 526784f, 1488568f, 3336027f, 8294316f, 19079400f, 44281685f, 97049175f, 218199867f, 460907843f, 1073937751f };
 
         /// <summary>Во сколько раз дневной доход на локации больше, чем в самом начале. Для цен бустеров и т.п.</summary>
         public static float EconScale(int loc) { return ExpectedDayIncome(loc, 5) / ExpectedDayIncome(0, 5); }

@@ -60,6 +60,11 @@ namespace ValourGames.Shawarma
         public long kiosk2Cash = 0;
         public int kiosk2LastSold = 0;
 
+        // v0.14: пройденные шаги обучения ("|basics|ask|fly|...")
+        public string tutor = "";
+        public bool Tutored(string key) { return tutor != null && tutor.Contains("|" + key + "|"); }
+        public void MarkTutored(string key) { if (!Tutored(key)) tutor = (string.IsNullOrEmpty(tutor) ? "|" : tutor) + key + "|"; }
+
         // ежедневный бонус
         public string lastLogin = "";
         public int streak = 0;

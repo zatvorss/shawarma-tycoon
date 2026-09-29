@@ -109,11 +109,13 @@ namespace ValourGames.Shawarma
                 UIKit.Shape(lk, UIKit.RoundedSmall, next ? UIKit.Gold : UIKit.Gray, 0.5f, 0.38f, 44f, 32f);
             }
 
-            var plate = UIKit.Panel(pin, "Name", UIKit.Alpha(here ? UIKit.Hex("#1B5E20") : UIKit.Dark, 0.92f), -0.3f, -0.1f, 1.3f, 0.1f);
-            UIKit.AddShadow(plate, 4f, 0.35f);
             string nm = (l.id + 1) + ". " + l.Name;
-            if (next) nm = L.T("Переезд: ", "Move: ") + GameData.Money(l.cost);
-            UIKit.FitLabel(plate.transform, nm, 24, next ? UIKit.Gold : UIKit.Cream, 0.04f, 0.08f, 0.96f, 0.92f);
+            if (next) nm = l.Name + "\n" + L.T("Переезд: ", "Move: ") + GameData.Money(l.cost);
+            bool twoLines = next || nm.Length > 20;
+            var plate = UIKit.Panel(pin, "Name", UIKit.Alpha(here ? UIKit.Hex("#1B5E20") : UIKit.Dark, 0.92f), -0.3f, twoLines ? -0.26f : -0.1f, 1.3f, 0.1f);
+            UIKit.AddShadow(plate, 4f, 0.35f);
+            var pl = UIKit.FitLabel(plate.transform, nm, 24, next ? UIKit.Gold : UIKit.Cream, 0.04f, 0.06f, 0.96f, 0.94f);
+            pl.resizeTextMinSize = 12;
 
             if (here || next)
             {

@@ -428,17 +428,13 @@ namespace ValourGames.Shawarma
                 UIKit.Panel(area, "Cap", UIKit.Hex("#E0D5B7"), x - 0.03f, 0.86f, x + 0.03f, 0.9f);
                 UIKit.Panel(area, "Base", UIKit.Hex("#E0D5B7"), x - 0.028f, 0.16f, x + 0.028f, 0.2f);
             }
-            // флаги и герб между колоннами
+            // гербы между колоннами
             for (int i = 0; i < 4; i++)
             {
                 float x = 0.2f + i * 0.2f;
-                UIKit.Panel(area, "Pole", UIKit.Hex("#8D6E63"), x - 0.03f, 0.45f, x - 0.027f, 0.8f, false);
-                UIKit.Panel(area, "FlagW", Color.white, x - 0.027f, 0.72f, x + 0.02f, 0.76f, false);
-                UIKit.Panel(area, "FlagB", UIKit.Hex("#1565C0"), x - 0.027f, 0.68f, x + 0.02f, 0.72f, false);
-                UIKit.Panel(area, "FlagR", UIKit.Hex("#C62828"), x - 0.027f, 0.64f, x + 0.02f, 0.68f, false);
-                var crest = UIKit.Shape(area, UIKit.CircleHD, UIKit.Hex("#FFC107"), x + 0.035f, 0.62f, 60f, 60f);
-                UIKit.Shape(crest.transform, UIKit.CircleHD, UIKit.Hex("#B71C1C"), 0.5f, 0.5f, 44f, 44f);
-                UIKit.Shape(crest.transform, UIKit.RoundedSmall, UIKit.Hex("#FFC107"), 0.5f, 0.5f, 16f, 26f);
+                var crest = UIKit.Shape(area, UIKit.CircleHD, UIKit.Hex("#FFC107"), x, 0.64f, 70f, 70f);
+                UIKit.Shape(crest.transform, UIKit.CircleHD, UIKit.Hex("#B71C1C"), 0.5f, 0.5f, 52f, 52f);
+                UIKit.Shape(crest.transform, UIKit.RoundedSmall, UIKit.Hex("#FFC107"), 0.5f, 0.5f, 18f, 30f);
             }
             // люстры
             for (int i = 0; i < 3; i++)
