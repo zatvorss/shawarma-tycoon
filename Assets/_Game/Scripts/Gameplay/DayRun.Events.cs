@@ -10,8 +10,6 @@ namespace ValourGames.Shawarma
     /// </summary>
     public partial class DayRun
     {
-        // --- хит дня ---
-        int[] _special;
 
         // --- курьеры ---
         readonly List<float> _courierAt = new List<float>();
@@ -19,7 +17,6 @@ namespace ValourGames.Shawarma
         public int CourierIncome { get; private set; }
 
         // --- конкурент и мухи ---
-        float _rivalT, _rivalAt = -1f;
         RectTransform _fly, _trapHead, _zapper;
         BinView _flyBin;
         float _flyT, _nextFly = -1f, _trapCd;
@@ -37,13 +34,6 @@ namespace ValourGames.Shawarma
         // =====================================================================
         void InitEvents()
         {
-            // хит дня: заказ побогаче, платит ×1.8
-            if (_day >= 2)
-            {
-                _special = MakeOrder();
-                for (int t = 0; t < 10 && GameData.Total(_special) < 3; t++) _special = MakeOrder();
-            }
-
             // курьеры: до 2 купленных бизнесов пришлют оптовый заказ
             int cl = _save.biz[Meta.BizCourier];
             if (cl > 0)
@@ -55,13 +45,13 @@ namespace ValourGames.Shawarma
             // тандыр-пекарня
             _bakeLvl = _save.biz[Meta.BizBakery];
             _bakeT = 0f;
+            if (_bakeLvl > 0)
+                for (int k = 0; k < (_bakeLvl >= 3 ? 2 : 1); k++) _bulkAt.Add(Random.Range(0.15f, 0.8f) * _dayDuration);
             // drive-thru: машины в течение дня
             int dl = _save.biz[Meta.BizDrive];
             for (int k = 0; k < Meta.DriveCars(dl); k++) _carAt.Add(Random.Range(0.08f, 0.85f) * _dayDuration);
 
-            // акция конкурента ШаурмаКинг
-            if (_eday >= 4 && Random.value < 0.45f) _rivalAt = Random.Range(0.3f, 0.6f) * _dayDuration;
-            // босс: каждый 5-й день приходит сам Мистер Кинг
+            // босс: каждый 5-й день приходит сам Мистер Мега
             if (_day % 5 == 0 && _eday >= 5) _bossAt = Random.Range(0.3f, 0.5f) * _dayDuration;
 
             // мухи
@@ -76,23 +66,16 @@ namespace ValourGames.Shawarma
             }
         }
 
-        string EventsBannerText()
+        /// <summary>Строки «Сегодня:» для карточки начала дня: текст и цвет маркера.</summary>
+        void EventLines(List<string> text, List<string> col)
         {
-            string msg = "";
-            if (_special != null)
-                msg += "\n<size=28><color=#FF8A80>" + L.T("Хит дня (×1.8): ", "Hit of the day (×1.8): ") + GameData.ShortList(_special) + "</color></size>";
-            if (_bossAt >= 0f)
-                msg += "\n<size=28><color=#FFD54F>" + L.T("Сегодня БОСС-ДЕНЬ: придёт сам Мистер Кинг!", "BOSS DAY: Mr. King himself is coming!") + "</color></size>";
-            if (_bakeLvl > 0)
-                msg += "\n<size=28><color=#FFCC80>" + L.T("Тандыр горячий: шаурма на свежем лаваше +", "The tandoor is hot: shawarma on fresh lavash +") +
-                       Mathf.RoundToInt(Meta.BakeBonus(_bakeLvl) * 100f) + "%</color></size>";
-            if (_carAt.Count > 0)
-                msg += "\n<size=28><color=#CE93D8>" + L.T("Drive-Thru открыт: машин сегодня — ", "Drive-Thru is open: cars today — ") + _carAt.Count + "</color></size>";
-            if (_courierBiz.Count > 0)
-                msg += "\n<size=28><color=#A5D6A7>" + L.T("Сегодня приедут курьеры от твоих бизнесов!", "Couriers from your businesses will come today!") + "</color></size>";
+            if (_bossAt >= 0f) { text.Add(L.T("БОСС-ДЕНЬ: придёт сам Мистер Мега!", "BOSS DAY: Mr. Mega himself is coming!")); col.Add("#FFD54F"); }
+            if (_bakeLvl > 0) { text.Add(L.T("Тандыр горячий: шаурма на свежем лаваше +", "The tandoor is hot: shawarma on fresh lavash +") + Mathf.RoundToInt(Meta.BakeBonus(_bakeLvl) * 100f) + "%"); col.Add("#FFB74D"); }
+            if (_bulkAt.Count > 0) { text.Add(L.T("Конкуренты придут за лавашом оптом", "Rivals will come to buy lavash in bulk")); col.Add("#FF8A65"); }
+            if (_carAt.Count > 0) { text.Add(L.T("ШаурмаАвто открыто: машин сегодня — ", "ShawarmaAuto is open: cars today — ") + _carAt.Count); col.Add("#CE93D8"); }
+            if (_courierBiz.Count > 0) { text.Add(L.T("Сегодня приедут курьеры за оптовыми заказами", "Couriers will come for bulk orders today")); col.Add("#81C784"); }
             for (int b = 0; b < _boost.Length; b++)
-                if (_boost[b]) msg += "\n<size=26><color=#FFC928>" + Meta.Boosts[b].Name + ": " + Meta.Boosts[b].Desc + "</color></size>";
-            return msg;
+                if (_boost[b]) { text.Add(Meta.Boosts[b].Name + ": " + Meta.Boosts[b].Desc); col.Add("#FFC928"); }
         }
 
         void TickEvents(float dt)
@@ -131,17 +114,6 @@ namespace ValourGames.Shawarma
                 if (SpawnBoss()) _bossAt = -1f;
             }
 
-            // акция конкурента
-            if (_rivalAt >= 0f && _elapsed >= _rivalAt && _timeLeft > 0f)
-            {
-                _rivalAt = -1f;
-                _rivalT = 20f;
-                ShowBanner(L.T("«ШаурмаКинг» раздаёт скидки напротив!\n<size=30>20 секунд клиенты нервничают сильнее — работай быстрее!</size>",
-                               "“ShawarmaKing” is giving discounts across the street!\n<size=30>For 20 seconds customers lose patience faster — hurry!</size>"), 2.6f);
-                Sfx.Play(Sound.Error);
-                Juice.Shake(_street, 8f, 0.3f);
-            }
-            if (_rivalT > 0f) _rivalT -= dt;
 
             // мухи
             if (_trapCd > 0f) _trapCd -= dt;
@@ -375,7 +347,7 @@ namespace ValourGames.Shawarma
         }
 
         // =====================================================================
-        //  БОСС: МИСТЕР КИНГ
+        //  БОСС: МИСТЕР МЕГА
         // =====================================================================
         bool SpawnBoss()
         {
@@ -386,8 +358,8 @@ namespace ValourGames.Shawarma
             var c = new Customer(_slots[slot], CustType.Business, order, Drink.None, 70f, ServeMode.ToGo, true, false, -1, 3, false, true);
             _customers[slot] = c;
             c.Say(L.T("Ну-ка, покажи, на что способен твой ларёк!", "Let's see what your little kiosk can do!"), 3f);
-            ShowBanner(L.T("БОСС: МИСТЕР КИНГ!\n<size=30>Собери ему 3 одинаковые шаурмы с собой за 70 секунд — получишь огромную награду и очко славы!</size>",
-                           "BOSS: MR. KING!\n<size=30>Make him 3 identical to-go shawarmas in 70 seconds — huge reward and a Fame point!</size>"), 3.4f);
+            ShowBanner(L.T("БОСС: МИСТЕР МЕГА!\n<size=30>Собери ему 3 одинаковые шаурмы с собой за 70 секунд — получишь огромную награду и очко славы!</size>",
+                           "BOSS: MR. MEGA!\n<size=30>Make him 3 identical to-go shawarmas in 70 seconds — huge reward and a Fame point!</size>"), 3.4f);
             Sfx.Play(Sound.Burn);
             Juice.Shake(_root, 14f, 0.5f);
             return true;
@@ -466,13 +438,24 @@ namespace ValourGames.Shawarma
                 {
                     _hotLavash.RemoveAt(i);
                     changed = true;
-                    Toast(L.T("Горячий лаваш остыл — используй свежий быстрее!", "The hot lavash cooled down — use it faster!"));
+                    Toast(L.T("Лаваш из тандыра остыл — бонуса за него уже не будет", "The tandoor lavash cooled down — no bonus for it now"));
                 }
             }
-            if (_hotLavash.Count < Meta.BakeCap(_bakeLvl) && _timeLeft > 0f)
+            // оптовики: пока ждёт покупатель — тандыр работает на полную
+            bool bulk = false;
+            foreach (var c in _customers) if (c != null && !c.leaving && c.IsBulk) bulk = true;
+            float bakeTime = Meta.BakeTime(_bakeLvl) * (bulk ? 0.25f : 1f);
+            int cap = bulk ? 5 : Meta.BakeCap(_bakeLvl);
+            for (int i = _bulkAt.Count - 1; i >= 0; i--)
+            {
+                if (_elapsed < _bulkAt[i] || _timeLeft <= 0f) continue;
+                if (SpawnBulk()) _bulkAt.RemoveAt(i);
+                break;
+            }
+            if (_hotLavash.Count < cap && (_timeLeft > 0f || bulk))
             {
                 _bakeT += dt;
-                if (_bakeT >= Meta.BakeTime(_bakeLvl))
+                if (_bakeT >= bakeTime)
                 {
                     _bakeT = 0f;
                     _hotLavash.Add(Meta.LavashHot);
@@ -481,7 +464,7 @@ namespace ValourGames.Shawarma
                     if (_tandoor != null) Juice.Punch(_tandoor.parent, 0.15f, 0.25f);
                 }
             }
-            if (_tandoorFill != null) UIKit.SetFill(_tandoorFill, _bakeT / Meta.BakeTime(_bakeLvl));
+            if (_tandoorFill != null) UIKit.SetFill(_tandoorFill, _bakeT / bakeTime);
             if (changed) RefreshTandoor();
         }
 
@@ -489,6 +472,65 @@ namespace ValourGames.Shawarma
         {
             if (_tandoorText == null) return;
             _tandoorText.text = _hotLavash.Count > 0 ? L.T("горячий ×", "hot ×") + _hotLavash.Count : "";
+        }
+
+        readonly List<float> _bulkAt = new List<float>();
+
+        /// <summary>Оптовик из соседнего кафе: берёт от 5 до 30 горячих лавашей (в среднем около 10).</summary>
+        bool SpawnBulk()
+        {
+            int slot = FreeSlot();
+            if (slot < 0) return false;
+            float u = Mathf.Max(0.0001f, Random.value);
+            int qty = Mathf.Clamp(5 + Mathf.RoundToInt(-Mathf.Log(u) * 5f), 5, 30);
+            float patience = Mathf.Max(_patience, 30f + qty * 4.5f);
+            var c = new Customer(_slots[slot], CustType.Business, GameData.NewCounts(), Drink.None, patience, ServeMode.ToGo, true, false,
+                -1, 1, false, false, false, qty);
+            _customers[slot] = c;
+            c.Say(L.T("Нам нужно ", "We need ") + qty + L.T(" горячих лавашей!", " hot lavash!"), 3f);
+            ShowBanner(L.T("Оптовый заказ лаваша!\n<size=30>Соседнее кафе берёт ", "Bulk lavash order!\n<size=30>A nearby cafe wants ") + qty +
+                L.T(" шт. Тандыр печёт быстрее — жми на покупателя, чтобы отдать готовые</size>", ". The tandoor bakes faster — tap the buyer to hand over ready ones</size>"), 3f);
+            Sfx.Play(Sound.Fanfare);
+            return true;
+        }
+
+        /// <summary>Тап по оптовику: отдаём все горячие лаваши.</summary>
+        void GiveBulk(int slot, Customer c)
+        {
+            int n = Mathf.Min(_hotLavash.Count, c.lavashQty);
+            if (n <= 0)
+            {
+                Toast(L.T("Горячих лавашей пока нет — тандыр печёт", "No hot lavash yet — the tandoor is baking"));
+                Sfx.Play(Sound.Error);
+                return;
+            }
+            for (int i = 0; i < n; i++)
+            {
+                _hotLavash.RemoveAt(0);
+                if (_tandoor != null)
+                {
+                    var ic = Icons.Lavash(_fx, 0.5f, 0.5f, 70f);
+                    Juice.Fly(ic, _tandoor.position, c.BubbleWorld, 0.35f, i * 0.07f, null);
+                }
+            }
+            RefreshTandoor();
+            c.GiveLavash(n);
+            Sfx.Play(Sound.Click);
+            if (!c.Done) return;
+
+            int per = Mathf.Max(10, Mathf.RoundToInt(GameData.LavashPrice * _priceMult * 1.2f));
+            int total = per * c.lavashTotal;
+            Earned += total;
+            Served++;
+            _save.money += total;
+            ChangeRep(GameData.RepHappy);
+            c.Leave(true, L.T("Отличный лаваш!", "Great lavash!"));
+            LiveStats(c, total, true);
+            Juice.FloatText(_slots[slot], "+" + total, UIKit.Gold, 60, 0.7f, 0.65f);
+            SpawnCoins(c.BubbleWorld, 8);
+            Sfx.Play(Sound.Coin);
+            Progress(QuestType.Serve, 1);
+            Progress(QuestType.Earn, total);
         }
 
         /// <summary>Берём лаваш: горячий, если есть.</summary>
@@ -546,7 +588,7 @@ namespace ValourGames.Shawarma
             _customers[slot] = c;
             c.Say(L.T("Один заказ в окно, пожалуйста!", "One order to the window, please!"), 2.5f);
             Sfx.Play(Sound.Spawn);
-            Toast(L.T("Машина у Drive-Thru! Всё — с собой в пакет", "A car at the Drive-Thru! Everything to go"));
+            Toast(L.T("Машина у окна ШаурмаАвто! Всё — с собой в пакет", "A car at the ShawarmaAuto window! Everything to go"));
             return true;
         }
 

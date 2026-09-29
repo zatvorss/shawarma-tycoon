@@ -135,16 +135,8 @@ namespace ValourGames.Shawarma
             RefreshAllKitchen();
             RefreshHud();
 
-            string msg = _loc.Name + " • " + L.T("День ", "Day ") + _day;
-            msg += "\n<size=36>" + L.T("Цель: ", "Goal: ") + _goal + "</size>";
-            string news = GameData.NewStuff(_eday);
-            if (news.Length > 0) msg += "\n<size=30>" + L.T("Новое: ", "New: ") + news + "</size>";
-            if (_event == DayEvent.Rain) msg += "\n<size=30>" + L.T("Дождь: клиентов меньше, чаевые ×1.5", "Rain: fewer customers, tips ×1.5") + "</size>";
-            if (_event == DayEvent.Rush) msg += "\n<size=30>" + L.T("Сегодня будет час пик!", "Rush hour today!") + "</size>";
-            for (int b = 0; b < _boost.Length; b++)
-                if (_boost[b]) msg += "\n<size=28><color=#FFC928>" + L.T("Бустер: ", "Booster: ") + Meta.Boosts[b].Name + "</color></size>";
-            msg += EventsBannerText();
-            ShowBanner(msg, 4.2f);
+            ShowDayIntro();
+            _spawnTimer = 4.5f;
         }
 
         // =====================================================================
@@ -260,7 +252,6 @@ namespace ValourGames.Shawarma
                 var c = _customers[i];
                 if (c == null) continue;
                 c.Tick(dt);
-                if (_rivalT > 0f && !c.leaving) c.patience -= dt * 0.6f;
                 if (_musicianHere && !c.leaving && c.type != CustType.Musician) c.patience = Mathf.Min(c.maxPatience, c.patience + dt * 0.4f);
 
                 if (c.leaving)
@@ -284,8 +275,8 @@ namespace ValourGames.Shawarma
                 {
                     if (c.boss)
                     {
-                        ShowBanner(L.T("Мистер Кинг ушёл, смеясь...\n<size=30>«Я же говорил — твой ларёк не для больших дел!»</size>",
-                                       "Mr. King left laughing...\n<size=30>“Told you — your kiosk can't handle big business!”</size>"), 2.8f);
+                        ShowBanner(L.T("Мистер Мега ушёл, смеясь...\n<size=30>«Я же говорил — твой ларёк не для больших дел!»</size>",
+                                       "Mr. Mega left laughing...\n<size=30>“Told you — your kiosk can't handle big business!”</size>"), 2.8f);
                         ChangeRep(-0.3f);
                     }
                     Lost++;
@@ -327,7 +318,7 @@ namespace ValourGames.Shawarma
             float limit = _patience * 0.7f * GameData.QueueWait(_save.Lvl(Up.Queue));
             for (int i = _queue.Count - 1; i >= 0; i--)
             {
-                _queue[i] += dt * (_rivalT > 0f ? 1.6f : 1f);
+                _queue[i] += dt;
                 if (_queue[i] > limit)
                 {
                     _queue.RemoveAt(i);
@@ -365,8 +356,8 @@ namespace ValourGames.Shawarma
             var mode = Random.value < 0.5f ? ServeMode.Here : ServeMode.ToGo;
             bool known = _autoAsk || (type != CustType.Tourist && Random.value < GameData.ModeKnownChance);
             bool golden = _eday >= 3 && Random.value < GameData.GoldenChance * (Meta.Has(_save, Meta.CharmMagnet) ? 2f : 1f);
-            bool special = _special != null && type != CustType.Vegan && type != CustType.Glutton && Random.value < 0.25f;
-            var order = special ? (int[])_special.Clone() : MakeOrder(type);
+            bool special = false;
+            var order = MakeOrder(type);
             int qty = type == CustType.Glutton ? 2 : 1;
             var c = new Customer(_slots[slot], type, order, drink, patience, mode, known, golden, -1, qty, special);
             _customers[slot] = c;
@@ -454,6 +445,8 @@ namespace ValourGames.Shawarma
             var c = _customers[slot];
             if (c == null || c.leaving) return;
 
+            if (c.IsBulk) { GiveBulk(slot, c); return; }
+
             // сначала узнать: здесь или с собой
             if (!c.modeKnown && c.needShawarma)
             {
@@ -516,7 +509,6 @@ namespace ValourGames.Shawarma
         {
             var def = GameData.Get(c.type);
             float mult = _priceMult * def.payMult * GameData.ComboMult(_combo) * (c.golden ? GameData.GoldenPay : 1f);
-            if (c.special) mult *= 1.8f;
             if (_feverT > 0f) mult *= 2f;
             if (c.gotFresh) mult *= 1f + Meta.BakeBonus(_save.biz[Meta.BizBakery]);
             if (c.car) mult *= Meta.DriveMult(_save.biz[Meta.BizDrive]);
@@ -535,7 +527,7 @@ namespace ValourGames.Shawarma
                 price = price * c.qtyTotal + bonus;
                 _save.fame += 1;
                 BossWon = true;
-                ShowBanner(L.T("ТЫ ПОБЕДИЛ МИСТЕРА КИНГА!\n<size=32>+", "YOU BEAT MR. KING!\n<size=32>+") + bonus + " + " + Meta.FamePts(1) + "</size>", 3f);
+                ShowBanner(L.T("ТЫ ПОБЕДИЛ МИСТЕРА МЕГУ!\n<size=32>+", "YOU BEAT MR. MEGA!\n<size=32>+") + bonus + " + " + Meta.FamePts(1) + "</size>", 3f);
                 Sfx.Play(Sound.Fanfare);
             }
             float tipK = 0.3f * c.PatienceFrac * _tipMult * def.tipMult;
@@ -693,19 +685,6 @@ namespace ValourGames.Shawarma
             if (_questBtn != null) Juice.Punch(_questBtn, 0.3f, 0.3f);
         }
 
-        void ShowQuests()
-        {
-            var sb = new System.Text.StringBuilder();
-            sb.Append(L.T("Задания дня", "Daily quests")).Append('\n');
-            foreach (var q in _quests)
-            {
-                sb.Append("<size=30>").Append(q.done ? "<color=#7CFC00>[OK] </color>" : "• ").Append(q.Text);
-                if (!q.done && q.Progress.Length > 0) sb.Append("  (").Append(q.Progress).Append(")");
-                sb.Append("  <color=#FFC928>+").Append(q.reward).Append("</color></size>\n");
-            }
-            ShowBanner(sb.ToString().TrimEnd('\n'), 3.5f);
-        }
-
         int QuestsDone()
         {
             int n = 0;
@@ -752,7 +731,7 @@ namespace ValourGames.Shawarma
                 DayXp += xp;
             }
             if (happy && c.IsCourier) _save.couriers++;
-            if (happy && c.special) _save.specials++;
+            if (happy && GameData.Get(c.type).special && !c.IsCourier && !c.boss && !c.car) _save.specials++;
             _save.lifetime += money;
             if (happy)
             {
@@ -934,7 +913,6 @@ namespace ValourGames.Shawarma
             if (Rain) ev = L.T("Дождь", "Rain");
             if (_event == DayEvent.Rush) ev = RushNow ? L.T("ЧАС ПИК!", "RUSH HOUR!") : L.T("Час пик скоро", "Rush later");
             if (_hypeT > 0f) ev = L.T("Хайп! ", "Hype! ") + Mathf.CeilToInt(_hypeT);
-            if (_rivalT > 0f) ev = L.T("Акция конкурента! ", "Rival promo! ") + Mathf.CeilToInt(_rivalT);
             if (_queue.Count > 0) ev = "<color=" + (_queue.Count >= 3 ? "#FF5252" : "#FFE082") + ">" + L.T("Очередь: ", "Queue: ") + _queue.Count + "</color>  " + ev;
             _eventText.text = ev;
             _questText.text = L.T("Задания ", "Quests ") + QuestsDone() + "/" + _quests.Count;

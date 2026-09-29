@@ -192,30 +192,40 @@ namespace ValourGames.Shawarma
                     if (owned) art.gameObject.AddComponent<Swayer>();
                     break;
                 case Meta.BizBakery:
-                    UIKit.Panel(p, "Floor", UIKit.Hex("#A1887F"), 0f, 0f, 1f, 0.22f, false);
                     UIKit.Panel(p, "Wall", UIKit.Hex("#FFE0B2"), 0f, 0.22f, 1f, 1f, false);
-                    // тандыр: глиняный купол с жерлом огня
-                    UIKit.Shape(art, UIKit.CircleHD, UIKit.Hex("#A1471F"), 0.38f, 0.42f, 170f, 170f);
-                    UIKit.Shape(art, UIKit.CircleHD, UIKit.Hex("#C0632F"), 0.38f, 0.46f, 150f, 150f);
-                    UIKit.Shape(art, UIKit.Rounded, UIKit.Hex("#A1471F"), 0.38f, 0.15f, 180f, 50f);
-                    var mouth = UIKit.Shape(art, UIKit.Circle, UIKit.Hex("#3E2723"), 0.38f, 0.5f, 80f, 60f);
-                    var fire = UIKit.Shape(mouth.transform, UIKit.Circle, UIKit.Hex("#FF6F00"), 0.5f, 0.35f, 56f, 36f);
-                    UIKit.Shape(mouth.transform, UIKit.Circle, UIKit.Hex("#FFD54F"), 0.5f, 0.3f, 30f, 18f);
-                    if (owned) fire.gameObject.AddComponent<Blinker>().speed = 3f;
-                    // стопка горячего лаваша
+                    for (int k = 0; k < 6; k++) UIKit.Panel(p, "Brick", UIKit.Alpha(UIKit.Hex("#D7A77A"), 0.5f), 0f, 0.3f + k * 0.12f, 1f, 0.31f + k * 0.12f, false);
+                    UIKit.Panel(p, "Floor", UIKit.Hex("#8D6E63"), 0f, 0f, 1f, 0.22f, false);
+                    // тандыр — глиняный кувшин с огнём в горловине
+                    UIKit.Shape(art, UIKit.CircleHD, new Color(0, 0, 0, 0.25f), 0.36f, 0.08f, 190f, 40f);
+                    UIKit.Shape(art, UIKit.Rounded, UIKit.Hex("#A84A22"), 0.36f, 0.42f, 180f, 170f);
+                    UIKit.Shape(art, UIKit.Rounded, UIKit.Hex("#C8683A"), 0.34f, 0.44f, 150f, 150f);
+                    UIKit.Shape(art, UIKit.RoundedSmall, UIKit.Hex("#8E3B1A"), 0.36f, 0.3f, 176f, 10f);
+                    UIKit.Shape(art, UIKit.RoundedSmall, UIKit.Hex("#8E3B1A"), 0.36f, 0.56f, 176f, 10f);
+                    UIKit.Shape(art, UIKit.RoundedSmall, UIKit.Alpha(Color.white, 0.2f), 0.22f, 0.45f, 16f, 110f);
+                    // горловина с жаром
+                    UIKit.Shape(art, UIKit.CircleHD, UIKit.Hex("#6D2A10"), 0.36f, 0.8f, 150f, 50f);
+                    UIKit.Shape(art, UIKit.CircleHD, UIKit.Hex("#2B130A"), 0.36f, 0.8f, 124f, 36f);
+                    var glowT = UIKit.Shape(art, UIKit.CircleHD, UIKit.Hex("#FF8F00"), 0.36f, 0.8f, 96f, 24f);
+                    if (owned) glowT.gameObject.AddComponent<Blinker>().speed = 3f;
                     for (int k = 0; k < 3; k++)
-                        Icons.Lavash(art, 0.8f, 0.22f + k * 0.07f, 90f);
+                    {
+                        var fl = UIKit.Shape(art, UIKit.Circle, UIKit.Hex(k == 1 ? "#FFD54F" : "#FF7043"), 0.3f + k * 0.06f, 0.9f, 20f, 30f);
+                        if (owned) { var fb = fl.gameObject.AddComponent<Bobber>(); fb.amp = 4f; fb.speed = 5f + k * 2f; }
+                    }
+                    // доска с горячим лавашом
+                    UIKit.Shape(art, UIKit.RoundedSmall, UIKit.Hex("#6D4C41"), 0.8f, 0.16f, 120f, 16f);
+                    for (int k = 0; k < 3; k++) Icons.Lavash(art, 0.8f, 0.24f + k * 0.06f, 96f);
                     if (owned)
                         for (int k = 0; k < 3; k++)
                         {
-                            var steam = UIKit.Shape(art, UIKit.Circle, UIKit.Alpha(Color.white, 0.5f), 0.74f + k * 0.06f, 0.55f + k * 0.04f, 18f, 26f);
+                            var steam = UIKit.Shape(art, UIKit.Circle, UIKit.Alpha(Color.white, 0.5f), 0.74f + k * 0.06f, 0.5f + k * 0.04f, 16f, 24f);
                             var sb = steam.gameObject.AddComponent<Bobber>();
                             sb.amp = 6f;
                             sb.speed = 2f + k;
                         }
                     break;
                 default:
-                    // окно Drive-Thru: здание, окошко, меню-табло и машина
+                    // окно ШаурмаАвто: здание, окошко, табло и машина
                     UIKit.Panel(p, "Road", UIKit.Hex("#546E7A"), 0f, 0f, 1f, 0.24f, false);
                     for (int k = 0; k < 4; k++) UIKit.Panel(p, "Mark", UIKit.Hex("#FFEB3B"), 0.04f + k * 0.26f, 0.11f, 0.16f + k * 0.26f, 0.13f, false);
                     UIKit.Panel(p, "Building", UIKit.Hex("#ECEFF1"), 0.55f, 0.24f, 1f, 0.85f, false);
@@ -223,7 +233,7 @@ namespace ValourGames.Shawarma
                     var win = UIKit.Panel(p, "Win", UIKit.Hex("#B3E5FC"), 0.6f, 0.4f, 0.8f, 0.7f);
                     UIKit.AddOutline(win, UIKit.Dark, 2f);
                     var sign = UIKit.Panel(p, "Sign", col, 0.82f, 0.45f, 0.98f, 0.8f);
-                    UIKit.FitLabel(sign.transform, "DRIVE\nTHRU", 18, Color.white, 0.05f, 0.05f, 0.95f, 0.95f);
+                    UIKit.FitLabel(sign.transform, L.T("ШАУРМА\nАВТО", "SHAWARMA\nAUTO"), 18, Color.white, 0.05f, 0.05f, 0.95f, 0.95f);
                     // машина подъезжает
                     var carR = UIKit.Rect(p, "Car");
                     UIKit.PlaceFixed(carR, 0.3f, 0.3f, 180f, 110f);

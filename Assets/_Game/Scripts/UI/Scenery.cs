@@ -193,12 +193,20 @@ namespace ValourGames.Shawarma
         {
             UIKit.Panel(area, "Tower", UIKit.Hex("#ECEFF1"), 0.82f, 0.15f, 0.86f, 0.7f, false);
             UIKit.Panel(area, "TowerTop", UIKit.Hex("#546E7A"), 0.8f, 0.7f, 0.88f, 0.78f);
+            // самолёт: тёмный контур, синяя полоса, иллюминаторы и красный хвост — не сливается с облаками
             var plane = UIKit.Rect(area, "Plane");
-            UIKit.PlaceFixed(plane, 0.2f, 0.82f, 180f, 60f);
-            UIKit.Shape(plane, UIKit.Rounded, Color.white, 0.5f, 0.5f, 180f, 30f);
-            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#CFD8DC"), 0.5f, 0.5f, 30f, 90f, 20f);
-            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#E53935"), 0.08f, 0.8f, 20f, 40f, 20f);
-            _clouds.Add(new Mover { rt = plane, x = 0.2f, y = 0.82f, vx = 0.04f });
+            UIKit.PlaceFixed(plane, 0.2f, 0.86f, 220f, 80f);
+            plane.SetAsLastSibling();
+            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#37474F"), 0.47f, 0.28f, 60f, 16f, -12f);           // дальнее крыло
+            UIKit.Shape(plane, UIKit.Rounded, UIKit.Hex("#37474F"), 0.5f, 0.5f, 214f, 38f);                        // контур
+            UIKit.Shape(plane, UIKit.Rounded, UIKit.Hex("#F5F7FA"), 0.5f, 0.52f, 206f, 30f);                       // фюзеляж
+            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#1E88E5"), 0.5f, 0.44f, 196f, 8f);                   // полоса
+            for (int i = 0; i < 8; i++) UIKit.Shape(plane, UIKit.Circle, UIKit.Hex("#263238"), 0.3f + i * 0.07f, 0.58f, 8f, 8f);
+            UIKit.Shape(plane, UIKit.Circle, UIKit.Hex("#263238"), 0.95f, 0.56f, 16f, 12f);                        // кабина
+            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#E53935"), 0.07f, 0.82f, 26f, 50f, 25f);             // хвост
+            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#90A4AE"), 0.5f, 0.36f, 40f, 90f, 60f);               // крыло
+            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Alpha(Color.white, 0.6f), -0.25f, 0.5f, 160f, 6f);         // след
+            _clouds.Add(new Mover { rt = plane, x = 0.2f, y = 0.86f, vx = 0.04f });
         }
 
         void BuildTowers(RectTransform area)

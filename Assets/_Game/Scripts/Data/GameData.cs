@@ -19,7 +19,7 @@ namespace ValourGames.Shawarma
     }
 
     /// <summary>Улучшения. Порядок = индекс в SaveData.upgrades. Уровни 0..3 (в игре "Ур. 1..4").</summary>
-    public enum Up { Spit, Knife, Fryer, Grill, Sauce, Bins, Patience, Tips, Price, Pack, Flies, Board, Fire, Queue, Grills, FryBox }
+    public enum Up { Spit, Knife, Fryer, Grill, Sauce, Bins, Patience, Tips, Price, Pack, Flies, Board, Fire, Queue, Grills, FryBox, VegFeed, FryLoad, FryUnload }
 
     /// <summary>Где будут есть: здесь (обёртка) или с собой (обёртка + пакет).</summary>
     public enum ServeMode { Here, ToGo }
@@ -260,16 +260,16 @@ namespace ValourGames.Shawarma
         public static readonly UpgradeDef[] Upgrades =
         {
             U(Up.Spit, "Вертел", "Spit",
-                new[] { "3 куска = порция", "2 куска = порция", "1 взмах = порция", "АВТО-нарезчик", "ЛЕГЕНДА: нарезчик ×2 быстрее" },
-                new[] { "3 pieces = portion", "2 pieces = portion", "1 swipe = portion", "AUTO-cutter", "LEGEND: cutter 2× faster" },
+                new[] { "Порция мяса — 3 взмаха ножом", "Порция — 2 взмаха", "Порция — 1 взмах или касание", "АВТО-нарезчик срезает мясо сам", "ЛЕГЕНДА: нарезчик вдвое быстрее" },
+                new[] { "A meat portion takes 3 knife swipes", "Portion — 2 swipes", "Portion — 1 swipe or tap", "AUTO-cutter slices meat by itself", "LEGEND: cutter twice as fast" },
                 new[] { 600, 3500, 16000, 60000 }),
             U(Up.Knife, "Нож и доска", "Knife & board",
-                new[] { "Перетащи овощ из ящика на доску, 6 ударов", "3 удара", "1 удар + тап по ящику — овощ сам прыгает на доску", "АВТО-слайсер: режет и раскладывает сам", "ЛЕГЕНДА: слайсер ×2 быстрее" },
-                new[] { "Drag a veggie from the crate to the board, 6 chops", "3 chops", "1 chop + tap the crate — veggie jumps on the board", "AUTO-slicer: chops and fills bins", "LEGEND: slicer 2× faster" },
+                new[] { "Овощ рубится за 6 ударов", "За 3 удара", "За 1 удар", "АВТО-нож рубит сам всё, что лежит на доске", "ЛЕГЕНДА: авто-нож вдвое быстрее" },
+                new[] { "A veggie takes 6 chops", "3 chops", "1 chop", "AUTO-knife chops whatever is on the board", "LEGEND: auto-knife twice as fast" },
                 new[] { 600, 3500, 16000, 60000 }),
             U(Up.Fryer, "Фритюр", "Fryer",
-                new[] { "Сырую — тащи во фритюр, готовую — в лоток. 9 сек, 3 порции", "6 сек, 4 порции", "4 сек, 6 порций + тап — картошка прыгает сама", "АВТО: сама прыгает во фритюр и в лоток", "ЛЕГЕНДА: жарит на 40% быстрее" },
-                new[] { "Drag raw fries to the fryer, cooked — to the bin. 9 s, 3 portions", "6 s, 4 portions", "4 s, 6 portions + tap — fries jump by themselves", "AUTO: fries jump in and out by themselves", "LEGEND: 40% faster" },
+                new[] { "Жарит 9 сек, выходит 3 порции", "Жарит 6 сек, 4 порции", "Жарит 4 сек, 6 порций", "Термостат: картошка больше не подгорает", "ЛЕГЕНДА: жарит на 40% быстрее" },
+                new[] { "Fries in 9 s, 3 portions", "6 s, 4 portions", "4 s, 6 portions", "Thermostat: fries never burn", "LEGEND: 40% faster" },
                 new[] { 900, 5000, 22000, 80000 }),
             U(Up.Grill, "Гриль", "Grill",
                 new[] { "Жарит 6 сек", "Жарит 4.5 сек", "Жарит 3.5 сек", "АВТО-таймер: сам переворачивает и снимает", "ЛЕГЕНДА: на 30% быстрее" },
@@ -323,6 +323,18 @@ namespace ValourGames.Shawarma
                 new[] { "Достань коробку и держи над картошкой 1 сек", "Наполняется за 0.5 сек", "Наполняется мгновенно", "АВТО: коробка сама наполняется и встаёт на выдачу", "ЛЕГЕНДА: коробка сама отдаётся клиенту" },
                 new[] { "Take a box and hold it over the fries for 1 s", "Fills in 0.5 s", "Fills instantly", "AUTO: box fills itself and goes to the tray", "LEGEND: box is handed to the customer by itself" },
                 new[] { 700, 4000, 18000, 65000 }),
+            U(Up.VegFeed, "Подача овощей", "Veggie feeder",
+                new[] { "Овощ перетаскиваешь из ящика на доску сам", "Касание ящика — овощ сам ложится на доску", "АВТО: помощник кладёт на доску то, что кончается" },
+                new[] { "You drag veggies from the crate to the board", "Tap the crate — the veggie lands on the board", "AUTO: a helper puts whatever runs out on the board" },
+                new[] { 1500, 20000 }),
+            U(Up.FryLoad, "Засыпка фритюра", "Fryer loader",
+                new[] { "Сырую картошку перетаскиваешь во фритюр сам", "Касание ящика — картошка высыпается во фритюр", "АВТО: помощник сам засыпает картошку во фритюр" },
+                new[] { "You drag raw fries into the fryer", "Tap the crate — fries pour into the fryer", "AUTO: a helper loads the fryer by itself" },
+                new[] { 1500, 20000 }),
+            U(Up.FryUnload, "Выгрузка фритюра", "Fryer unloader",
+                new[] { "Готовую корзину перетаскиваешь в лоток сам", "Касание корзины — картошка пересыпается в лоток", "АВТО: помощник сам пересыпает готовую картошку в лоток" },
+                new[] { "You drag the cooked basket to the bin", "Tap the basket — fries pour into the bin", "AUTO: a helper empties cooked fries into the bin" },
+                new[] { 1500, 20000 }),
         };
 
         // Локации идут по очереди. Переезд на следующую = РЕБЁРТ (как в Roblox):
@@ -479,8 +491,8 @@ namespace ValourGames.Shawarma
         public static float BoxFillTime(int l)      { return l >= 2 ? 0f : (l == 1 ? 0.5f : 1f); }
         public static bool  BoxAuto(int l)          { return l >= 3; }
         public static bool  BoxDeliver(int l)       { return l >= 4; }
-        public static bool  KnifeTapCrate(int l)    { return l >= 2; }
-        public static bool  FryerTap(int l)         { return l >= 2; }
+        public static bool  HelperTap(int l)        { return l >= 1; }
+        public static bool  HelperAuto(int l)       { return l >= 2; }
         public static bool  AutoAsk(int tipsLvl)    { return tipsLvl >= 3; }
         public static int   FlyHits(int l)          { return l >= 1 ? 1 : 3; }
         public static int   DirtyAfter(int l)       { return l >= 4 ? 99999 : (l >= 2 ? 8 : 4); }

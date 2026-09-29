@@ -98,6 +98,47 @@ namespace ValourGames.Shawarma
             }
         }
 
+        static Sprite _arrow;
+        /// <summary>Ровная сплошная стрелка вправо (древко + наконечник), со сглаженными краями. Влево — поверни на 180°.</summary>
+        public static Sprite Arrow
+        {
+            get
+            {
+                if (_arrow != null) return _arrow;
+                const int s = 256;
+                var poly = new[]
+                {
+                    new Vector2(28, 100), new Vector2(128, 100), new Vector2(128, 38), new Vector2(232, 128),
+                    new Vector2(128, 218), new Vector2(128, 156), new Vector2(28, 156)
+                };
+                var tex = new Texture2D(s, s, TextureFormat.RGBA32, false);
+                tex.wrapMode = TextureWrapMode.Clamp;
+                tex.filterMode = FilterMode.Bilinear;
+                var px = new Color32[s * s];
+                for (int y = 0; y < s; y++)
+                    for (int x = 0; x < s; x++)
+                    {
+                        var pt = new Vector2(x + 0.5f, y + 0.5f);
+                        bool inside = false;
+                        float best = float.MaxValue;
+                        for (int i = 0, j = poly.Length - 1; i < poly.Length; j = i++)
+                        {
+                            var a = poly[i]; var b = poly[j];
+                            if (((a.y > pt.y) != (b.y > pt.y)) && (pt.x < (b.x - a.x) * (pt.y - a.y) / (b.y - a.y) + a.x)) inside = !inside;
+                            var ab = b - a;
+                            float t = Mathf.Clamp01(Vector2.Dot(pt - a, ab) / ab.sqrMagnitude);
+                            best = Mathf.Min(best, (a + ab * t - pt).magnitude);
+                        }
+                        float alpha = inside ? Mathf.Clamp01(best + 0.5f) : Mathf.Clamp01(0.5f - best);
+                        px[y * s + x] = new Color32(255, 255, 255, (byte)(alpha * 255));
+                    }
+                tex.SetPixels32(px);
+                tex.Apply();
+                _arrow = Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 100f);
+                return _arrow;
+            }
+        }
+
         /// <summary>Вертикальный градиент сверху вниз.</summary>
         public static Sprite Gradient(Color top, Color bottom)
         {

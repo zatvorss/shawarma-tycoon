@@ -16,7 +16,7 @@ namespace ValourGames.Shawarma
         public bool sound = true;
         public bool music = true;
         public string lang = "";   // "" = авто, "ru", "en"
-        public int[] upgrades = new int[16];
+        public int[] upgrades = new int[19];
 
         // статистика для достижений
         public int totalPerfect = 0;

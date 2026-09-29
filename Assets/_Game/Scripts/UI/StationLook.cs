@@ -96,6 +96,24 @@ namespace ValourGames.Shawarma
                     p.speed = 3f;
                     break;
                 }
+                case Up.VegFeed:
+                case Up.FryLoad:
+                case Up.FryUnload:
+                {
+                    // рука-помощник переносит продукт туда-сюда
+                    UIKit.Shape(holder, UIKit.RoundedSmall, UIKit.Hex("#455A64"), 0.5f, 0.08f, size * 0.5f, size * 0.14f);
+                    var arm = UIKit.Rect(holder, "Arm");
+                    UIKit.PlaceFixed(arm, 0.5f, 0.12f, size * 0.14f, size * 0.8f);
+                    arm.pivot = new Vector2(0.5f, 0f);
+                    arm.anchoredPosition = Vector2.zero;
+                    UIKit.Shape(arm, UIKit.RoundedSmall, UIKit.Hex("#90A4AE"), 0.5f, 0.5f, size * 0.12f, size * 0.8f);
+                    UIKit.Shape(arm, UIKit.Circle, UIKit.Hex("#37474F"), 0.5f, 1.0f, size * 0.3f, size * 0.3f);
+                    Icons.Ingredient(arm, id == Up.VegFeed ? Ing.Tomato : Ing.Fries, 0.5f, 1.12f, size * 0.4f);
+                    var p = arm.gameObject.AddComponent<Pendulum>();
+                    p.angle = 40f;
+                    p.speed = 3f;
+                    break;
+                }
                 case Up.FryBox:
                 {
                     UIKit.Shape(holder, UIKit.RoundedSmall, UIKit.Hex("#455A64"), 0.5f, 0.08f, size * 0.5f, size * 0.14f);

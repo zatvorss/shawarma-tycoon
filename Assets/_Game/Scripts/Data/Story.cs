@@ -9,7 +9,7 @@ namespace ValourGames.Shawarma
     }
 
     /// <summary>
-    /// Сюжет: дядя Ашот передал тебе свой ларёк. Корпорация «ШаурмаКинг» забрала его ресторан.
+    /// Сюжет: дядя Ашот передал тебе свой ларёк. Корпорация «МегаШаурма» забрала его ресторан.
     /// Пройди путь к миллиарду, переезжая всё выше, — и верни имя семьи.
     /// Главы: 0 — начало, 1 — первая встреча с конкурентом, 2..10 — переезд на локацию 1..9, 11 — финал.
     /// </summary>
@@ -23,7 +23,7 @@ namespace ValourGames.Shawarma
             switch (w)
             {
                 case Ashot: return L.T("Дядя Ашот", "Uncle Ashot");
-                case King: return L.T("Мистер Кинг", "Mr. King");
+                case King: return L.T("Мистер Мега", "Mr. Mega");
                 case Reporter: return L.T("Репортёр Лена", "Reporter Lena");
                 default: return L.T("Ты", "You");
             }
@@ -41,7 +41,7 @@ namespace ValourGames.Shawarma
                 case 0: return new[]
                 {
                     A("Сынок, этот ларёк кормил весь двор тридцать лет. Теперь он твой.", "Son, this kiosk fed the whole yard for thirty years. Now it's yours."),
-                    A("Корпорация «ШаурмаКинг» скупает все точки в городе. Они забрали и мой ресторан.", "The “ShawarmaKing” corporation is buying every spot in town. They took my restaurant too."),
+                    A("Корпорация «МегаШаурма» скупает все точки в городе. Они забрали и мой ресторан.", "The “MegaShawarma” corporation is buying every spot in town. They took my restaurant too."),
                     A("Докажи, что настоящая шаурма сильнее. Пройди путь к миллиарду — и верни наше имя!", "Prove that real shawarma is stronger. Walk the road to a billion — and win our name back!"),
                     M("Я не подведу, дядя Ашот!", "I won't let you down, Uncle Ashot!"),
                 };
@@ -92,7 +92,7 @@ namespace ValourGames.Shawarma
                 {
                     A("Сынок... последний шаг. Отсюда видно весь город.", "Son... the last step. You can see the whole city from here."),
                     K("Небоскрёб? Мой офис этажом выше. Не мешай мне тут жарить!", "The skyscraper? My office is one floor up. Stop grilling under me!"),
-                    M("Скоро это будет наш этаж, мистер Кинг.", "Soon this will be our floor, Mr. King."),
+                    M("Скоро это будет наш этаж, мистер Мега.", "Soon this will be our floor, Mr. Mega."),
                 };
                 case 11: return new[]
                 {

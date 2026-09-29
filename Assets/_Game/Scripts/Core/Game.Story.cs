@@ -105,9 +105,9 @@ namespace ValourGames.Shawarma
                     break;
                 case Story.King:
                     UIKit.Shape(h, UIKit.RoundedSmall, UIKit.Hex("#111111"), 0.5f, 0.56f, 150f, 36f);   // очки
-                    for (int i = 0; i < 3; i++) UIKit.Shape(h, UIKit.RoundedSmall, UIKit.Gold, 0.3f + i * 0.2f, 1.1f, 34f, 34f, 45f);  // корона
-                    UIKit.Shape(h, UIKit.RoundedSmall, UIKit.Gold, 0.5f, 0.99f, 156f, 46f);
-                    UIKit.Shape(h, C, UIKit.Red, 0.5f, 0.99f, 22f, 22f);
+                    UIKit.Shape(h, R, UIKit.Hex("#111111"), 0.55f, 0.95f, 190f, 70f, -6f);                // зализанный чуб
+                    var med = UIKit.Shape(p, C, UIKit.Gold, 0.5f, 0.12f, 70f, 70f);                          // медальон «М»
+                    UIKit.FitLabel(med.transform, "M", 44, UIKit.Hex("#6A1B9A"), 0.1f, 0.1f, 0.9f, 0.9f);
                     break;
                 case Story.Reporter:
                     UIKit.Shape(p, R, UIKit.Hex("#5D4037"), 0.5f, 0.72f, 210f, 110f);                    // волосы
