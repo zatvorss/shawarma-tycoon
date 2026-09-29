@@ -98,6 +98,7 @@ namespace ValourGames.Shawarma
         // --- коробки фри ---
         int _lvBox, _lvVeg, _lvFryLoad, _lvFryUnload, _lvDrinks;
         bool _grillOn, _packingOn;
+        RectTransform _lavashCell, _wrapShawarmaBtn, _cupsCell;
         float _autoVegT;
         RectTransform[] _vegCells;
         DragSource _boxSrc;
@@ -1518,6 +1519,7 @@ namespace ValourGames.Shawarma
                     Icons.Lavash(bg.transform, 0.5f, 0.6f, 76f);
                     UIKit.FitLabel(bg.transform, L.T("Лаваш", "Lavash"), 22, UIKit.Dark, 0.05f, 0.02f, 0.95f, 0.24f);
                     UIKit.MakeButton(bg, OnLavash);
+                    _lavashCell = bg.rectTransform;
                     BuildTandoor(bg.transform);
                     continue;
                 }
@@ -1559,7 +1561,7 @@ namespace ValourGames.Shawarma
             _boardList.resizeTextMinSize = 12;
             _boardList.resizeTextMaxSize = 22;
 
-            UIKit.Button(p, L.T("Завернуть", "Wrap"), UIKit.Green, OnWrap, 0.695f, 0.215f, 0.985f, 0.39f, 38);
+            _wrapShawarmaBtn = UIKit.Button(p, L.T("Завернуть", "Wrap"), UIKit.Green, OnWrap, 0.695f, 0.215f, 0.985f, 0.39f, 38).transform as RectTransform;
             UIKit.Button(p, L.T("В мусор", "Trash"), UIKit.Red, OnTrash, 0.695f, 0.03f, 0.985f, 0.2f, 34);
         }
 
@@ -1623,6 +1625,7 @@ namespace ValourGames.Shawarma
 
             // стопка стаканов
             var cups = UIKit.Panel(u, "Cups", Color.white, 0.04f, 0.53f, 0.48f, 0.96f);
+            _cupsCell = cups.rectTransform;
             if (cola || ayran)
             {
                 Icons.DrinkCup(cups.transform, Drink.None, 0.36f, 0.45f, 50f, 0f);

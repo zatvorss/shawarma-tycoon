@@ -857,6 +857,8 @@ namespace ValourGames.Shawarma
 
         /// <summary>На 1-й локации упаковки нет: не спрашиваем «здесь или с собой».</summary>
         public static bool PackingOn = true;
+        /// <summary>Идёт обучение — терпение не тратится.</summary>
+        public static bool Frozen;
 
         void BuildStrip()
         {
@@ -973,7 +975,7 @@ namespace ValourGames.Shawarma
                 return;
             }
 
-            patience -= dt;
+            if (!Frozen) patience -= dt;
             float f = PatienceFrac;
             UIKit.SetFill(_barFill, f);
             _barImg.color = f > 0.5f ? UIKit.Green : (f > 0.25f ? UIKit.Orange : UIKit.Red);

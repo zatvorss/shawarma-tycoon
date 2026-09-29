@@ -140,8 +140,12 @@ namespace ValourGames.Shawarma
             RefreshAllKitchen();
             RefreshHud();
 
-            ShowDayIntro();
-            _spawnTimer = 4.5f;
+            if (NeedBasics) StartBasics();
+            else
+            {
+                ShowDayIntro();
+                _spawnTimer = 4.5f;
+            }
         }
 
         // =====================================================================
@@ -168,6 +172,16 @@ namespace ValourGames.Shawarma
             if (_ended || _paused) return;
 
             float dt = Time.deltaTime;
+            TickTutor();
+            Customer.Frozen = TutorFrozen;
+            if (TutorFrozen)
+            {
+                // во время обучения время дня стоит: клиенты не теряют терпение, новые не приходят
+                TickKitchen(dt);
+                TickCustomers(dt);
+                RefreshHud();
+                return;
+            }
             _elapsed += dt;
             if (_hypeT > 0f) _hypeT -= dt;
             TickFever(dt);
@@ -838,6 +852,7 @@ namespace ValourGames.Shawarma
             var hud = UIKit.Panel(_root, "HUD", UIKit.Dark, 0, 0.93f, 1, 1, false);
             _dayText = UIKit.Label(hud.transform, "", 34, UIKit.Cream, TextAnchor.MiddleLeft, 0.012f, 0f, 0.12f, 1, true);
             BuildQueuePill();
+            BuildFeverPill();
             var qb = UIKit.Button(hud.transform, "", UIKit.Purple, ShowQuests, 0.125f, 0.12f, 0.265f, 0.88f, 26);
             _questBtn = qb.transform;
             _questText = qb.GetComponentInChildren<Text>();
@@ -856,12 +871,11 @@ namespace ValourGames.Shawarma
             // рейтинг ларька
             Icons.Star(hud.transform, 0.705f, 0.5f, 40f, true);
             _repText = UIKit.Label(hud.transform, "", 30, UIKit.Gold, TextAnchor.MiddleLeft, 0.722f, 0, 0.785f, 1, true);
-            _repText.lineSpacing = 0.8f;
 
             _comboText = UIKit.Label(hud.transform, "", 30, UIKit.Orange, TextAnchor.MiddleCenter, 0.625f, 0, 0.69f, 1, true);
 
             _moneyIcon = Icons.Coin(hud.transform, 0.8f, 0.5f, 50f);
-            _moneyText = UIKit.Label(hud.transform, "", 40, UIKit.Gold, TextAnchor.MiddleLeft, 0.82f, 0, 0.93f, 1, true);
+            _moneyText = UIKit.Label(hud.transform, "", 40, UIKit.Gold, TextAnchor.MiddleLeft, 0.82f, 0, 0.935f, 1, true);
 
             UIKit.Button(hud.transform, "II", UIKit.Steel, () => SetPaused(true), 0.938f, 0.1f, 0.992f, 0.9f, 34);
         }
@@ -940,6 +954,38 @@ namespace ValourGames.Shawarma
             _queuePill.SetActive(false);
         }
 
+        // --- табличка «ЖАРА» под навесом: огонёк, надпись и полоска оставшегося времени ---
+        GameObject _feverPill;
+        RectTransform _feverBar;
+        Text _feverText;
+
+        void BuildFeverPill()
+        {
+            var pill = UIKit.Panel(_root, "FeverPill", UIKit.Hex("#BF360C"), 0.6f, 0.868f, 0.8f, 0.925f);
+            UIKit.AddShadow(pill, 6f, 0.4f);
+            UIKit.AddOutline(pill, UIKit.Gold, 2f);
+            var fl = UIKit.Rect(pill.transform, "Flame");
+            UIKit.PlaceFixed(fl, 0.1f, 0.5f, 40f, 50f);
+            UIKit.Shape(fl, UIKit.Circle, UIKit.Hex("#FF9800"), 0.5f, 0.45f, 34f, 42f);
+            UIKit.Shape(fl, UIKit.Circle, UIKit.Hex("#FFEB3B"), 0.5f, 0.36f, 18f, 24f);
+            fl.gameObject.AddComponent<Bobber>().amp = 3f;
+            _feverText = UIKit.FitLabel(pill.transform, "", 26, Color.white, 0.2f, 0.3f, 0.97f, 0.97f);
+            UIKit.AddShadow(_feverText, 2f, 0.6f);
+            _feverBar = UIKit.Bar(pill.transform, UIKit.Alpha(Color.black, 0.35f), UIKit.Gold, 0.22f, 0.1f, 0.95f, 0.28f);
+            _feverPill = pill.gameObject;
+            _feverPill.SetActive(false);
+        }
+
+        void RefreshFeverPill()
+        {
+            if (_feverPill == null) return;
+            bool on = _feverT > 0f;
+            if (_feverPill.activeSelf != on) _feverPill.SetActive(on);
+            if (!on) return;
+            _feverText.text = L.T("ЖАРА: деньги ×2 · ", "FEVER: money ×2 · ") + Mathf.CeilToInt(_feverT) + L.T(" с", " s");
+            UIKit.SetFill(_feverBar, _feverT / FeverTime);
+        }
+
         void RefreshQueuePill()
         {
             if (_queuePill == null) return;
@@ -981,15 +1027,15 @@ namespace ValourGames.Shawarma
             _goalFill.GetComponent<Image>().color = got >= _goal ? UIKit.Gold : UIKit.Green;
             _goalText.text = L.T("Цель ", "Goal ") + got + " / " + _goal;
 
-            _moneyText.text = GameData.Money(_save.money);
-            _comboText.text = _feverT > 0f ? L.T("ЖАРА ×2 ", "FEVER ×2 ") + Mathf.CeilToInt(_feverT)
-                : (_combo >= 2 ? "×" + GameData.ComboMult(_combo).ToString("0.0") : "");
-            _comboText.color = _feverT > 0f ? (Mathf.PingPong(Time.time * 6f, 1f) > 0.5f ? UIKit.Gold : UIKit.Red) : UIKit.Orange;
+            _comboText.text = _combo >= 2 ? "×" + GameData.ComboMult(_combo).ToString("0.0") : "";
+            _comboText.color = UIKit.Orange;
+            RefreshFeverPill();
+            UIKit.SetMoney(_moneyText, _save.money, 40);
 
             string hint = Hint();
             _hintBulb.SetActive(hint.Length > 0);
             _hintText.text = hint;
-            _repText.text = "<size=15><color=#FFE9A8>" + L.T("рейтинг", "rating") + "</color></size>\n" + _save.rep.ToString("0.0");
+            _repText.text = _save.rep.ToString("0.0");
         }
 
         public void Toast(string msg)
