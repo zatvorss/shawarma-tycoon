@@ -4,7 +4,7 @@ using UnityEngine;
 namespace ValourGames.Shawarma
 {
     /// <summary>Ингредиенты. Порядок = индекс в массивах запасов и заказов.</summary>
-    public enum Ing { Meat, Tomato, Cucumber, Cabbage, Cheese, Jalapeno, Fries, Garlic, Spicy }
+    public enum Ing { Meat, Tomato, Cucumber, Cabbage, Cheese, Onion, Fries, Garlic, Spicy }
 
     /// <summary>Как пополняется запас ингредиента.</summary>
     public enum Restock { Spit, Chop, Fryer, Sauce }
@@ -35,18 +35,18 @@ namespace ValourGames.Shawarma
         public string ru, en, shortRu, shortEn;
         public Color color;
         public int price;
-        public int unlockDay;
+        public int unlockLoc;   // с какой локации (индекс) открывается: по одной новой начинке на каждую локацию
         public Restock restock;
 
         public string Name { get { return L.T(ru, en); } }
         public string Short { get { return L.T(shortRu, shortEn); } }
 
         public IngredientDef(Ing id, string ru, string en, string shortRu, string shortEn,
-            string hex, int price, int unlockDay, Restock restock)
+            string hex, int price, int unlockLoc, Restock restock)
         {
             this.id = id; this.ru = ru; this.en = en; this.shortRu = shortRu; this.shortEn = shortEn;
             color = UIKit.Hex(hex);
-            this.price = price; this.unlockDay = unlockDay; this.restock = restock;
+            this.price = price; this.unlockLoc = unlockLoc; this.restock = restock;
         }
     }
 
@@ -167,15 +167,15 @@ namespace ValourGames.Shawarma
 
         public static readonly IngredientDef[] Ingredients =
         {
-            new IngredientDef(Ing.Meat,     "Мясо",       "Meat",        "Мясо",    "Meat",    "#B5542D", 60, 1,  Restock.Spit),
-            new IngredientDef(Ing.Tomato,   "Помидор",    "Tomato",      "Помидор", "Tomato",  "#E0413A", 15, 1,  Restock.Chop),
-            new IngredientDef(Ing.Cucumber, "Огурец",     "Cucumber",    "Огурец",  "Cucumb.", "#3E9B3E", 15, 2,  Restock.Chop),
-            new IngredientDef(Ing.Cabbage,  "Капуста",    "Cabbage",     "Капуста", "Cabbage", "#8DBF4A", 10, 5,  Restock.Chop),
-            new IngredientDef(Ing.Cheese,   "Сыр",        "Cheese",      "Сыр",     "Cheese",  "#F2C94C", 30, 6,  Restock.Chop),
-            new IngredientDef(Ing.Jalapeno, "Халапеньо",  "Jalapeno",    "Халап.",  "Jalap.",  "#2E7D32", 20, 10, Restock.Chop),
-            new IngredientDef(Ing.Fries,    "Картошка",   "Fries",       "Картоф.", "Fries",   "#E8B321", 25, 3,  Restock.Fryer),
-            new IngredientDef(Ing.Garlic,   "Чесн. соус", "Garlic sauce","Чесн.",   "Garlic",  "#E9E1C8", 10, 1,  Restock.Sauce),
-            new IngredientDef(Ing.Spicy,    "Остр. соус", "Hot sauce",   "Острый",  "Hot",     "#C62828", 15, 7,  Restock.Sauce),
+            new IngredientDef(Ing.Meat,     "Мясо",             "Meat",          "Мясо",      "Meat",     "#B5542D", 60, 0, Restock.Spit),
+            new IngredientDef(Ing.Tomato,   "Помидор",          "Tomato",        "Помидор",   "Tomato",   "#E0413A", 15, 0, Restock.Chop),
+            new IngredientDef(Ing.Cucumber, "Огурец",           "Cucumber",      "Огурец",    "Cucumber", "#3E9B3E", 15, 1, Restock.Chop),
+            new IngredientDef(Ing.Cabbage,  "Капуста",          "Cabbage",       "Капуста",   "Cabbage",  "#8DBF4A", 10, 3, Restock.Chop),
+            new IngredientDef(Ing.Cheese,   "Сыр",              "Cheese",        "Сыр",       "Cheese",   "#F2C94C", 30, 5, Restock.Chop),
+            new IngredientDef(Ing.Onion,    "Маринованный лук", "Pickled onion", "Лук",       "Onion",    "#AB47BC", 20, 6, Restock.Chop),
+            new IngredientDef(Ing.Fries,    "Картошка",         "Fries",         "Картошка",  "Fries",    "#E8B321", 25, 2, Restock.Fryer),
+            new IngredientDef(Ing.Garlic,   "Чесночный соус",   "Garlic sauce",  "Чесночный", "Garlic",   "#E9E1C8", 10, 0, Restock.Sauce),
+            new IngredientDef(Ing.Spicy,    "Острый соус",      "Hot sauce",     "Острый",    "Hot",      "#C62828", 15, 4, Restock.Sauce),
         };
 
         public static readonly DrinkDef[] Drinks =
@@ -352,34 +352,34 @@ namespace ValourGames.Shawarma
         public static readonly LocationDef[] Locations =
         {
             Loc(0, "Ларёк во дворе", "Backyard kiosk", "Здесь всё началось. Ларёк дяди Ашота.", "Where it all began. Uncle Ashot's kiosk.",
-                0, 1, 1f, 1f, 1f, 1f, "#6EC6F0", "#FDE7C4", "#C4BBAA", "#C0392B", false, "city",
+                0, 1, 1f, 1.0f, 1.0f, 1f, "#6EC6F0", "#FDE7C4", "#C4BBAA", "#C0392B", false, "city",
                 new[] { 40, 20, 10, 12, 6, 2, 4, 2, 4, 10 }, 0.08f, 0.36f),
             Loc(1, "Рынок", "Market", "Шумно, торгуются, но народу — тьма.", "Noisy, lots of haggling, huge crowds.",
-                5000, 5, 1.3f, 0.95f, 0.9f, 1f, "#81D4FA", "#FFF3E0", "#BCAAA4", "#E67E22", false, "market",
+                11000, 6, 1.3f, 1.0f, 0.95f, 1f, "#81D4FA", "#FFF3E0", "#BCAAA4", "#E67E22", false, "market",
                 new[] { 35, 10, 10, 20, 5, 3, 3, 4, 10, 8 }, 0.18f, 0.66f),
             Loc(2, "Вокзал", "Train station", "Все торопятся, но платят больше.", "Everyone rushes but pays more.",
-                15000, 5, 1.7f, 0.8f, 0.85f, 1.2f, "#9EC9E8", "#F2E3CF", "#A7A7A7", "#2E86AB", false, "city",
+                40000, 11, 1.7f, 0.95f, 0.9f, 1.2f, "#9EC9E8", "#F2E3CF", "#A7A7A7", "#2E86AB", false, "city",
                 new[] { 25, 8, 35, 8, 4, 4, 4, 8, 4, 4 }, 0.29f, 0.36f),
             Loc(3, "Пляж", "Beach", "Жарко! Все хотят пить. Много блогеров и туристов.", "Hot! Everyone is thirsty. Bloggers and tourists.",
-                40000, 6, 2.2f, 1f, 0.85f, 2f, "#29B6F6", "#FFF3C4", "#E8D39A", "#F39C12", false, "beach",
+                145000, 18, 2.2f, 1.0f, 0.9f, 2f, "#29B6F6", "#FFF3C4", "#E8D39A", "#F39C12", false, "beach",
                 new[] { 25, 10, 4, 6, 20, 4, 10, 18, 0, 8 }, 0.4f, 0.68f),
             Loc(4, "Кампус", "Campus", "Толпы студентов: платят мало, но их очень много.", "Crowds of students: cheap but many.",
-                100000, 6, 2.6f, 1.1f, 0.6f, 1f, "#81C784", "#FFF8E1", "#B8B0A0", "#8E44AD", false, "city",
+                250000, 18, 2.6f, 1.1f, 0.8f, 1f, "#81C784", "#FFF8E1", "#B8B0A0", "#8E44AD", false, "city",
                 new[] { 10, 55, 4, 3, 10, 2, 8, 2, 2, 8 }, 0.5f, 0.36f),
             Loc(5, "Стадион", "Stadium", "Финал кубка! Болельщики и спортсмены.", "Cup final! Fans and athletes.",
-                250000, 7, 3.2f, 0.7f, 0.55f, 1.4f, "#4FC3F7", "#E1F5FE", "#9E9E9E", "#1565C0", false, "stadium",
+                310000, 18, 3.2f, 0.95f, 0.85f, 1.4f, "#4FC3F7", "#E1F5FE", "#9E9E9E", "#1565C0", false, "stadium",
                 new[] { 25, 10, 5, 2, 10, 3, 35, 5, 5, 5 }, 0.6f, 0.68f),
             Loc(6, "Аэропорт", "Airport", "Туристы со всего мира и бизнес-класс.", "Tourists from all over the world.",
-                600000, 7, 4f, 0.75f, 0.7f, 1.3f, "#B3E5FC", "#ECEFF1", "#B0BEC5", "#00838F", false, "airport",
+                460000, 18, 4f, 0.95f, 0.85f, 1.3f, "#B3E5FC", "#ECEFF1", "#B0BEC5", "#00838F", false, "airport",
                 new[] { 15, 5, 30, 4, 6, 6, 4, 30, 0, 0 }, 0.7f, 0.36f),
             Loc(7, "Ночной центр", "Downtown night", "Ночь, неон, критики и блогеры.", "Night, neon, critics and bloggers.",
-                1500000, 8, 5f, 0.7f, 0.7f, 1.5f, "#0B1633", "#3A2F5B", "#4A4A5A", "#E91E63", true, "city",
+                640000, 18, 5f, 0.95f, 0.85f, 1.5f, "#0B1633", "#3A2F5B", "#4A4A5A", "#E91E63", true, "city",
                 new[] { 30, 10, 15, 0, 25, 10, 5, 5, 0, 0 }, 0.8f, 0.68f),
             Loc(8, "Фудкорт ТЦ", "Mall food court", "Высшая лига. Безумный поток.", "The big league. Insane traffic.",
-                4000000, 8, 6.5f, 0.7f, 0.5f, 1.3f, "#F5E6D3", "#E0CDB5", "#D7CCC8", "#16A085", false, "mall",
+                900000, 18, 6.5f, 0.95f, 0.8f, 1.3f, "#F5E6D3", "#E0CDB5", "#D7CCC8", "#16A085", false, "mall",
                 new[] { 20, 15, 15, 8, 12, 8, 6, 6, 2, 8 }, 0.88f, 0.36f),
             Loc(9, "Небоскрёб", "Skyscraper", "Вершина города. Отсюда виден миллиард.", "The top of the city. A billion in sight.",
-                12000000, 10, 9f, 0.65f, 0.45f, 1.5f, "#1A237E", "#FF8A65", "#546E7A", "#FFC928", true, "towers",
+                1280000, 18, 9f, 0.9f, 0.8f, 1.5f, "#1A237E", "#FF8A65", "#546E7A", "#FFC928", true, "towers",
                 new[] { 15, 5, 35, 2, 12, 15, 4, 10, 0, 2 }, 0.94f, 0.7f),
         };
 
@@ -433,8 +433,9 @@ namespace ValourGames.Shawarma
 
         // ---------- параметры дня ----------
         public static float DayDuration(int day)   { return Mathf.Min(100f + day * 4f, 160f); }
-        public static float SpawnInterval(int day) { return Mathf.Max(11f - day * 0.6f, 4f); }
-        public static float BasePatience(int day)  { return Mathf.Max(55f - day * 1.6f, 26f); }
+        public static float SpawnInterval(int day) { return Mathf.Max(12f - day * 0.4f, 6.5f); }
+        /// <summary>Базовое терпение. К нему прибавляется +4 сек за каждый пункт заказа (см. DayRun.SpawnCustomer).</summary>
+        public static float BasePatience(int day)  { return Mathf.Max(70f - day * 1f, 48f); }
         public static int   MaxActive(int day)     { return day < 3 ? 2 : (day < 6 ? 3 : 4); }
         public static int   MaxToppings(int day)   { return Mathf.Clamp(1 + day / 3, 1, 5); }
         public static float DoubleMeatChance(int day) { return day < 4 ? 0f : Mathf.Min(0.15f + day * 0.02f, 0.45f); }
@@ -443,7 +444,65 @@ namespace ValourGames.Shawarma
         /// <summary>Цель дня по выручке. Не выполнил — день повторяется.</summary>
         public static int Goal(int day, LocationDef loc)
         {
-            return Mathf.RoundToInt((200f + day * 150f) * loc.price / 10f) * 10;
+            // цель — примерно треть того, что заработает средний игрок; первые два дня — мягче
+            float k = day <= 2 ? 0.25f : 0.35f;
+            return Mathf.Max(100, Mathf.RoundToInt(k * ExpectedDayIncome(loc.id, day) / 10f) * 10);
+        }
+
+        // =====================================================================
+        //  ЭКОНОМИКА. Модель среднего игрока без улучшений и рекламы:
+        //  1-я → 2-я локация ≈ 15 минут, 2-я → 3-я ≈ 30 минут, дальше ≈ час на локацию.
+        // =====================================================================
+
+        /// <summary>Сколько в среднем зарабатывает игрок за день на локации (без улучшений).</summary>
+        public static float ExpectedDayIncome(int loc, int day)
+        {
+            loc = Mathf.Clamp(loc, 0, Locations.Length - 1);
+            var L = Locations[loc];
+            int e = EffDay(day, loc);
+            float dur = DayDuration(day);
+            float interval = SpawnInterval(day) * L.spawn * 0.956f;
+            float arrivals = dur / interval;
+            int tops = loc + 2;
+            float m = Mathf.Min(MaxToppings(e), tops);
+            float k = (1f + m) / 2f;
+            float dm = DoubleMeatChance(e);
+            float items = 1f + k + dm;
+            float torder = 8f + 0.8f * items;
+            float served = 0.9f * Mathf.Min(arrivals, dur / torder);
+            float price = (40f + 60f * (1f + dm) + k * 15f + Mathf.Min(0.8f, 0.4f * L.drink) * 50f) * L.price * RebirthMult(loc) * 1.15f * 1.05f * 1.12f;
+            return served * price;
+        }
+
+        /// <summary>Сколько игрок зарабатывает за всё время на локации до переезда (по модели выше).</summary>
+        static readonly float[] _stayIncome = { 14281f, 51502f, 182910f, 311336f, 390860f, 574465f, 801379f, 1137344f, 1596296f, 2462597f };
+
+        /// <summary>Во сколько раз дневной доход на локации больше, чем в самом начале. Для цен бустеров и т.п.</summary>
+        public static float EconScale(int loc) { return ExpectedDayIncome(loc, 5) / ExpectedDayIncome(0, 5); }
+
+        static readonly float[] _levelFactor = { 1f, 2.2f, 4f, 7f };
+        static float _meanBase = -1f;
+
+        /// <summary>
+        /// Цена улучшения: все доступные на локации уровни вместе стоят ≈60% того, что там заработаешь.
+        /// Чем дороже уровень — тем дороже (×1, ×2.2, ×4, ×7). Вес предмета — из его базовой цены.
+        /// </summary>
+        public static int UpgradeCost(UpgradeDef def, int lvl, int loc)
+        {
+            loc = Mathf.Clamp(loc, 0, Locations.Length - 1);
+            if (_meanBase < 0f)
+            {
+                float sum = 0f;
+                foreach (var u in Upgrades) sum += u.costs[0];
+                _meanBase = sum / Upgrades.Length;
+            }
+            float w = def.costs[0] / _meanBase;
+            int cap = Mathf.Max(1, UpgradeDef.CapAt(loc));
+            float lf = 0f;
+            for (int i = 0; i < cap && i < _levelFactor.Length; i++) lf += _levelFactor[i];
+            float unit = 0.6f * _stayIncome[loc] / (Upgrades.Length * lf);
+            float v = w * _levelFactor[Mathf.Clamp(lvl, 0, _levelFactor.Length - 1)] * unit;
+            return Mathf.Max(50, Mathf.RoundToInt(v / 10f) * 10);
         }
 
         // ---------- эффекты улучшений (lvl 0..3) ----------
@@ -503,8 +562,15 @@ namespace ValourGames.Shawarma
         public static int   QueueMax(int l)         { return l >= 4 ? 10 : (l >= 2 ? 8 : 6); }
         public static float ComboMult(int combo)    { return 1f + 0.1f * Mathf.Min(combo, 10); }
 
-        public static bool Unlocked(Ing id, int day) { return Get(id).unlockDay <= day; }
+        /// <summary>Открыта ли начинка на этой локации (по одной новой на каждой локации).</summary>
+        public static bool IngOpen(Ing id, int loc) { return Get(id).unlockLoc <= loc; }
         public static bool Unlocked(Drink id, int day) { return id != Drink.None && Get(id).unlockDay <= day; }
+        /// <summary>Напиток/гарнир доступен: напитки — по «эффективному дню», картошка фри — вместе с картошкой.</summary>
+        public static bool DrinkOpen(Drink id, int eday, int loc)
+        {
+            if (id == Drink.Fries) return IngOpen(Ing.Fries, loc);
+            return Unlocked(id, eday);
+        }
 
         // ---------- заказы: массив количеств по Ing ----------
         public static int[] NewCounts() { return new int[IngCount]; }
@@ -544,11 +610,12 @@ namespace ValourGames.Shawarma
         }
 
         /// <summary>Что нового открывается в этот день.</summary>
-        public static string NewStuff(int day)
+        /// <summary>Что нового сегодня. day — «эффективный день», loc — локация, localDay — день на этой локации.</summary>
+        public static string NewStuff(int day, int loc, int localDay)
         {
             var parts = new List<string>();
-            foreach (var d in Ingredients) if (d.unlockDay == day && day > 1) parts.Add(d.Name);
-            for (int i = 1; i < Drinks.Length; i++) if (Drinks[i].unlockDay == day) parts.Add(Drinks[i].Name);
+            foreach (var d in Ingredients) if (d.unlockLoc == loc && loc > 0 && localDay == 1) parts.Add(d.Name);
+            for (int i = 1; i < Drinks.Length; i++) if (i != (int)Drink.Fries && Drinks[i].unlockDay == day) parts.Add(Drinks[i].Name);
             foreach (var c in Customers) if (c.unlockDay == day && day > 1) parts.Add(L.T("клиент: ", "customer: ") + c.Name);
             if (day == 4) parts.Add(L.T("двойное мясо в заказах", "double meat orders"));
             return string.Join(", ", parts);

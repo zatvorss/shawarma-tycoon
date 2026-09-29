@@ -79,8 +79,7 @@ namespace ValourGames.Shawarma
         /// <summary>Цена улучшения растёт вместе с ценами локации: на дорогих локациях и шаурма дороже, и прокачка.</summary>
         int UpCost(Up id, int lvl)
         {
-            var def = GameData.Upgrades[(int)id];
-            return Mathf.RoundToInt(def.Cost(lvl) * _save.Loc.price / 10f) * 10;
+            return GameData.UpgradeCost(GameData.Upgrades[(int)id], lvl, _save.location);
         }
 
         /// <summary>Можно ли сейчас (на этой локации) купить следующий уровень.</summary>
@@ -300,8 +299,8 @@ namespace ValourGames.Shawarma
             var prices = new System.Collections.Generic.List<int>();
             names.Add(L.T("Шаурма", "Shawarma")); prices.Add(GameData.LavashPrice + meat + tom);
             names.Add(L.T("Двойная", "Double")); prices.Add(GameData.LavashPrice + meat * 2 + tom);
-            if (GameData.Unlocked(Ing.Cheese, eday)) { names.Add(L.T("С сыром", "Cheesy")); prices.Add(GameData.LavashPrice + meat + tom + GameData.Get(Ing.Cheese).price); }
-            if (GameData.Unlocked(Drink.Fries, eday)) { names.Add(L.T("Фри", "Fries")); prices.Add(GameData.Get(Drink.Fries).price); }
+            if (GameData.IngOpen(Ing.Cheese, _save.location)) { names.Add(L.T("С сыром", "Cheesy")); prices.Add(GameData.LavashPrice + meat + tom + GameData.Get(Ing.Cheese).price); }
+            if (GameData.DrinkOpen(Drink.Fries, eday, _save.location)) { names.Add(L.T("Фри", "Fries")); prices.Add(GameData.Get(Drink.Fries).price); }
             if (GameData.Unlocked(Drink.Cola, eday)) { names.Add(L.T("Кола", "Cola")); prices.Add(GameData.Get(Drink.Cola).price); }
             if (GameData.Unlocked(Drink.Ayran, eday)) { names.Add(L.T("Айран", "Ayran")); prices.Add(GameData.Get(Drink.Ayran).price); }
             int n = Mathf.Min(names.Count, 6);

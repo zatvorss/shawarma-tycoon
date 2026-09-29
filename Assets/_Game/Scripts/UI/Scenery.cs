@@ -49,9 +49,13 @@ namespace ValourGames.Shawarma
                         Random.value, Random.Range(0.5f, 1f), 5f, 5f);
                     _twinkle.Add(st);
                 }
-                UIKit.Shape(area, UIKit.Circle, new Color(1f, 1f, 0.9f, 0.2f), 0.14f, 0.8f, 170f, 170f);
-                UIKit.Shape(area, UIKit.Circle, UIKit.Hex("#FFF6D5"), 0.14f, 0.8f, 100f, 100f);
-                UIKit.Shape(area, UIKit.Circle, UIKit.Hex(loc.skyTop), 0.155f, 0.82f, 80f, 80f);
+                // полная луна с кратерами и мягким ореолом
+                UIKit.Shape(area, UIKit.CircleHD, new Color(1f, 1f, 0.9f, 0.12f), 0.14f, 0.8f, 190f, 190f);
+                UIKit.Shape(area, UIKit.CircleHD, new Color(1f, 1f, 0.9f, 0.18f), 0.14f, 0.8f, 140f, 140f);
+                var moon = UIKit.Shape(area, UIKit.CircleHD, UIKit.Hex("#FFF6D5"), 0.14f, 0.8f, 100f, 100f);
+                UIKit.Shape(moon.transform, UIKit.Circle, UIKit.Hex("#EDE3BE"), 0.35f, 0.62f, 24f, 24f);
+                UIKit.Shape(moon.transform, UIKit.Circle, UIKit.Hex("#EDE3BE"), 0.64f, 0.4f, 16f, 16f);
+                UIKit.Shape(moon.transform, UIKit.Circle, UIKit.Hex("#EDE3BE"), 0.6f, 0.72f, 10f, 10f);
             }
             else if (!rain)
             {
@@ -80,7 +84,7 @@ namespace ValourGames.Shawarma
             else if (loc.scene == "towers") BuildTowers(area);
             else
             {
-                BuildCity(area, night, rain, loc.id == 2);
+                BuildCity(area, night, rain, loc.id == 2, loc.id);
                 if (loc.scene == "market") BuildMarket(area);
                 if (loc.scene == "stadium") BuildStadium(area);
                 if (loc.scene == "airport") BuildAirport(area);
@@ -107,7 +111,7 @@ namespace ValourGames.Shawarma
             }
         }
 
-        void BuildCity(RectTransform area, bool night, bool rain, bool station)
+        void BuildCity(RectTransform area, bool night, bool rain, bool station, int id = 0)
         {
             Color far = night ? UIKit.Hex("#1C2240") : (rain ? UIKit.Hex("#7D8A96") : UIKit.Hex("#A9BCD0"));
             float px = -0.02f;
@@ -142,8 +146,12 @@ namespace ValourGames.Shawarma
                 {
                     // неоновая вывеска
                     string[] neon = { "#FF4FA3", "#22E3FF", "#B388FF", "#FFD740" };
-                    var sign = UIKit.Panel(house.transform, "Neon", UIKit.Hex(neon[Random.Range(0, neon.Length)]), 0.15f, 0.62f, 0.85f, 0.72f);
-                    _twinkle.Add(sign);
+                    string[] words = { "КАФЕ", "БАР", "ОТЕЛЬ", "24/7", "КИНО", "ПИЦЦА" };
+                    var nc = UIKit.Hex(neon[n / 2 % neon.Length]);
+                    var sign = UIKit.Panel(house.transform, "Neon", UIKit.Hex("#120E1E"), 0.1f, 0.6f, 0.9f, 0.74f);
+                    UIKit.AddOutline(sign, nc, 2f);
+                    var nt = UIKit.FitLabel(sign.transform, words[(n / 2 + id) % words.Length], 24, nc, 0.06f, 0.08f, 0.94f, 0.92f);
+                    UIKit.AddOutline(nt, UIKit.Alpha(nc, 0.4f), 2f);
                 }
                 if (station && n == 2)
                 {
@@ -180,32 +188,54 @@ namespace ValourGames.Shawarma
             for (int i = 0; i < 40; i++)
                 UIKit.Shape(area, UIKit.Circle, UIKit.Hex(i % 3 == 0 ? "#E53935" : (i % 3 == 1 ? "#1E88E5" : "#FFEB3B")),
                     0.1f + (i % 20) * 0.042f, 0.36f + (i / 20) * 0.06f, 14f, 14f);
+            // мачты прожекторов стоят на земле: от тротуара до самого верха
             float[] xs = { 0.12f, 0.88f };
             foreach (var x in xs)
             {
-                UIKit.Shape(area, UIKit.RoundedSmall, UIKit.Hex("#455A64"), x, 0.55f, 10f, 330f);
-                var lamp = UIKit.Shape(area, UIKit.RoundedSmall, UIKit.Hex("#FFFDE7"), x, 0.9f, 90f, 40f);
-                _twinkle.Add(lamp);
+                UIKit.Panel(area, "Mast", UIKit.Hex("#455A64"), x - 0.003f, 0.16f, x + 0.003f, 0.86f, false);
+                for (int k = 0; k < 6; k++)
+                    UIKit.Panel(area, "Brace", UIKit.Hex("#546E7A"), x - 0.008f, 0.22f + k * 0.1f, x + 0.008f, 0.225f + k * 0.1f, false);
+                UIKit.Panel(area, "Frame", UIKit.Hex("#37474F"), x - 0.03f, 0.85f, x + 0.03f, 0.95f);
+                for (int k = 0; k < 6; k++)
+                    UIKit.Shape(area, UIKit.Circle, UIKit.Hex("#FFFDE7"), x - 0.02f + (k % 3) * 0.02f, 0.875f + (k / 3) * 0.05f, 22f, 18f);
+                UIKit.Shape(area, UIKit.CircleHD, new Color(1f, 1f, 0.85f, 0.15f), x, 0.9f, 220f, 140f);
             }
         }
 
         void BuildAirport(RectTransform area)
         {
-            UIKit.Panel(area, "Tower", UIKit.Hex("#ECEFF1"), 0.82f, 0.15f, 0.86f, 0.7f, false);
-            UIKit.Panel(area, "TowerTop", UIKit.Hex("#546E7A"), 0.8f, 0.7f, 0.88f, 0.78f);
-            // самолёт: тёмный контур, синяя полоса, иллюминаторы и красный хвост — не сливается с облаками
+            // терминал со стеклянным фасадом
+            var term = UIKit.Panel(area, "Terminal", UIKit.Hex("#CFD8DC"), 0.55f, 0.15f, 1.02f, 0.5f, false);
+            UIKit.Panel(term.transform, "Glass", UIKit.Hex("#4FC3F7"), 0.02f, 0.18f, 0.98f, 0.82f, false);
+            for (int i = 0; i < 12; i++)
+                UIKit.Panel(term.transform, "Mullion", UIKit.Hex("#90A4AE"), i / 12f, 0.18f, i / 12f + 0.006f, 0.82f, false);
+            UIKit.Panel(term.transform, "Roof", UIKit.Hex("#607D8B"), -0.02f, 0.82f, 1.02f, 0.94f, false);
+            var tsign = UIKit.Panel(term.transform, "Sign", UIKit.Hex("#1565C0"), 0.25f, 0.84f, 0.75f, 0.93f, false);
+            UIKit.FitLabel(tsign.transform, L.T("АЭРОПОРТ", "AIRPORT"), 30, Color.white, 0.05f, 0.05f, 0.95f, 0.95f);
+            // диспетчерская вышка: ствол, стеклянная кабина, антенна
+            UIKit.Panel(area, "TowerShaft", UIKit.Hex("#ECEFF1"), 0.405f, 0.15f, 0.435f, 0.62f, false);
+            UIKit.Panel(area, "TowerShade", UIKit.Hex("#CFD8DC"), 0.425f, 0.15f, 0.435f, 0.62f, false);
+            UIKit.Panel(area, "Cab", UIKit.Hex("#546E7A"), 0.39f, 0.62f, 0.45f, 0.72f);
+            UIKit.Panel(area, "CabGlass", UIKit.Hex("#80DEEA"), 0.395f, 0.645f, 0.445f, 0.7f, false);
+            UIKit.Panel(area, "CabRoof", UIKit.Hex("#37474F"), 0.385f, 0.72f, 0.455f, 0.74f);
+            UIKit.Panel(area, "Antenna", UIKit.Hex("#37474F"), 0.418f, 0.74f, 0.422f, 0.82f, false);
+            var tip = UIKit.Shape(area, UIKit.Circle, UIKit.Red, 0.42f, 0.825f, 12f, 12f);
+            _twinkle.Add(tip);
+
+            // самолёт в профиль: фюзеляж, хвостовой киль, стреловидное крыло снизу, иллюминаторы
             var plane = UIKit.Rect(area, "Plane");
-            UIKit.PlaceFixed(plane, 0.2f, 0.86f, 220f, 80f);
+            UIKit.PlaceFixed(plane, 0.2f, 0.86f, 240f, 90f);
             plane.SetAsLastSibling();
-            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#37474F"), 0.47f, 0.28f, 60f, 16f, -12f);           // дальнее крыло
-            UIKit.Shape(plane, UIKit.Rounded, UIKit.Hex("#37474F"), 0.5f, 0.5f, 214f, 38f);                        // контур
-            UIKit.Shape(plane, UIKit.Rounded, UIKit.Hex("#F5F7FA"), 0.5f, 0.52f, 206f, 30f);                       // фюзеляж
-            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#1E88E5"), 0.5f, 0.44f, 196f, 8f);                   // полоса
-            for (int i = 0; i < 8; i++) UIKit.Shape(plane, UIKit.Circle, UIKit.Hex("#263238"), 0.3f + i * 0.07f, 0.58f, 8f, 8f);
-            UIKit.Shape(plane, UIKit.Circle, UIKit.Hex("#263238"), 0.95f, 0.56f, 16f, 12f);                        // кабина
-            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#E53935"), 0.07f, 0.82f, 26f, 50f, 25f);             // хвост
-            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#90A4AE"), 0.5f, 0.36f, 40f, 90f, 60f);               // крыло
-            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Alpha(Color.white, 0.6f), -0.25f, 0.5f, 160f, 6f);         // след
+            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#B0BEC5"), 0.56f, 0.62f, 56f, 12f, 18f);            // дальнее крыло
+            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#E53935"), 0.1f, 0.72f, 30f, 46f, -28f);            // киль
+            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#E53935"), 0.1f, 0.5f, 34f, 10f);                   // стабилизатор
+            UIKit.Shape(plane, UIKit.Rounded, UIKit.Hex("#37474F"), 0.52f, 0.5f, 228f, 36f);                      // контур
+            UIKit.Shape(plane, UIKit.Rounded, UIKit.Hex("#FAFAFA"), 0.52f, 0.52f, 222f, 30f);                     // фюзеляж
+            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#1E88E5"), 0.52f, 0.44f, 212f, 7f);                 // полоса
+            for (int i = 0; i < 9; i++) UIKit.Shape(plane, UIKit.Circle, UIKit.Hex("#263238"), 0.3f + i * 0.065f, 0.56f, 7f, 8f);
+            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#263238"), 0.95f, 0.57f, 14f, 8f);                  // кабина
+            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#90A4AE"), 0.5f, 0.33f, 80f, 14f, -18f);             // ближнее крыло
+            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#607D8B"), 0.5f, 0.3f, 26f, 12f, -18f);              // двигатель
             _clouds.Add(new Mover { rt = plane, x = 0.2f, y = 0.86f, vx = 0.04f });
         }
 
@@ -242,33 +272,135 @@ namespace ValourGames.Shawarma
             for (int i = 0; i < 6; i++)
                 UIKit.Shape(sea, UIKit.RoundedSmall, new Color(1, 1, 1, 0.35f), Random.Range(0.05f, 0.95f), 0.2f + i * 0.13f,
                     Random.Range(60f, 140f), 6f);
-            // пальмы
-            float[] xs = { 0.08f, 0.3f, 0.72f, 0.93f };
-            foreach (var x in xs)
-            {
-                UIKit.Shape(area, UIKit.RoundedSmall, UIKit.Hex("#8D6E63"), x, 0.34f, 22f, 190f, 6f);
-                for (int l = 0; l < 5; l++)
-                    UIKit.Shape(area, UIKit.Rounded, UIKit.Hex("#2E7D32"), x + 0.01f, 0.56f, 140f, 34f, -60f + l * 30f);
-            }
+            // пальмы: изогнутый ствол из сегментов, листья растут из одной точки кроны и свисают
+            float[] xs = { 0.06f, 0.29f, 0.73f, 0.95f };
+            float[] lean = { 0.035f, -0.03f, 0.03f, -0.035f };
+            for (int p = 0; p < xs.Length; p++) Palm(area, xs[p], lean[p]);
             // зонтик
             UIKit.Shape(area, UIKit.RoundedSmall, UIKit.Hex("#EEEEEE"), 0.5f, 0.28f, 8f, 120f);
             UIKit.Shape(area, UIKit.Circle, UIKit.Hex("#E53935"), 0.5f, 0.42f, 220f, 70f);
         }
 
+        /// <summary>Пальма: ствол сегментами с лёгким наклоном, крона — листья-«перья» от одной точки.</summary>
+        void Palm(RectTransform area, float x, float lean)
+        {
+            const int seg = 9;
+            float y0 = 0.17f, y1 = 0.62f;
+            float cx = x, cy = y1;
+            for (int i = 0; i < seg; i++)
+            {
+                float t = (float)i / (seg - 1);
+                float px = x + lean * t * t;
+                float py = Mathf.Lerp(y0, y1, t);
+                UIKit.Shape(area, UIKit.RoundedSmall, UIKit.Hex(i % 2 == 0 ? "#8D6E63" : "#795548"), px, py, 26f - t * 6f, 30f);
+                cx = px; cy = py;
+            }
+            float[] ang = { 170f, 140f, 110f, 70f, 40f, 10f, 200f, -20f };
+            for (int i = 0; i < ang.Length; i++)
+            {
+                var leaf = UIKit.Rect(area, "Leaf");
+                UIKit.PlaceFixed(leaf, cx, cy, 130f, 30f);
+                leaf.pivot = new Vector2(0f, 0.5f);
+                leaf.anchoredPosition = Vector2.zero;
+                leaf.localRotation = Quaternion.Euler(0, 0, ang[i]);
+                UIKit.Shape(leaf, UIKit.Rounded, UIKit.Hex(i % 2 == 0 ? "#2E7D32" : "#388E3C"), 0.5f, 0.5f, 130f, 28f);
+                UIKit.Shape(leaf, UIKit.RoundedSmall, UIKit.Hex("#1B5E20"), 0.5f, 0.5f, 120f, 4f);
+            }
+            for (int i = 0; i < 3; i++)
+                UIKit.Shape(area, UIKit.Circle, UIKit.Hex("#5D4037"), cx - 0.008f + i * 0.008f, cy - 0.03f, 18f, 18f);
+        }
+
+        /// <summary>
+        /// Фудкорт в торговом центре: стеклянная крыша, второй этаж с перилами, ряд фуд-стендов
+        /// с подсвеченными вывесками и меню-бордами, плиточный пол и столики с кашпо.
+        /// </summary>
         void BuildMall(RectTransform area)
         {
-            string[] cols = { "#E57373", "#64B5F6", "#81C784", "#FFB74D", "#BA68C8", "#4DB6AC" };
-            string[] names = { "SHOES", "TECH", "FRESH", "TOYS", "BEAUTY", "BOOKS" };
+            // стеклянная крыша
+            UIKit.Panel(area, "Ceiling", UIKit.Hex("#ECEFF1"), 0f, 0.88f, 1f, 1f, false);
+            for (int i = 0; i < 10; i++)
+                UIKit.Panel(area, "Sky", UIKit.Hex("#B3E5FC"), i / 10f + 0.006f, 0.9f, (i + 1) / 10f - 0.006f, 0.99f, false);
+            UIKit.Panel(area, "Beam", UIKit.Hex("#B0BEC5"), 0f, 0.875f, 1f, 0.89f, false);
+
+            // второй этаж: витрины магазинов и стеклянные перила
+            string[] up = { "#F8BBD0", "#C5CAE9", "#DCEDC8", "#FFE0B2", "#B2EBF2", "#E1BEE7", "#FFF9C4" };
+            for (int i = 0; i < 7; i++)
+            {
+                float x0 = i / 7f + 0.004f, x1 = (i + 1) / 7f - 0.004f;
+                var shop = UIKit.Panel(area, "Upper", UIKit.Hex("#FAFAFA"), x0, 0.66f, x1, 0.86f, false);
+                UIKit.Panel(shop.transform, "Sign", UIKit.Hex(up[i]), 0.08f, 0.78f, 0.92f, 0.95f, false);
+                UIKit.Panel(shop.transform, "Glass", UIKit.Hex("#E3F2FD"), 0.08f, 0.05f, 0.92f, 0.72f, false);
+            }
+            UIKit.Panel(area, "Slab", UIKit.Hex("#9E9E9E"), 0f, 0.6f, 1f, 0.635f, false);
+            UIKit.Panel(area, "Railing", new Color(0.85f, 0.95f, 1f, 0.45f), 0f, 0.635f, 1f, 0.68f, false);
+            UIKit.Panel(area, "Handrail", UIKit.Hex("#B0BEC5"), 0f, 0.675f, 1f, 0.685f, false);
+            for (int i = 0; i < 24; i++)
+                UIKit.Panel(area, "Post", UIKit.Hex("#B0BEC5"), i / 24f, 0.635f, i / 24f + 0.003f, 0.68f, false);
+
+            // подвесные лампы
             for (int i = 0; i < 6; i++)
             {
-                float x0 = i / 6f + 0.005f, x1 = (i + 1) / 6f - 0.005f;
-                var shop = UIKit.Panel(area, "Shop", UIKit.Hex("#FAFAFA"), x0, 0.17f, x1, 0.8f, false);
-                var sign = UIKit.Panel(shop.transform, "Sign", UIKit.Hex(cols[i]), 0.05f, 0.82f, 0.95f, 0.97f);
-                UIKit.FitLabel(sign.transform, names[i], 30, Color.white, 0.05f, 0.05f, 0.95f, 0.95f);
-                UIKit.Panel(shop.transform, "Glass", UIKit.Hex("#B3E5FC"), 0.08f, 0.05f, 0.92f, 0.76f);
+                float x = (i + 0.5f) / 6f;
+                UIKit.Panel(area, "Cord", UIKit.Hex("#616161"), x - 0.001f, 0.55f, x + 0.001f, 0.6f, false);
+                UIKit.Shape(area, UIKit.Circle, UIKit.Hex("#FFB300"), x, 0.545f, 40f, 22f);
+                UIKit.Shape(area, UIKit.CircleHD, new Color(1f, 0.9f, 0.6f, 0.18f), x, 0.52f, 150f, 70f);
             }
-            for (int i = 0; i < 8; i++)
-                UIKit.Shape(area, UIKit.Circle, new Color(1f, 1f, 0.85f, 0.9f), (i + 0.5f) / 8f, 0.93f, 40f, 16f);
+
+            // ряд фуд-стендов
+            string[] names = { "ПИЦЦА", "СУШИ", "БУРГЕРЫ", "ВОК", "КОФЕ" };
+            string[] namesEn = { "PIZZA", "SUSHI", "BURGERS", "WOK", "COFFEE" };
+            string[] brand = { "#D32F2F", "#00897B", "#F57C00", "#6A1B9A", "#5D4037" };
+            string[] light = { "#FFEB3B", "#E0F2F1", "#FFF3E0", "#F3E5F5", "#FFE0B2" };
+            for (int i = 0; i < 5; i++)
+            {
+                float x0 = i / 5f + 0.006f, x1 = (i + 1) / 5f - 0.006f;
+                var bc = UIKit.Hex(brand[i]);
+                var stall = UIKit.Panel(area, "Stall", Color.Lerp(bc, Color.white, 0.75f), x0, 0.2f, x1, 0.52f, false);
+                var st = stall.transform;
+                // подсвеченная вывеска
+                var sign = UIKit.Panel(st, "Sign", bc, 0f, 0.8f, 1f, 1f, false);
+                var sl = UIKit.FitLabel(sign.transform, L.T(names[i], namesEn[i]), 34, UIKit.Hex(light[i]), 0.05f, 0.08f, 0.95f, 0.92f);
+                UIKit.AddOutline(sl, UIKit.Alpha(Color.black, 0.35f), 2f);
+                // меню-борд: картинки блюд и строчки цен
+                var menu = UIKit.Panel(st, "Menu", UIKit.Hex("#212121"), 0.08f, 0.5f, 0.92f, 0.77f, false);
+                for (int k = 0; k < 3; k++)
+                {
+                    float mx = 0.06f + k * 0.32f;
+                    UIKit.Panel(menu.transform, "Pic", Color.Lerp(bc, UIKit.Hex(light[i]), 0.4f), mx, 0.42f, mx + 0.26f, 0.9f, false);
+                    UIKit.Panel(menu.transform, "Line", UIKit.Alpha(Color.white, 0.7f), mx, 0.14f, mx + 0.26f, 0.22f, false);
+                }
+                // стойка
+                UIKit.Panel(st, "CounterTop", UIKit.Hex("#CFD8DC"), -0.01f, 0.36f, 1.01f, 0.42f, false);
+                UIKit.Panel(st, "CounterFront", bc, 0f, 0f, 1f, 0.36f, false);
+                UIKit.Panel(st, "Stripe", UIKit.Alpha(Color.white, 0.35f), 0f, 0.16f, 1f, 0.2f, false);
+                UIKit.Panel(st, "Till", UIKit.Hex("#37474F"), 0.7f, 0.42f, 0.86f, 0.5f);
+            }
+
+            // плиточный пол
+            UIKit.Panel(area, "Floor", UIKit.Hex("#E0D6CC"), 0f, 0f, 1f, 0.2f, false);
+            for (int i = 0; i < 24; i++)
+                for (int r = 0; r < 2; r++)
+                    if ((i + r) % 2 == 0)
+                        UIKit.Panel(area, "Tile", UIKit.Hex("#D2C6BA"), i / 24f, r * 0.1f, (i + 1) / 24f, (r + 1) * 0.1f, false);
+            UIKit.Panel(area, "Skirting", UIKit.Hex("#8D6E63"), 0f, 0.195f, 1f, 0.205f, false);
+
+            // столики со стульями и растения
+            float[] tx = { 0.1f, 0.3f, 0.5f, 0.7f, 0.9f };
+            foreach (var x in tx)
+            {
+                UIKit.Shape(area, UIKit.RoundedSmall, UIKit.Hex("#FF8A65"), x - 0.03f, 0.13f, 30f, 44f);
+                UIKit.Shape(area, UIKit.RoundedSmall, UIKit.Hex("#FF8A65"), x + 0.03f, 0.13f, 30f, 44f);
+                UIKit.Shape(area, UIKit.RoundedSmall, UIKit.Hex("#9E9E9E"), x, 0.1f, 8f, 50f);
+                UIKit.Shape(area, UIKit.CircleHD, UIKit.Hex("#FAFAFA"), x, 0.16f, 110f, 22f);
+                UIKit.Shape(area, UIKit.Circle, UIKit.Hex("#FFCC80"), x - 0.01f, 0.18f, 18f, 10f);
+            }
+            float[] px = { 0.2f, 0.8f };
+            foreach (var x in px)
+            {
+                UIKit.Shape(area, UIKit.RoundedSmall, UIKit.Hex("#795548"), x, 0.07f, 50f, 44f);
+                for (int k = 0; k < 5; k++)
+                    UIKit.Shape(area, UIKit.Rounded, UIKit.Hex(k % 2 == 0 ? "#43A047" : "#2E7D32"), x, 0.17f, 22f, 70f, -50f + k * 25f);
+            }
         }
 
         static void SetPos(Mover m)

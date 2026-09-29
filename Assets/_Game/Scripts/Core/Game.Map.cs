@@ -279,10 +279,11 @@ namespace ValourGames.Shawarma
             UIKit.Label(c, L.T("У тебя: ", "You have: ") + _save.boosts[i] + L.T(" шт.  Тратится 1 в начале дня, если включён.", ".  Uses 1 at day start if ON."),
                 22, UIKit.Dark, TextAnchor.MiddleLeft, 0f, 0.24f, 1f, 0.34f, true);
 
-            var buy = UIKit.PriceButton(c, L.T("Купить", "Buy"), def.cost, UIKit.Green, () =>
+            int bcost = Meta.BoostCost(i, _save.location);
+            var buy = UIKit.PriceButton(c, L.T("Купить", "Buy"), bcost, UIKit.Green, () =>
             {
-                if (_save.money < def.cost) { Sfx.Play(Sound.Error); return; }
-                _save.money -= def.cost;
+                if (_save.money < bcost) { Sfx.Play(Sound.Error); return; }
+                _save.money -= bcost;
                 _save.boosts[i]++;
                 _save.boostOn[i] = 1;
                 SaveSystem.Save(_save);
@@ -290,7 +291,7 @@ namespace ValourGames.Shawarma
                 BuildMap(-1);
                 BoosterPopup(i);
             }, 0f, 0f, 0.32f, 0.2f, 30);
-            buy.interactable = _save.money >= def.cost;
+            buy.interactable = _save.money >= bcost;
             UIKit.Button(c, L.T("Бесплатно за рекламу", "Free for an ad"), UIKit.Orange, () =>
             {
                 Platform.ShowRewarded("boost_" + i, () =>

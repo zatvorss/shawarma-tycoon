@@ -48,13 +48,14 @@ namespace ValourGames.Shawarma
         public string ru, en, descRu, descEn; // в описании {0} — цель уровня
         public int[] targets, rewards;
         public Func<SaveData, int> value;
+        public long scale = 1;   // цели хранятся в тысячах (Путь к миллиарду) — при показе умножаем
         public string Name { get { return L.T(ru, en); } }
         public string Desc(int tier)
         {
             int t = targets[Mathf.Clamp(tier, 0, targets.Length - 1)];
-            return string.Format(L.T(descRu, descEn), Fmt(t));
+            return string.Format(L.T(descRu, descEn), Fmt(t * scale));
         }
-        public static string Fmt(int v) { return v >= 1000 ? GameData.Money(v) : v.ToString(); }
+        public static string Fmt(long v) { return v >= 1000 ? GameData.Money(v) : v.ToString(); }
         public const int Tiers = 5;
     }
 
@@ -135,6 +136,12 @@ namespace ValourGames.Shawarma
             new BoostDef { id = Boost.Gold, ru = "Золотой лаваш", en = "Golden lavash", cost = 500,
                 descRu = "Все цены ×1.25 на день", descEn = "All prices ×1.25 for the day" },
         };
+
+        /// <summary>Цена бустера растёт вместе с доходами локации.</summary>
+        public static int BoostCost(int i, int loc)
+        {
+            return Mathf.RoundToInt(Boosts[i].cost * GameData.EconScale(loc) / 10f) * 10;
+        }
 
         // ---------------- скины ларька ----------------
         public static readonly SkinDef[] Skins =
@@ -231,7 +238,7 @@ namespace ValourGames.Shawarma
         public static int P(SaveData s, Perk p) { return s.perks[(int)p]; }
 
         // ---------------- бизнесы ----------------
-        public const int BizCourier = 0, BizBakery = 1, BizDrive = 2;
+        public const int BizCourier = 0, BizBakery = 1, BizSauce = 2;
 
         public static readonly BizDef[] Businesses =
         {
@@ -247,11 +254,11 @@ namespace ValourGames.Shawarma
                 lvRu = new[] { "Лаваш за 14 сек, шаурма +20%, 1 оптовик в день", "12 сек, шаурма +25%", "10 сек, +30%, 2 лаваша сразу, 2 оптовика", "8 сек, шаурма +40%", "6 сек, +50%, 3 лаваша сразу" },
                 lvEn = new[] { "Lavash in 14 s, shawarma +20%, 1 bulk buyer a day", "12 s, shawarma +25%", "10 s, +30%, 2 at once, 2 buyers", "8 s, shawarma +40%", "6 s, +50%, 3 at once" },
                 costs = new[] { 40000, 100000, 250000, 600000, 1500000 } },
-            new BizDef { ru = "ШаурмаАвто", en = "ShawarmaAuto", color = "#6A1B9A", unlockLoc = 8,
-                descRu = "Окно выдачи для машин: водители заказывают, не выходя из авто. Спешат и сигналят, но платят в разы больше. Всё — с собой.",
-                descEn = "Like big chains: cars pull up to the window. They hurry and honk, but pay much more. Everything to go.",
-                lvRu = new[] { "2 машины в день, оплата ×1.5", "3 машины, ×1.5", "4 машины, ×2", "5 машин, ×2", "6 машин, ×2.5, ждут на 30% дольше" },
-                lvEn = new[] { "2 cars a day, pay ×1.5", "3 cars, ×1.5", "4 cars, ×2", "5 cars, ×2", "6 cars, ×2.5, wait 30% longer" },
+            new BizDef { ru = "Фирменный соус", en = "Signature sauce", color = "#C62828", unlockLoc = 8,
+                descRu = "Как в лучших шаурмичных: свой соус «Секрет Ашота» в бутылках. Довольные гости просят бутылочку с собой — успей нажать на неё и продать.",
+                descEn = "Like the best shawarma places: your own “Ashot's Secret” sauce in bottles. Happy guests ask for a bottle to go — tap it quickly to sell.",
+                lvRu = new[] { "Бутылку просит каждый 4-й гость", "Каждый 3-й, бутылка дороже ×1.5", "Каждый 3-й, ×2", "Каждый 2-й, ×2.5", "Каждый 2-й, ×3 и ждут дольше" },
+                lvEn = new[] { "Every 4th guest asks for a bottle", "Every 3rd, bottle ×1.5", "Every 3rd, ×2", "Every 2nd, ×2.5", "Every 2nd, ×3, waits longer" },
                 costs = new[] { 200000, 500000, 1200000, 3000000, 7000000 } },
         };
 
@@ -261,9 +268,9 @@ namespace ValourGames.Shawarma
         public static float BakeBonus(int l) { float[] b = { 0f, 0.2f, 0.25f, 0.3f, 0.4f, 0.5f }; return b[Mathf.Clamp(l, 0, 5)]; }
         public static int BakeCap(int l) { return l >= 5 ? 3 : (l >= 3 ? 2 : 1); }
         public const float LavashHot = 14f;
-        public static int DriveCars(int l) { return l <= 0 ? 0 : l + 1; }
-        public static float DriveMult(int l) { return l >= 5 ? 2.5f : (l >= 3 ? 2f : 1.5f); }
-        public static float DrivePatience(int l) { return l >= 5 ? 1.05f : 0.8f; }
+        public static float SauceChance(int l) { return l <= 0 ? 0f : (l >= 4 ? 0.5f : (l >= 2 ? 0.33f : 0.25f)); }
+        public static float SauceMult(int l) { float[] m = { 0f, 1f, 1.5f, 2f, 2.5f, 3f }; return m[Mathf.Clamp(l, 0, 5)]; }
+        public static float SauceOfferTime(int l) { return l >= 5 ? 4f : 2.8f; }
 
         // ---------------- талисманы Шаурма-Пасса ----------------
         public const int CharmCoin = 0, CharmBell = 1, CharmBowl = 2, CharmSpatula = 3, CharmMagnet = 4, CharmCrown = 5;
@@ -349,6 +356,8 @@ namespace ValourGames.Shawarma
             return new AchDef { ru = ru, en = en, descRu = dRu, descEn = dEn, targets = t, rewards = r, value = v };
         }
 
+        static AchDef Scaled(AchDef d, long scale) { d.scale = scale; return d; }
+
         public static readonly AchDef[] Achievements =
         {
             A("Шаурмист", "Shawarmist", "Обслужи {0} клиентов", "Serve {0} customers",
@@ -371,9 +380,9 @@ namespace ValourGames.Shawarma
                 new[] { 1, 2, 3, 4, 6 }, new[] { 1000, 3000, 8000, 20000, 60000 }, AutoStations),
             A("Инвестор", "Investor", "Уровней бизнесов: {0}", "Business levels: {0}",
                 new[] { 1, 3, 6, 10, 15 }, new[] { 1000, 5000, 20000, 60000, 200000 }, BizLevels),
-            A("Путь к миллиарду", "Road to a billion", "Заработай за всё время {0}к", "Earn {0}K in total",
-                new[] { 10, 100, 1000, 100000, 1000000 }, new[] { 500, 3000, 20000, 200000, 1000000 },
-                s => (int)System.Math.Min(s.lifetime / 1000L, int.MaxValue)),
+            Scaled(A("Путь к миллиарду", "Road to a billion", "Заработай за всё время {0}", "Earn {0} in total",
+                new[] { 10, 100, 1000, 10000, 1000000 }, new[] { 500, 3000, 20000, 150000, 1000000 },
+                s => (int)System.Math.Min(s.lifetime / 1000L, int.MaxValue)), 1000),
             A("Курьерская служба", "Courier service", "Заказов для бизнесов: {0}", "Business orders: {0}",
                 new[] { 1, 10, 50, 150, 500 }, new[] { 200, 1000, 5000, 15000, 50000 }, s => s.couriers),
             A("Друг котов", "Cat friend", "Погладь кота {0} раз", "Pet the cat {0} times",
@@ -490,7 +499,7 @@ namespace ValourGames.Shawarma
             new[] { "Одну с собой, я на патруле", "Документы... шучу, шаурму!", "Всё по закону, без острого", "Быстро и чётко!" },
             new[] { "У меня пять минут между операциями", "Руки мыли? Отлично!", "Врач прописал шаурму", "Главное — свежесть" },
             new[] { "Если что — потушу!", "После смены голодный как волк", "Горячее — это по моей части", "Двойное, пожалуйста" },
-            new[] { "Рок-н-ролл и шаурма!", "Сделай погромче... то есть посочнее", "Йе-е-е!", "Мне с халапеньо, конечно" },
+            new[] { "Рок-н-ролл и шаурма!", "Сделай погромче... то есть посочнее", "Йе-е-е!", "Мне с луком, конечно" },
             new[] { "Я на паузе, быстрее!", "Шаурма даёт +10 к силе", "GG, давай заказ", "Катка через 5 минут" },
             new[] { "А лаваш у вас крафтовый?", "Я ел шаурму, когда это не было мейнстримом", "Мне на альтернативном соусе", "Сфоткаю для блога" },
             new[] { "Счётчик тикает!", "Заказ с собой, я на смене", "Шеф, побыстрее", "Клиент в машине ждёт" },
@@ -523,7 +532,7 @@ namespace ValourGames.Shawarma
             new[] { "One to go, I'm on patrol", "License... kidding, shawarma!", "By the book, nothing spicy", "Quick and clean!" },
             new[] { "Five minutes between surgeries", "Washed hands? Good!", "Doctor's orders: shawarma", "Freshness first" },
             new[] { "If anything burns — I've got it!", "Hungry after my shift", "Hot stuff is my job", "Double, please" },
-            new[] { "Rock'n'roll and shawarma!", "Turn it up... I mean juicier", "Yeah-h-h!", "Jalapeno, of course" },
+            new[] { "Rock'n'roll and shawarma!", "Turn it up... I mean juicier", "Yeah-h-h!", "Onion, of course" },
             new[] { "I'm on pause, hurry!", "Shawarma gives +10 strength", "GG, take my order", "Match in 5 minutes" },
             new[] { "Is your lavash craft?", "I ate shawarma before it was cool", "Alternative sauce, please", "Posting this on my blog" },
             new[] { "The meter's running!", "To go, I'm on shift", "Boss, hurry up", "My passenger is waiting" },
