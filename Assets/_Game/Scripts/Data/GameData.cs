@@ -9,7 +9,7 @@ namespace ValourGames.Shawarma
     /// <summary>Как пополняется запас ингредиента.</summary>
     public enum Restock { Spit, Chop, Fryer, Sauce }
 
-    public enum Drink { None, Cola, Ayran, Fries } // Fries — картошка фри в коробке (отдельный заказ)
+    public enum Drink { None, Cola, Juice, Fries } // Fries — картошка фри в коробке (отдельный заказ)
 
     public enum CustType
     {
@@ -20,7 +20,7 @@ namespace ValourGames.Shawarma
     }
 
     /// <summary>Улучшения. Порядок = индекс в SaveData.upgrades. Уровни 0..3 (в игре "Ур. 1..4").</summary>
-    public enum Up { Spit, Knife, Fryer, Grill, Sauce, Bins, Patience, Tips, Price, Pack, Flies, Board, Fire, Queue, Grills, FryBox, VegFeed, FryLoad, FryUnload, Drinks, Premium, Lounge, TurboGrill }
+    public enum Up { Spit, Knife, Fryer, Grill, Sauce, Bins, Patience, Tips, Price, Pack, Flies, Board, Fire, Queue, Grills, FryBox, VegFeed, FryLoad, FryUnload, Drinks, Premium, Lounge, TurboGrill, Seats }
 
     /// <summary>Где будут есть: здесь (обёртка) или с собой (обёртка + пакет).</summary>
     public enum ServeMode { Here, ToGo }
@@ -183,7 +183,7 @@ namespace ValourGames.Shawarma
         {
             null, // Drink.None
             new DrinkDef(Drink.Cola,  "Кола",  "Cola",  50, 4),
-            new DrinkDef(Drink.Ayran, "Айран", "Ayran", 40, 8),
+            new DrinkDef(Drink.Juice, "Апельсиновый сок", "Orange juice", 40, 8),
             new DrinkDef(Drink.Fries, "Картошка фри", "Fries box", 60, 3),
         };
 
@@ -356,6 +356,10 @@ namespace ValourGames.Shawarma
                 new[] { "Обычный жар", "Индукция: гриль и фритюр на 25% быстрее", "Плазма: гриль и фритюр на 45% быстрее" },
                 new[] { "Regular heat", "Induction: grill and fryer 25% faster", "Plasma: grill and fryer 45% faster" },
                 new[] { 3000, 6000 }, new[] { 10, 11 }),
+            U(Up.Seats, "Места у прилавка", "Counter seats",
+                new[] { "2 места у прилавка — крайние закрыты стенкой", "3 места: сносим левую стенку", "4 места: весь прилавок открыт" },
+                new[] { "2 seats at the counter — the sides are walled off", "3 seats: the left wall comes down", "4 seats: the whole counter is open" },
+                new[] { 2500, 12000 }, new[] { 2, 4 }),
         };
 
         // Локации идут по очереди. Переезд на следующую = РЕБЁРТ (как в Roblox):
@@ -460,10 +464,29 @@ namespace ValourGames.Shawarma
 
         // ---------- параметры дня ----------
         public static float DayDuration(int day)   { return Mathf.Min(100f + day * 4f, 160f); }
-        public static float SpawnInterval(int day) { return Mathf.Max(12f - day * 0.4f, 6.5f); }
-        /// <summary>Базовое терпение. К нему прибавляется +4 сек за каждый пункт заказа (см. DayRun.SpawnCustomer).</summary>
-        public static float BasePatience(int day)  { return Mathf.Max(70f - day * 1f, 48f); }
-        public static int   MaxActive(int day)     { return day < 3 ? 2 : (day < 6 ? 3 : 4); }
+        /// <summary>
+        /// Интервал между клиентами. С каждым днём на локации клиенты идут чаще (ведь мы прокачиваемся и
+        /// обслуживаем быстрее). Чем дальше локация — тем раньше старт, круче рост и ниже предел:
+        /// во дворе 12 → 8 сек, в Дубае 9.3 → 5.3 сек (плюс собственный множитель локации).
+        /// </summary>
+        public static float SpawnInterval(int day, int loc)
+        {
+            loc = Mathf.Clamp(loc, 0, 11);
+            float start = 12f - 0.25f * loc, slope = 0.3f + 0.02f * loc, floor = 8f - 0.25f * loc;
+            return Mathf.Max(start - slope * Mathf.Max(0, day - 1), floor);
+        }
+        /// <summary>
+        /// Базовое терпение (к нему +4 сек за каждый пункт заказа, см. DayRun.SpawnCustomer).
+        /// Каждый день чуть меньше; во дворе 72 → 56 сек, в Дубае 59 → 40 сек.
+        /// </summary>
+        public static float BasePatience(int day, int loc)
+        {
+            loc = Mathf.Clamp(loc, 0, 11);
+            float start = 72f - 1.2f * loc, slope = 1f + 0.08f * loc, floor = 56f - 1.5f * loc;
+            return Mathf.Max(start - slope * Mathf.Max(0, day - 1), floor);
+        }
+        /// <summary>Сколько клиентов одновременно у прилавка — улучшение «Места у прилавка»: 2 → 3 → 4.</summary>
+        public static int   Seats(int lvl)         { return Mathf.Clamp(2 + lvl, 2, 4); }
         public static int   MaxToppings(int day)   { return Mathf.Clamp(1 + day / 3, 1, 5); }
         public static float DoubleMeatChance(int day) { return day < 4 ? 0f : Mathf.Min(0.15f + day * 0.02f, 0.45f); }
         public const float  DrinkChance = 0.3f;
@@ -492,7 +515,7 @@ namespace ValourGames.Shawarma
             var L = Locations[loc];
             int e = EffDay(day, loc);
             float dur = DayDuration(day);
-            float interval = SpawnInterval(day) * L.spawn * 0.956f;
+            float interval = SpawnInterval(day, loc) * L.spawn * 0.956f;
             float arrivals = dur / interval;
             int tops = Mathf.Min(loc, 7) + 2;
             float m = Mathf.Min(MaxToppings(e), tops);
@@ -609,7 +632,7 @@ namespace ValourGames.Shawarma
         {
             if (id == Drink.Fries) return IngOpen(Ing.Fries, loc);
             if (id == Drink.Cola) return loc >= 2;
-            if (id == Drink.Ayran) return loc >= 5;
+            if (id == Drink.Juice) return loc >= 5;
             return false;
         }
 
@@ -620,7 +643,7 @@ namespace ValourGames.Shawarma
         //  2: гриль, грязная доска, кола в стаканах
         //  3: фритюр и картошка, пожары на гриле
         //  4: огурцы, кот
-        //  5: капуста, айран, дождь и час пик
+        //  5: капуста, апельсиновый сок, дождь и час пик
         //  6: острый соус, босс-день
         //  7: сыр     8: маринованный лук
         // =====================================================================
@@ -679,9 +702,9 @@ namespace ValourGames.Shawarma
             if (localDay == 1)
             {
                 string[] featRu = { "", "упаковка «здесь / с собой», мухи", "гриль, кола в стаканах, грязная доска", "фритюр и картошка фри, пожары на гриле",
-                                    "кот у ларька", "айран, дождь и час пик", "босс-день с Мистером Мегой" };
+                                    "кот у ларька", "апельсиновый сок, дождь и час пик", "босс-день с Мистером Мегой" };
                 string[] featEn = { "", "here / to-go packing, flies", "grill, cola in cups, dirty board", "fryer and fries, grill fires",
-                                    "a cat at the kiosk", "ayran, rain and rush hour", "boss day with Mr. Mega" };
+                                    "a cat at the kiosk", "orange juice, rain and rush hour", "boss day with Mr. Mega" };
                 if (loc > 0 && loc < featRu.Length) parts.Add(L.T(featRu[loc], featEn[loc]));
             }
             foreach (var c in Customers) if (c.unlockDay == day && day > 1) parts.Add(L.T("клиент: ", "customer: ") + c.Name);

@@ -490,10 +490,20 @@ namespace ValourGames.Shawarma
         }
 
         /// <summary>Забрать награду за следующий уровень.</summary>
-        public static int Claim(SaveData s, int i)
+        /// <summary>Награда за уровень достижения, проиндексированная под экономику текущей локации.</summary>
+        public static long AchReward(SaveData s, int i, int tier)
+        {
+            var a = Achievements[i];
+            tier = Mathf.Clamp(tier, 0, a.rewards.Length - 1);
+            double v = a.rewards[tier] * (double)GameData.EconScale(s.location);
+            long step = v >= 100000 ? 1000 : (v >= 1000 ? 100 : 10);
+            return System.Math.Max(10L, (long)System.Math.Round(v / step) * step);
+        }
+
+        public static long Claim(SaveData s, int i)
         {
             if (!Ready(s, i)) return 0;
-            int reward = Achievements[i].rewards[s.achTier[i]];
+            long reward = AchReward(s, i, s.achTier[i]);
             s.achTier[i]++;
             s.money += reward;
             return reward;

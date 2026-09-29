@@ -283,33 +283,75 @@ namespace ValourGames.Shawarma
             UIKit.Shape(area, UIKit.Circle, UIKit.Hex("#E53935"), 0.5f, 0.42f, 220f, 70f);
         }
 
-        /// <summary>Пальма: ствол сегментами с лёгким наклоном, крона — листья-«перья» от одной точки.</summary>
+        /// <summary>
+        /// Пальма: плавный сужающийся ствол из перекрывающихся овалов (без щелей и «полосок»),
+        /// крона — изогнутые вниз перистые листья из цепочки овалов, в центре — кокосы.
+        /// </summary>
         void Palm(RectTransform area, float x, float lean)
         {
-            const int seg = 9;
-            float y0 = 0.17f, y1 = 0.62f;
+            const int seg = 24;
+            float y0 = 0.15f, y1 = 0.6f;
             float cx = x, cy = y1;
-            for (int i = 0; i < seg; i++)
-            {
-                float t = (float)i / (seg - 1);
-                float px = x + lean * t * t;
-                float py = Mathf.Lerp(y0, y1, t);
-                UIKit.Shape(area, UIKit.RoundedSmall, UIKit.Hex(i % 2 == 0 ? "#8D6E63" : "#795548"), px, py, 26f - t * 6f, 30f);
-                cx = px; cy = py;
-            }
-            float[] ang = { 170f, 140f, 110f, 70f, 40f, 10f, 200f, -20f };
+            var bark = UIKit.Hex("#9C7A5B");
+            var barkDark = UIKit.Hex("#7B5B40");
+            var barkLight = UIKit.Hex("#B89474");
+            // три прохода (контур → кора → блик), иначе контур следующего сегмента ляжет полосой поверх предыдущего
+            for (int pass = 0; pass < 3; pass++)
+                for (int i = 0; i < seg; i++)
+                {
+                    float t = (float)i / (seg - 1);
+                    float px = x + lean * t * t;
+                    float py = Mathf.Lerp(y0, y1, t);
+                    float w = 34f - t * 12f;
+                    // сегмент повёрнут по изгибу ствола и перекрывает соседей — ствол гладкий, без щелей
+                    float rot = -Mathf.Atan2(2f * lean * t * 1920f, (y1 - y0) * 1080f) * Mathf.Rad2Deg;
+                    if (pass == 0) UIKit.Shape(area, UIKit.RoundedSmall, barkDark, px, py, w + 5f, 34f, rot);
+                    else if (pass == 1) UIKit.Shape(area, UIKit.RoundedSmall, bark, px, py, w, 34f, rot);
+                    else
+                    {
+                        UIKit.Shape(area, UIKit.RoundedSmall, UIKit.Alpha(barkLight, 0.7f), px - 0.002f, py, w * 0.3f, 34f, rot);
+                        if (i % 3 == 1) UIKit.Shape(area, UIKit.RoundedSmall, UIKit.Alpha(barkDark, 0.35f), px, py, w * 0.8f, 3f, rot);
+                    }
+                    cx = px; cy = py;
+                }
+
+            // крона строится в пикселях вокруг верхушки ствола
+            var crown = UIKit.Rect(area, "Crown");
+            UIKit.PlaceFixed(crown, cx, cy, 10f, 10f);
+            float[] ang = { 172f, 145f, 118f, 90f, 62f, 35f, 8f, 205f, -25f };
+            float[] len = { 150f, 160f, 140f, 110f, 140f, 160f, 150f, 120f, 120f };
+            var dark = UIKit.Hex("#1B5E20");
             for (int i = 0; i < ang.Length; i++)
             {
-                var leaf = UIKit.Rect(area, "Leaf");
-                UIKit.PlaceFixed(leaf, cx, cy, 130f, 30f);
-                leaf.pivot = new Vector2(0f, 0.5f);
-                leaf.anchoredPosition = Vector2.zero;
-                leaf.localRotation = Quaternion.Euler(0, 0, ang[i]);
-                UIKit.Shape(leaf, UIKit.Rounded, UIKit.Hex(i % 2 == 0 ? "#2E7D32" : "#388E3C"), 0.5f, 0.5f, 130f, 28f);
-                UIKit.Shape(leaf, UIKit.RoundedSmall, UIKit.Hex("#1B5E20"), 0.5f, 0.5f, 120f, 4f);
+                float a = ang[i] * Mathf.Deg2Rad;
+                Vector2 d = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+                float L0 = len[i];
+                float droop = 0.55f + 0.2f * Mathf.Abs(Mathf.Cos(a));   // боковые листья свисают сильнее
+                var col = UIKit.Hex(i % 2 == 0 ? "#2E7D32" : "#43A047");
+                const int n = 10;
+                for (int pass = 0; pass < 2; pass++)
+                    for (int k = 0; k < n; k++)
+                    {
+                        float s = (k + 0.5f) / n;
+                        // точка на изогнутой вниз дуге и касательная к ней
+                        Vector2 pnt = d * (s * L0) + new Vector2(0f, -droop * L0 * s * s);
+                        Vector2 tan = d * L0 + new Vector2(0f, -2f * droop * L0 * s);
+                        float rot = Mathf.Atan2(tan.y, tan.x) * Mathf.Rad2Deg;
+                        float lw = L0 / n * 2.4f;
+                        float lh = Mathf.Lerp(34f, 10f, s);
+                        var img = UIKit.Shape(crown, UIKit.CircleHD, pass == 0 ? dark : col, 0.5f, 0.5f,
+                            lw + (pass == 0 ? 6f : 0f), lh + (pass == 0 ? 6f : 0f), rot);
+                        img.rectTransform.anchoredPosition = pnt;
+                    }
             }
+            // кокосы
             for (int i = 0; i < 3; i++)
-                UIKit.Shape(area, UIKit.Circle, UIKit.Hex("#5D4037"), cx - 0.008f + i * 0.008f, cy - 0.03f, 18f, 18f);
+            {
+                var co = UIKit.Shape(crown, UIKit.CircleHD, UIKit.Hex("#5D4037"), 0.5f, 0.5f, 22f, 22f);
+                co.rectTransform.anchoredPosition = new Vector2(-12f + i * 12f, -12f - (i == 1 ? 6f : 0f));
+                var hl = UIKit.Shape(crown, UIKit.CircleHD, UIKit.Hex("#8D6E63"), 0.5f, 0.5f, 7f, 7f);
+                hl.rectTransform.anchoredPosition = new Vector2(-15f + i * 12f, -8f - (i == 1 ? 6f : 0f));
+            }
         }
 
         /// <summary>

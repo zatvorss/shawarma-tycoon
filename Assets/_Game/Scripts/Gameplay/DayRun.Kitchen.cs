@@ -694,7 +694,7 @@ namespace ValourGames.Shawarma
             if (_boxSrc == null) return;
             var bin = BinOf(Ing.Fries);
             int f = (int)Ing.Fries;
-            if (_boxSrc.Dragging && !_boxFilled && bin != null && DragSource.Over(bin.root, _boxSrc.Pos))
+            if (_boxSrc.Dragging && !_boxFilled && bin != null && DragSource.OverPad(bin.root, _boxSrc.Pos, 60f))
             {
                 if (_stock[f] <= 0)
                 {
@@ -1396,7 +1396,7 @@ namespace ValourGames.Shawarma
                 ds.makeGhost = () => Icons.Ingredient(_fx, id, 0.5f, 0.5f, 90f);
                 ds.onDrop = pos =>
                 {
-                    if (DragSource.Over(_chopBoard, pos)) OnPickVeg(id);
+                    if (DragSource.OverPad(_chopBoard, pos, 50f)) OnPickVeg(id);
                     else Toast(L.T("Брось овощ на разделочную доску", "Drop the veggie on the cutting board"));
                 };
                 ds.onTap = () =>
@@ -1461,7 +1461,7 @@ namespace ValourGames.Shawarma
             _fryDrag.onDrop = pos =>
             {
                 var bin = BinOf(Ing.Fries);
-                if (bin != null && DragSource.Over(bin.root, pos)) UnloadFryer(false);
+                if (bin != null && DragSource.OverPad(bin.root, pos, 50f)) UnloadFryer(false);
                 else Toast(L.T("Брось картошку в лоток «Картошка» на сборке", "Drop the fries into the Fries bin"));
             };
             _fryDrag.onTap = OnFryerTap;
@@ -1482,7 +1482,7 @@ namespace ValourGames.Shawarma
             rds.makeGhost = () => RawFries(_fx, 100f);
             rds.onDrop = pos =>
             {
-                if (DragSource.Over(_fryBody, pos)) LoadFryer(false);
+                if (DragSource.OverPad(_fryBody, pos, 50f)) LoadFryer(false);
                 else Toast(L.T("Брось сырую картошку во фритюр", "Drop the raw fries into the fryer"));
             };
             rds.onTap = OnRawCrateTap;
@@ -1616,17 +1616,17 @@ namespace ValourGames.Shawarma
                 UIKit.FitLabel(info.transform, L.T("Упаковка «здесь / с собой»\nпоявится на 2-й локации", "Here / to-go packing\narrives at location 2"), 18, UIKit.Alpha(UIKit.Cream, 0.8f), 0.05f, 0.08f, 0.95f, 0.92f);
             }
 
-            // напитки и гарнир «под столом»: стаканы, коробки фри, краны колы и айрана
+            // напитки и гарнир «под столом»: стаканы, коробки фри, краны колы и сока
             var under = UIKit.Panel(p, "Under", UIKit.Hex("#CFE8F5"), 0.03f, 0.015f, 0.97f, 0.33f);
             UIKit.AddShadow(under, 4f, 0.3f);
             var u = under.transform;
             bool cola = GameData.DrinkOpen(Drink.Cola, _eday, _save.location);
-            bool ayran = GameData.DrinkOpen(Drink.Ayran, _eday, _save.location);
+            bool juice = GameData.DrinkOpen(Drink.Juice, _eday, _save.location);
 
             // стопка стаканов
             var cups = UIKit.Panel(u, "Cups", Color.white, 0.04f, 0.53f, 0.48f, 0.96f);
             _cupsCell = cups.rectTransform;
-            if (cola || ayran)
+            if (cola || juice)
             {
                 Icons.DrinkCup(cups.transform, Drink.None, 0.36f, 0.45f, 50f, 0f);
                 Icons.DrinkCup(cups.transform, Drink.None, 0.5f, 0.52f, 50f, 0f);
@@ -1666,8 +1666,8 @@ namespace ValourGames.Shawarma
 
             // краны
             _tapCola = DispenserCell(u, Drink.Cola, 0.04f, cola, L.T("Кола —\nлокация 3", "Cola —\nlocation 3"));
-            _tapAyran = DispenserCell(u, Drink.Ayran, 0.52f, ayran, L.T("Айран —\nлокация 6", "Ayran —\nlocation 6"));
-            if (GameData.CupTap(_lvDrinks) && (cola || ayran)) StationLook.Auto(u, Up.Drinks, 0.93f, 0.5f, 34f);
+            _tapJuice = DispenserCell(u, Drink.Juice, 0.52f, juice, L.T("Сок —\nлокация 6", "Juice —\nlocation 6"));
+            if (GameData.CupTap(_lvDrinks) && (cola || juice)) StationLook.Auto(u, Up.Drinks, 0.93f, 0.5f, 34f);
         }
 
         static void LockedCell(Transform cell, string text)
@@ -1680,7 +1680,7 @@ namespace ValourGames.Shawarma
         /// <summary>Кран напитка: под него подносят стакан (или просто касаются — с 4-го уровня «Напитков»).</summary>
         RectTransform DispenserCell(Transform u, Drink d, float x0, bool open, string lockText)
         {
-            var cell = UIKit.Panel(u, "Tap_" + d, UIKit.Hex(d == Drink.Cola ? "#B71C1C" : "#1565C0"), x0, 0.04f, x0 + 0.44f, 0.47f);
+            var cell = UIKit.Panel(u, "Tap_" + d, UIKit.Hex(d == Drink.Cola ? "#B71C1C" : "#E65100"), x0, 0.04f, x0 + 0.44f, 0.47f);
             if (!open) { LockedCell(cell.transform, lockText); return null; }
             var c = cell.transform;
             UIKit.Panel(c, "Front", UIKit.Alpha(Color.white, 0.18f), 0.08f, 0.55f, 0.92f, 0.92f);
@@ -1695,9 +1695,9 @@ namespace ValourGames.Shawarma
         //  НАПИТКИ В СТАКАНАХ: взять стакан, подержать под краном, отдать
         // =====================================================================
         DragSource _cupSrc;
-        RectTransform _tapCola, _tapAyran;
+        RectTransform _tapCola, _tapJuice;
         float _cupFill, _autoCupT;
-        Drink _cupDrink = Drink.None, _cupHover = Drink.None;
+        Drink _cupDrink = Drink.None, _cupHover = Drink.None, _cupFillDrink = Drink.None;
         int _cupDrawn = -1;
 
         RectTransform MakeCupGhost()
@@ -1707,6 +1707,7 @@ namespace ValourGames.Shawarma
             _cupFill = 0f;
             _cupDrink = Drink.None;
             _cupHover = Drink.None;
+            _cupFillDrink = Drink.None;
             _cupDrawn = -1;
             DrawCupGhost(g, Drink.None, 0);
             return g;
@@ -1732,9 +1733,16 @@ namespace ValourGames.Shawarma
             if (_cupSrc != null && _cupSrc.Dragging && _cupDrink == Drink.None)
             {
                 Drink over = Drink.None;
-                if (_tapCola != null && DragSource.Over(_tapCola, _cupSrc.Pos)) over = Drink.Cola;
-                else if (_tapAyran != null && DragSource.Over(_tapAyran, _cupSrc.Pos)) over = Drink.Ayran;
-                if (over != _cupHover) { _cupHover = over; _cupFill = 0f; }
+                // зона налива щедрая: весь кран + 90 px вокруг; если зоны пересекаются — ближайший кран
+                var cp = _cupSrc.Pos;
+                bool oc = _tapCola != null && DragSource.OverPad(_tapCola, cp, 90f);
+                bool oj = _tapJuice != null && DragSource.OverPad(_tapJuice, cp, 90f);
+                if (oc && oj) over = DragSource.Dist(_tapCola, cp) <= DragSource.Dist(_tapJuice, cp) ? Drink.Cola : Drink.Juice;
+                else if (oc) over = Drink.Cola;
+                else if (oj) over = Drink.Juice;
+                // если стакан на миг «соскочил» с крана — налитое не пропадает; сброс только при смене напитка
+                if (over != Drink.None && over != _cupFillDrink) { _cupFillDrink = over; _cupFill = 0f; }
+                _cupHover = over;
                 if (over != Drink.None)
                 {
                     _cupFill += dt;
@@ -1743,6 +1751,11 @@ namespace ValourGames.Shawarma
                     DrawCupGhost(_cupSrc.Ghost, over, step);
                     if (step == 1 && _cupFill - dt < need / 4f) Sfx.Play(Sound.Pour);
                     if (step >= 4) { _cupDrink = over; Sfx.Play(Sound.Done); }
+                }
+                else if (_cupFillDrink != Drink.None)
+                {
+                    int step = Mathf.Clamp(Mathf.FloorToInt(_cupFill / GameData.CupFillTime(_lvDrinks) * 4f), 0, 3);
+                    DrawCupGhost(_cupSrc.Ghost, _cupFillDrink, step);
                 }
                 else DrawCupGhost(_cupSrc.Ghost, Drink.None, 0);
             }
@@ -1756,9 +1769,9 @@ namespace ValourGames.Shawarma
             {
                 var c = _customers[i];
                 if (c == null || c.leaving) continue;
-                Drink want = c.WantsDrink(Drink.Cola) ? Drink.Cola : (c.WantsDrink(Drink.Ayran) ? Drink.Ayran : Drink.None);
+                Drink want = c.WantsDrink(Drink.Cola) ? Drink.Cola : (c.WantsDrink(Drink.Juice) ? Drink.Juice : Drink.None);
                 if (want == Drink.None) continue;
-                var from = want == Drink.Cola ? _tapCola : _tapAyran;
+                var from = want == Drink.Cola ? _tapCola : _tapJuice;
                 if (from == null) continue;
                 var ic = Icons.DrinkCup(_fx, want, 0.5f, 0.5f, 70f, 1f);
                 Juice.Fly(ic, from.position, c.BubbleWorld, 0.35f, 0f, null);
@@ -1795,7 +1808,7 @@ namespace ValourGames.Shawarma
                 return;
             }
             if (_tray.Count >= GameData.TrayCapacity) { Toast(L.T("Выдача заполнена", "Serving tray is full")); Sfx.Play(Sound.Error); return; }
-            var from = d == Drink.Cola ? _tapCola : _tapAyran;
+            var from = d == Drink.Cola ? _tapCola : _tapJuice;
             if (from != null)
             {
                 var ic = Icons.DrinkCup(_fx, d, 0.5f, 0.5f, 70f, 1f);
