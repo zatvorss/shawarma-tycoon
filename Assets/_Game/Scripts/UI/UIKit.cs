@@ -1,0 +1,400 @@
+using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.UI;
+
+namespace ValourGames.Shawarma
+{
+    /// <summary>
+    /// Помощники для сборки интерфейса из кода.
+    /// Координаты x0,y0,x1,y1 — доли от родителя (0..1): левый-нижний и правый-верхний угол.
+    /// </summary>
+    public static class UIKit
+    {
+        // ---------- палитра ----------
+        public static readonly Color Dark       = Hex("#2B1D14");
+        public static readonly Color Cream      = Hex("#FFF4E0");
+        public static readonly Color Wall       = Hex("#F3C98B");
+        public static readonly Color Wood       = Hex("#7A4A2A");
+        public static readonly Color WoodLight  = Hex("#C8935E");
+        public static readonly Color Steel      = Hex("#55626B");
+        public static readonly Color SteelLight = Hex("#A9B4BB");
+        public static readonly Color Green      = Hex("#3FA34D");
+        public static readonly Color Orange     = Hex("#F08A24");
+        public static readonly Color Red        = Hex("#D64541");
+        public static readonly Color Blue       = Hex("#3B82C4");
+        public static readonly Color Gold       = Hex("#FFC928");
+        public static readonly Color Gray       = Hex("#8F8F8F");
+        public static readonly Color Purple     = Hex("#8E5CC4");
+
+        public static Color Hex(string hex)
+        {
+            Color c;
+            if (!ColorUtility.TryParseHtmlString(hex, out c)) c = Color.magenta;
+            return c;
+        }
+
+        public static Color Alpha(Color c, float a) { c.a = a; return c; }
+
+        // ---------- шрифт и спрайты (генерируются кодом — ассеты не нужны) ----------
+        static Font _font;
+        public static Font Font
+        {
+            get
+            {
+                if (_font == null) _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                return _font;
+            }
+        }
+
+        static Sprite _rounded, _roundedSmall, _circle, _tile;
+
+        /// <summary>Скруглённый прямоугольник (9-slice).</summary>
+        public static Sprite Rounded
+        {
+            get { if (_rounded == null) _rounded = MakeRounded(96, 30, true); return _rounded; }
+        }
+
+        /// <summary>Слегка скруглённый (для мелочей).</summary>
+        public static Sprite RoundedSmall
+        {
+            get { if (_roundedSmall == null) _roundedSmall = MakeRounded(48, 12, true); return _roundedSmall; }
+        }
+
+        static Sprite _circleHD;
+        /// <summary>Круг в высоком разрешении — для больших фигур (колесо удачи и т.п.), чтобы не было пикселей.</summary>
+        public static Sprite CircleHD
+        {
+            get { if (_circleHD == null) _circleHD = MakeRounded(512, 256, false); return _circleHD; }
+        }
+
+        public static Sprite Circle
+        {
+            get { if (_circle == null) _circle = MakeRounded(128, 64, false); return _circle; }
+        }
+
+        /// <summary>Кафельная плитка для стены кухни.</summary>
+        public static Sprite Tile
+        {
+            get
+            {
+                if (_tile != null) return _tile;
+                const int s = 64;
+                var tex = new Texture2D(s, s, TextureFormat.RGBA32, false);
+                tex.wrapMode = TextureWrapMode.Repeat;
+                tex.filterMode = FilterMode.Bilinear;
+                var px = new Color32[s * s];
+                for (int y = 0; y < s; y++)
+                    for (int x = 0; x < s; x++)
+                    {
+                        bool grout = x < 2 || y < 2;
+                        float shade = 1f - 0.05f * ((float)y / s);
+                        byte v = grout ? (byte)200 : (byte)(255 * shade);
+                        px[y * s + x] = new Color32(v, v, v, 255);
+                    }
+                tex.SetPixels32(px);
+                tex.Apply();
+                _tile = Sprite.Create(tex, new Rect(0, 0, s, s), new Vector2(0.5f, 0.5f), 100f, 0, SpriteMeshType.FullRect);
+                return _tile;
+            }
+        }
+
+        /// <summary>Вертикальный градиент сверху вниз.</summary>
+        public static Sprite Gradient(Color top, Color bottom)
+        {
+            const int h = 64;
+            var tex = new Texture2D(2, h, TextureFormat.RGBA32, false);
+            tex.wrapMode = TextureWrapMode.Clamp;
+            tex.filterMode = FilterMode.Bilinear;
+            for (int y = 0; y < h; y++)
+            {
+                var c = Color.Lerp(bottom, top, (float)y / (h - 1));
+                tex.SetPixel(0, y, c);
+                tex.SetPixel(1, y, c);
+            }
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, 2, h), new Vector2(0.5f, 0.5f), 100f);
+        }
+
+        static Sprite MakeRounded(int size, int radius, bool sliced)
+        {
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            tex.wrapMode = TextureWrapMode.Clamp;
+            tex.filterMode = FilterMode.Bilinear;
+            var px = new Color32[size * size];
+            float r = radius;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float fx = x + 0.5f, fy = y + 0.5f;
+                    float cx = Mathf.Clamp(fx, r, size - r);
+                    float cy = Mathf.Clamp(fy, r, size - r);
+                    float d = Mathf.Sqrt((fx - cx) * (fx - cx) + (fy - cy) * (fy - cy));
+                    float a = Mathf.Clamp01(r - d + 0.5f);
+                    px[y * size + x] = new Color32(255, 255, 255, (byte)(a * 255));
+                }
+            }
+            tex.SetPixels32(px);
+            tex.Apply();
+            var border = sliced ? new Vector4(radius, radius, radius, radius) : Vector4.zero;
+            return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f, 0,
+                SpriteMeshType.FullRect, border);
+        }
+
+        // ---------- базовые элементы ----------
+        public static RectTransform Rect(Transform parent, string name)
+        {
+            var go = new GameObject(name, typeof(RectTransform));
+            go.layer = 5; // UI
+            var rt = (RectTransform)go.transform;
+            rt.SetParent(parent, false);
+            return rt;
+        }
+
+        public static void Place(RectTransform rt, float x0, float y0, float x1, float y1)
+        {
+            rt.anchorMin = new Vector2(x0, y0);
+            rt.anchorMax = new Vector2(x1, y1);
+            rt.offsetMin = Vector2.zero;
+            rt.offsetMax = Vector2.zero;
+        }
+
+        /// <summary>Фиксированный размер (в единицах канваса), центр — в точке (ax, ay) родителя.</summary>
+        public static void PlaceFixed(RectTransform rt, float ax, float ay, float w, float h)
+        {
+            rt.anchorMin = rt.anchorMax = new Vector2(ax, ay);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(w, h);
+            rt.anchoredPosition = Vector2.zero;
+        }
+
+        public static RectTransform Full(Transform parent, string name)
+        {
+            var rt = Rect(parent, name);
+            Place(rt, 0, 0, 1, 1);
+            return rt;
+        }
+
+        public static Image Panel(Transform parent, string name, Color color,
+            float x0 = 0, float y0 = 0, float x1 = 1, float y1 = 1, bool rounded = true)
+        {
+            var rt = Rect(parent, name);
+            Place(rt, x0, y0, x1, y1);
+            var img = rt.gameObject.AddComponent<Image>();
+            img.color = color;
+            if (rounded)
+            {
+                img.sprite = Rounded;
+                img.type = Image.Type.Sliced;
+            }
+            img.raycastTarget = false;
+            return img;
+        }
+
+        /// <summary>Фигура фиксированного размера (для рисования иконок и персонажей).</summary>
+        public static Image Shape(Transform parent, Sprite sprite, Color color,
+            float ax, float ay, float w, float h, float rot = 0f)
+        {
+            var rt = Rect(parent, "Shape");
+            PlaceFixed(rt, ax, ay, w, h);
+            if (rot != 0f) rt.localRotation = Quaternion.Euler(0, 0, rot);
+            var img = rt.gameObject.AddComponent<Image>();
+            img.sprite = sprite;
+            if (sprite != null && sprite.border != Vector4.zero) img.type = Image.Type.Sliced;
+            img.color = color;
+            img.raycastTarget = false;
+            return img;
+        }
+
+        public static Image CircleImg(Transform parent, string name, Color color, float ax, float ay, float size)
+        {
+            var img = Shape(parent, Circle, color, ax, ay, size, size);
+            img.gameObject.name = name;
+            return img;
+        }
+
+        public static void AddShadow(Graphic g, float dist = 6f, float alpha = 0.3f)
+        {
+            var sh = g.gameObject.AddComponent<Shadow>();
+            sh.effectColor = new Color(0, 0, 0, alpha);
+            sh.effectDistance = new Vector2(dist * 0.5f, -dist);
+        }
+
+        public static void AddOutline(Graphic g, Color c, float dist = 2f)
+        {
+            var o = g.gameObject.AddComponent<Outline>();
+            o.effectColor = c;
+            o.effectDistance = new Vector2(dist, -dist);
+        }
+
+        public static Text Label(Transform parent, string text, int size, Color color,
+            TextAnchor anchor = TextAnchor.MiddleCenter,
+            float x0 = 0, float y0 = 0, float x1 = 1, float y1 = 1, bool bold = false)
+        {
+            var rt = Rect(parent, "Text");
+            Place(rt, x0, y0, x1, y1);
+            var t = rt.gameObject.AddComponent<Text>();
+            t.font = Font;
+            t.text = text;
+            t.fontSize = size;
+            t.color = color;
+            t.alignment = anchor;
+            t.raycastTarget = false;
+            t.horizontalOverflow = HorizontalWrapMode.Wrap;
+            t.verticalOverflow = VerticalWrapMode.Overflow;
+            t.supportRichText = true;
+            if (bold) t.fontStyle = FontStyle.Bold;
+            return t;
+        }
+
+        /// <summary>Текст, который сам уменьшается, если не влезает.</summary>
+        public static Text FitLabel(Transform parent, string text, int maxSize, Color color,
+            float x0 = 0, float y0 = 0, float x1 = 1, float y1 = 1, bool bold = true)
+        {
+            var t = Label(parent, text, maxSize, color, TextAnchor.MiddleCenter, x0, y0, x1, y1, bold);
+            t.verticalOverflow = VerticalWrapMode.Truncate;
+            t.resizeTextForBestFit = true;
+            t.resizeTextMinSize = 14;
+            t.resizeTextMaxSize = maxSize;
+            return t;
+        }
+
+        /// <summary>Делает из картинки кнопку: реакция на нажатие + "пружинка".</summary>
+        public static Button MakeButton(Image img, UnityAction onClick)
+        {
+            img.raycastTarget = true;
+            var b = img.gameObject.AddComponent<Button>();
+            b.targetGraphic = img;
+            var cb = b.colors;
+            cb.normalColor = Color.white;
+            cb.highlightedColor = new Color(1.06f, 1.06f, 1.06f, 1f);
+            cb.pressedColor = new Color(0.8f, 0.8f, 0.8f, 1f);
+            cb.selectedColor = Color.white;
+            cb.disabledColor = new Color(0.55f, 0.55f, 0.55f, 0.75f);
+            cb.fadeDuration = 0.05f;
+            b.colors = cb;
+            var nav = b.navigation;
+            nav.mode = Navigation.Mode.None;
+            b.navigation = nav;
+            if (onClick != null) b.onClick.AddListener(onClick);
+            img.gameObject.AddComponent<ButtonJuice>();
+            return b;
+        }
+
+        public static Button Button(Transform parent, string label, Color color, UnityAction onClick,
+            float x0 = 0, float y0 = 0, float x1 = 1, float y1 = 1, int fontSize = 44)
+        {
+            var img = Panel(parent, "Btn", color, x0, y0, x1, y1);
+            AddShadow(img, 6f, 0.3f);
+            // светлая полоска сверху — объём
+            var gloss = Panel(img.transform, "Gloss", new Color(1, 1, 1, 0.15f), 0.04f, 0.55f, 0.96f, 0.94f);
+            gloss.raycastTarget = false;
+            var b = MakeButton(img, onClick);
+
+            var t = FitLabel(img.transform, label, fontSize, Color.white, 0.05f, 0.08f, 0.95f, 0.92f);
+            AddShadow(t, 3f, 0.4f);
+            return b;
+        }
+
+        /// <summary>
+        /// Кнопка с ценой: [подпись] [монетка] [число] — монетка никогда не налезает на цифры.
+        /// </summary>
+        public static Button PriceButton(Transform parent, string label, long cost, Color color, UnityAction onClick,
+            float x0, float y0, float x1, float y1, int fontSize = 34)
+        {
+            var b = Button(parent, "", color, onClick, x0, y0, x1, y1, fontSize);
+            var old = b.GetComponentInChildren<Text>();
+            if (old != null) Object.Destroy(old.gameObject);
+            bool hasLabel = !string.IsNullOrEmpty(label);
+            float coinX = hasLabel ? 0.56f : 0.32f;
+            if (hasLabel)
+            {
+                var l = FitLabel(b.transform, label, fontSize, Color.white, 0.04f, 0.1f, 0.5f, 0.9f);
+                l.alignment = TextAnchor.MiddleRight;
+                AddShadow(l, 3f, 0.4f);
+            }
+            Icons.Coin(b.transform, coinX, 0.5f, fontSize * 1.1f);
+            var n = FitLabel(b.transform, GameData.Money(cost), fontSize, Color.white, coinX + 0.05f, 0.1f, 0.97f, 0.9f);
+            n.alignment = TextAnchor.MiddleLeft;
+            AddShadow(n, 3f, 0.4f);
+            return b;
+        }
+
+        public static void SetLabel(Button b, string text)
+        {
+            var t = b.GetComponentInChildren<Text>();
+            if (t != null) t.text = text;
+        }
+
+        /// <summary>Прозрачная кликабельная область на весь родитель.</summary>
+        public static Button HitArea(Transform parent, string name, UnityAction onClick)
+        {
+            var rt = Full(parent, name);
+            var img = rt.gameObject.AddComponent<Image>();
+            img.color = new Color(0, 0, 0, 0);
+            var b = rt.gameObject.AddComponent<Button>();
+            b.targetGraphic = img;
+            b.transition = Selectable.Transition.None;
+            var nav = b.navigation;
+            nav.mode = Navigation.Mode.None;
+            b.navigation = nav;
+            if (onClick != null) b.onClick.AddListener(onClick);
+            return b;
+        }
+
+        /// <summary>Полоска прогресса. Возвращает заливку — её меняем через SetFill.</summary>
+        public static RectTransform Bar(Transform parent, Color back, Color fill,
+            float x0, float y0, float x1, float y1)
+        {
+            var bg = Panel(parent, "Bar", back, x0, y0, x1, y1, true);
+            bg.sprite = RoundedSmall;
+            var f = Panel(bg.transform, "Fill", fill, 0, 0, 1, 1, true);
+            f.sprite = RoundedSmall;
+            return f.rectTransform;
+        }
+
+        public static void SetFill(RectTransform fill, float v)
+        {
+            v = Mathf.Clamp01(v);
+            fill.anchorMax = new Vector2(v, 1f);
+            fill.offsetMax = Vector2.zero;
+            fill.gameObject.SetActive(v > 0.001f);
+        }
+
+        /// <summary>
+        /// Модальное окно: затемнение (тап мимо — закрыть), карточка с цветной шапкой и кнопкой X.
+        /// Возвращает область для содержимого.
+        /// </summary>
+        public static RectTransform Popup(Transform parent, string title, Color header,
+            float x0, float y0, float x1, float y1, UnityAction onClose)
+        {
+            var ov = Panel(parent, "Popup", new Color(0, 0, 0, 0.55f), 0, 0, 1, 1, false);
+            ov.raycastTarget = true;
+            var overlay = ov.gameObject;
+            UnityAction close = () =>
+            {
+                Sfx.Play(Sound.Click);
+                Object.Destroy(overlay);
+                if (onClose != null) onClose();
+            };
+            HitArea(ov.transform, "Outside", close);
+            var card = Panel(ov.transform, "Card", Cream, x0, y0, x1, y1);
+            card.raycastTarget = true;
+            AddShadow(card, 14f, 0.45f);
+            var head = Panel(card.transform, "Header", header, 0, 0.84f, 1, 1);
+            var t = FitLabel(head.transform, title, 46, Color.white, 0.04f, 0.1f, 0.84f, 0.9f);
+            AddShadow(t, 3f, 0.4f);
+            Button(head.transform, "X", Red, close, 0.87f, 0.14f, 0.98f, 0.86f, 34);
+            var content = Rect(card.transform, "Content");
+            Place(content, 0.03f, 0.03f, 0.97f, 0.82f);
+            Juice.Punch(card.rectTransform, 0.08f, 0.25f);
+            return content;
+        }
+
+        public static void Clear(Transform t)
+        {
+            for (int i = t.childCount - 1; i >= 0; i--)
+                Object.Destroy(t.GetChild(i).gameObject);
+        }
+    }
+}
