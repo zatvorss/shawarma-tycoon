@@ -32,6 +32,7 @@ namespace ValourGames.Shawarma
             public float sprinkT;
             public bool onFire;
             public bool fresh;
+            public bool dinged;
             public int fireTaps;
             public RectTransform fire;
         }
@@ -59,8 +60,8 @@ namespace ValourGames.Shawarma
             public bool locked;
         }
 
-        static readonly Ing[] Choppables = { Ing.Tomato, Ing.Cucumber, Ing.Cabbage, Ing.Cheese, Ing.Jalapeno };
-        static readonly Ing[] BinOrder = { Ing.Meat, Ing.Tomato, Ing.Cucumber, Ing.Cabbage, Ing.Cheese, Ing.Jalapeno, Ing.Fries, Ing.Garlic, Ing.Spicy };
+        static readonly Ing[] Choppables = { Ing.Tomato, Ing.Cucumber, Ing.Cabbage, Ing.Cheese, Ing.Onion };
+        static readonly Ing[] BinOrder = { Ing.Meat, Ing.Tomato, Ing.Cucumber, Ing.Cabbage, Ing.Cheese, Ing.Onion, Ing.Fries, Ing.Garlic, Ing.Spicy };
         const int MaxPerIngredient = 2;
 
         // --- уровни ---
@@ -165,7 +166,7 @@ namespace ValourGames.Shawarma
             _fryTime = GameData.FryTime(_lvFryer);
             _fryBurn = GameData.FryBurn(_lvFryer);
             _friesBatch = GameData.FriesBatch(_lvFryer);
-            _friesUnlocked = GameData.Unlocked(Ing.Fries, _eday);
+            _friesUnlocked = GameData.IngOpen(Ing.Fries, _save.location);
             _sauceRate = GameData.SauceRate(_lvSauce);
             _grillTime = GameData.GrillTime(_lvGrill);
             _packTaps = GameData.PackTaps(_save.Lvl(Up.Pack));
@@ -190,7 +191,7 @@ namespace ValourGames.Shawarma
             _stock[(int)Ing.Spicy] = sauceCap / 2;
         }
 
-        bool IsUnlocked(Ing id) { return GameData.Unlocked(id, _eday); }
+        bool IsUnlocked(Ing id) { return GameData.IngOpen(id, _save.location); }
 
         // =====================================================================
         //  ТИК
@@ -320,7 +321,7 @@ namespace ValourGames.Shawarma
                 {
                     _fry = FryState.Ready;
                     _fryT = 0f;
-                    Sfx.Play(Sound.Done);
+                    Sfx.Play(Sound.Ding);
                     Juice.Punch(_basket.transform, 0.15f, 0.3f);
                     RefreshFryer();
                     if (autoUnload && _stock[f] < _cap[f]) UnloadFryer(true);
@@ -385,6 +386,7 @@ namespace ValourGames.Shawarma
                 }
                 else if (g.t < _grillTime + Burn(g))
                 {
+                    if (!g.dinged) { g.dinged = true; Sfx.Play(Sound.Ding); }
                     if (autoGrill && _tray.Count < GameData.TrayCapacity) { TakeFromGrill(s, true); continue; }
                     float q = (g.t - _grillTime) / Burn(g);
                     bool perfect = q < PerfectLimit && !g.uneven;
@@ -1065,6 +1067,7 @@ namespace ValourGames.Shawarma
         {
             g.counts = null;
             g.fresh = false;
+            g.dinged = false;
             g.fireT = 0f;
             g.flipped = false;
             g.uneven = false;
@@ -1208,7 +1211,7 @@ namespace ValourGames.Shawarma
         // =====================================================================
         string Hint()
         {
-            if (_eday > 2) return _eday <= 5 ? FriesHint() : "";
+            if (_eday > 2) return (_save.location == GameData.Get(Ing.Fries).unlockLoc && _day <= 3) ? FriesHint() : "";
             foreach (var it in _tray)
                 if (!it.isDrink && it.pack == 0) return L.T("Упакуй: «Обёртка» — здесь, потом «Пакет» — с собой", "Pack it: Wrap for here, then Bag to go");
             foreach (var c in _customers)
@@ -1267,11 +1270,6 @@ namespace ValourGames.Shawarma
                 for (int i = 0; i < 4; i++)
                     UIKit.Shape(head.transform, UIKit.Circle, i <= level ? UIKit.Gold : UIKit.Alpha(Color.white, 0.2f),
                         0.74f + i * 0.07f, 0.5f, 11f, 11f);
-            }
-            if (auto)
-            {
-                var badge = UIKit.Panel(p.transform, "Auto", UIKit.Gold, 0.6f, 0.83f, 0.97f, 0.885f);
-                UIKit.FitLabel(badge.transform, L.T("АВТО", "AUTO"), 18, UIKit.Dark, 0.05f, 0.05f, 0.95f, 0.95f);
             }
             return p.rectTransform;
         }
@@ -1467,7 +1465,7 @@ namespace ValourGames.Shawarma
             {
                 var lk = UIKit.Panel(p, "Lock", new Color(0, 0, 0, 0.72f), 0, 0, 1, 0.88f);
                 lk.raycastTarget = true;
-                UIKit.FitLabel(lk.transform, L.T("Откроется\nна 3-й день", "Unlocks\non day 3"), 30, UIKit.Cream, 0.05f, 0.3f, 0.95f, 0.7f);
+                UIKit.FitLabel(lk.transform, L.T("Откроется\nна локации ", "Unlocks\nat location ") + (GameData.Get(Ing.Fries).unlockLoc + 1), 30, UIKit.Cream, 0.05f, 0.3f, 0.95f, 0.7f);
             }
         }
 
@@ -1501,7 +1499,7 @@ namespace ValourGames.Shawarma
                 {
                     b.locked = true;
                     bg.color = UIKit.Hex("#7D878E");
-                    UIKit.FitLabel(bg.transform, L.T("День ", "Day ") + Mathf.Max(2, GameData.Get(id).unlockDay - _save.location * 3), 24, UIKit.Alpha(Color.white, 0.7f), 0.05f, 0.3f, 0.95f, 0.7f);
+                    UIKit.FitLabel(bg.transform, L.T("Локация ", "Location ") + (GameData.Get(id).unlockLoc + 1), 22, UIKit.Alpha(Color.white, 0.75f), 0.05f, 0.3f, 0.95f, 0.7f);
                     continue;
                 }
 
@@ -1571,8 +1569,8 @@ namespace ValourGames.Shawarma
             var fridge = UIKit.Panel(p, "Fridge", UIKit.Hex("#CFE8F5"), 0.04f, 0.02f, 0.96f, 0.24f);
             UIKit.AddShadow(fridge, 4f, 0.3f);
             var drinks = new List<Drink>();
-            if (GameData.Unlocked(Drink.Cola, _eday)) drinks.Add(Drink.Cola);
-            if (GameData.Unlocked(Drink.Ayran, _eday)) drinks.Add(Drink.Ayran);
+            if (GameData.DrinkOpen(Drink.Cola, _eday, _save.location)) drinks.Add(Drink.Cola);
+            if (GameData.DrinkOpen(Drink.Ayran, _eday, _save.location)) drinks.Add(Drink.Ayran);
             bool boxes = _friesUnlocked;
             int cells = drinks.Count + (boxes ? 1 : 0);
             if (cells == 0)

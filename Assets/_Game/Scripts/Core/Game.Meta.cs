@@ -79,7 +79,7 @@ namespace ValourGames.Shawarma
                     int v = Mathf.Min(a.value(_save), a.targets[tier]);
                     var fill = UIKit.Bar(card.transform, UIKit.Alpha(UIKit.Dark, 0.15f), UIKit.Green, 0.3f, 0.1f, 0.72f, 0.3f);
                     UIKit.SetFill(fill, (float)v / a.targets[tier]);
-                    UIKit.FitLabel(card.transform, AchDef.Fmt(v) + "/" + AchDef.Fmt(a.targets[tier]), 16, UIKit.Dark, 0.3f, 0.1f, 0.72f, 0.3f);
+                    UIKit.FitLabel(card.transform, AchDef.Fmt(v * a.scale) + "/" + AchDef.Fmt(a.targets[tier] * a.scale), 16, UIKit.Dark, 0.3f, 0.1f, 0.72f, 0.3f);
                     UIKit.FitLabel(card.transform, "+" + a.rewards[tier], 20, UIKit.Gray, 0.74f, 0.08f, 0.99f, 0.32f);
                 }
             }
@@ -225,26 +225,28 @@ namespace ValourGames.Shawarma
                         }
                     break;
                 default:
-                    // окно ШаурмаАвто: здание, окошко, табло и машина
-                    UIKit.Panel(p, "Road", UIKit.Hex("#546E7A"), 0f, 0f, 1f, 0.24f, false);
-                    for (int k = 0; k < 4; k++) UIKit.Panel(p, "Mark", UIKit.Hex("#FFEB3B"), 0.04f + k * 0.26f, 0.11f, 0.16f + k * 0.26f, 0.13f, false);
-                    UIKit.Panel(p, "Building", UIKit.Hex("#ECEFF1"), 0.55f, 0.24f, 1f, 0.85f, false);
-                    UIKit.Panel(p, "Roof", col, 0.53f, 0.82f, 1f, 0.92f, false);
-                    var win = UIKit.Panel(p, "Win", UIKit.Hex("#B3E5FC"), 0.6f, 0.4f, 0.8f, 0.7f);
-                    UIKit.AddOutline(win, UIKit.Dark, 2f);
-                    var sign = UIKit.Panel(p, "Sign", col, 0.82f, 0.45f, 0.98f, 0.8f);
-                    UIKit.FitLabel(sign.transform, L.T("ШАУРМА\nАВТО", "SHAWARMA\nAUTO"), 18, Color.white, 0.05f, 0.05f, 0.95f, 0.95f);
-                    // машина подъезжает
-                    var carR = UIKit.Rect(p, "Car");
-                    UIKit.PlaceFixed(carR, 0.3f, 0.3f, 180f, 110f);
-                    UIKit.Shape(carR, UIKit.Rounded, UIKit.Hex("#E53935"), 0.5f, 0.42f, 180f, 50f);
-                    UIKit.Shape(carR, UIKit.Rounded, UIKit.Hex("#C62828"), 0.5f, 0.68f, 110f, 44f);
-                    UIKit.Shape(carR, UIKit.RoundedSmall, UIKit.Hex("#B3E5FC"), 0.62f, 0.68f, 40f, 28f);
-                    UIKit.Shape(carR, UIKit.RoundedSmall, UIKit.Hex("#B3E5FC"), 0.38f, 0.68f, 40f, 28f);
-                    UIKit.Shape(carR, UIKit.CircleHD, UIKit.Dark, 0.24f, 0.18f, 40f, 40f);
-                    UIKit.Shape(carR, UIKit.CircleHD, UIKit.Dark, 0.76f, 0.18f, 40f, 40f);
-                    UIKit.Shape(carR, UIKit.Circle, UIKit.Hex("#FFF59D"), 0.97f, 0.45f, 16f, 12f);
-                    if (owned) { var sw = carR.gameObject.AddComponent<Swayer>(); sw.amp = 14f; sw.speed = 1.5f; }
+                    // полка с фирменным соусом «Секрет Ашота»
+                    UIKit.Panel(p, "Wall", UIKit.Hex("#FFF3E0"), 0f, 0.2f, 1f, 1f, false);
+                    UIKit.Panel(p, "Counter", UIKit.Hex("#8D6E63"), 0f, 0f, 1f, 0.2f, false);
+                    UIKit.Panel(p, "Shelf", UIKit.Hex("#6D4C41"), 0.08f, 0.52f, 0.92f, 0.56f, false);
+                    for (int k = 0; k < 5; k++)
+                    {
+                        float bx = 0.16f + k * 0.17f;
+                        var bottle = UIKit.Rect(p, "Bottle");
+                        UIKit.PlaceFixed(bottle, bx, 0.7f, 70f, 70f);
+                        UIKit.Shape(bottle, UIKit.RoundedSmall, UIKit.Hex("#FAFAFA"), 0.5f, 0.95f, 14f, 8f);
+                        UIKit.Shape(bottle, UIKit.RoundedSmall, UIKit.Hex("#B71C1C"), 0.5f, 0.82f, 16f, 14f);
+                        UIKit.Shape(bottle, UIKit.Rounded, col, 0.5f, 0.42f, 36f, 44f);
+                        UIKit.Shape(bottle, UIKit.RoundedSmall, UIKit.Hex("#FFF8E1"), 0.5f, 0.42f, 30f, 18f);
+                        UIKit.Shape(bottle, UIKit.Circle, UIKit.Hex("#FFB300"), 0.5f, 0.42f, 10f, 10f);
+                    }
+                    // большая бутылка на прилавке
+                    UIKit.Shape(art, UIKit.RoundedSmall, UIKit.Hex("#FAFAFA"), 0.5f, 0.5f, 26f, 14f);
+                    UIKit.Shape(art, UIKit.RoundedSmall, UIKit.Hex("#B71C1C"), 0.5f, 0.44f, 30f, 24f);
+                    var big = UIKit.Shape(art, UIKit.Rounded, col, 0.5f, 0.26f, 80f, 70f);
+                    var lbl = UIKit.Panel(big.transform, "Label", UIKit.Hex("#FFF8E1"), 0.1f, 0.25f, 0.9f, 0.75f);
+                    UIKit.FitLabel(lbl.transform, L.T("СЕКРЕТ\nАШОТА", "ASHOT'S\nSECRET"), 14, UIKit.Hex("#B71C1C"), 0.04f, 0.04f, 0.96f, 0.96f);
+                    if (owned) big.gameObject.AddComponent<Bobber>().amp = 3f;
                     break;
             }
             if (locked)

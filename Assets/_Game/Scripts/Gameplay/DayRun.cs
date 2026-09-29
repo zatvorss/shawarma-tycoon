@@ -53,7 +53,7 @@ namespace ValourGames.Shawarma
         // --- UI ---
         RectTransform _root, _street, _fx, _moneyIcon, _banner, _goalFill, _clockHand;
         RectTransform[] _slots;
-        Text _dayText, _eventText, _clockText, _moneyText, _comboText, _hintText, _toastText, _bannerText, _goalText, _repText;
+        Text _dayText, _clockText, _moneyText, _comboText, _hintText, _toastText, _bannerText, _goalText, _repText;
         Image _flash;
         GameObject _hintBulb;
         Transform _questBtn;
@@ -346,19 +346,21 @@ namespace ValourGames.Shawarma
             var def = GameData.Get(type);
             Drink drink = Drink.None;
             var drinks = new List<Drink>();
-            if (GameData.Unlocked(Drink.Cola, _eday)) drinks.Add(Drink.Cola);
-            if (GameData.Unlocked(Drink.Ayran, _eday)) drinks.Add(Drink.Ayran);
-            if (GameData.Unlocked(Drink.Fries, _eday)) drinks.Add(Drink.Fries);
+            if (GameData.DrinkOpen(Drink.Cola, _eday, _save.location)) drinks.Add(Drink.Cola);
+            if (GameData.DrinkOpen(Drink.Ayran, _eday, _save.location)) drinks.Add(Drink.Ayran);
+            if (GameData.DrinkOpen(Drink.Fries, _eday, _save.location)) drinks.Add(Drink.Fries);
             if (drinks.Count > 0 && Random.value < Mathf.Min(0.8f, _drinkChance + 0.1f)) drink = drinks[Random.Range(0, drinks.Count)];
 
-            float patience = _patience * def.patienceMult * Random.Range(0.9f, 1.1f);
-            patience = Mathf.Max(patience * 0.35f, patience - waited * 0.5f);
             var mode = Random.value < 0.5f ? ServeMode.Here : ServeMode.ToGo;
             bool known = _autoAsk || (type != CustType.Tourist && Random.value < GameData.ModeKnownChance);
             bool golden = _eday >= 3 && Random.value < GameData.GoldenChance * (Meta.Has(_save, Meta.CharmMagnet) ? 2f : 1f);
             bool special = false;
             var order = MakeOrder(type);
             int qty = type == CustType.Glutton ? 2 : 1;
+            // терпение: база + 4 сек за каждый пункт заказа; даже самые торопливые ждут не меньше 80% от обычного
+            int items = GameData.Total(order) * qty + (drink != Drink.None ? 1 : 0);
+            float patience = (_patience + 4f * items) * Mathf.Max(0.8f, def.patienceMult) * Random.Range(0.92f, 1.08f);
+            patience = Mathf.Max(patience * 0.5f, patience - waited * 0.4f);
             var c = new Customer(_slots[slot], type, order, drink, patience, mode, known, golden, -1, qty, special);
             _customers[slot] = c;
             c.Say(golden ? L.T("Я очень богат! Удиви меня!", "I'm very rich! Impress me!") : Meta.Hello(type), 2.5f);
@@ -410,7 +412,7 @@ namespace ValourGames.Shawarma
         {
             var toppings = new List<Ing>();
             foreach (var d in GameData.Ingredients)
-                if (d.id != Ing.Meat && d.unlockDay <= _eday) toppings.Add(d.id);
+                if (d.id != Ing.Meat && GameData.IngOpen(d.id, _save.location)) toppings.Add(d.id);
             for (int i = toppings.Count - 1; i > 0; i--)
             {
                 int j = Random.Range(0, i + 1);
@@ -427,7 +429,7 @@ namespace ValourGames.Shawarma
                 k = Mathf.Min(Mathf.Max(k, 2), toppings.Count);
             }
             for (int i = 0; i < k; i++) order[(int)toppings[i]] = 1;
-            if (t == CustType.Builder && GameData.Unlocked(Ing.Fries, _eday)) order[(int)Ing.Fries] = 1;
+            if (t == CustType.Builder && GameData.IngOpen(Ing.Fries, _save.location)) order[(int)Ing.Fries] = 1;
             return order;
         }
 
@@ -511,7 +513,6 @@ namespace ValourGames.Shawarma
             float mult = _priceMult * def.payMult * GameData.ComboMult(_combo) * (c.golden ? GameData.GoldenPay : 1f);
             if (_feverT > 0f) mult *= 2f;
             if (c.gotFresh) mult *= 1f + Meta.BakeBonus(_save.biz[Meta.BizBakery]);
-            if (c.car) mult *= Meta.DriveMult(_save.biz[Meta.BizDrive]);
             int price = Mathf.RoundToInt(GameData.OrderPrice(c.order, c.drink) * mult);
             if (c.type == CustType.Glutton && !c.IsCourier && !c.boss) price *= c.qtyTotal;
             if (c.IsCourier)
@@ -623,10 +624,10 @@ namespace ValourGames.Shawarma
                 Juice.Punch(_comboText.transform, 0.35f, 0.3f);
             }
 
-            if (c.car) CarsServed++;
             string thanks = c.type == CustType.Critic ? L.T("Шедевр! 5/5", "Masterpiece! 5/5")
                 : (tip > price / 5 ? L.T("Супер!", "Awesome!") : (tip > 0 ? L.T("Спасибо!", "Thanks!") : L.T("Норм", "OK")));
             c.Leave(true, thanks);
+            TryOfferSauce(slot, c);
             LiveStats(c, total, true);
             Juice.FloatText(_slots[slot], "+" + total, UIKit.Gold, 60, 0.7f, 0.65f);
             SpawnCoins(c.BubbleWorld, Mathf.Clamp(total / 40, 3, 8));
@@ -823,8 +824,8 @@ namespace ValourGames.Shawarma
         void BuildHud()
         {
             var hud = UIKit.Panel(_root, "HUD", UIKit.Dark, 0, 0.93f, 1, 1, false);
-            _dayText = UIKit.Label(hud.transform, "", 30, UIKit.Cream, TextAnchor.MiddleLeft, 0.01f, 0.42f, 0.12f, 1, true);
-            _eventText = UIKit.Label(hud.transform, "", 22, UIKit.Hex("#9FD3FF"), TextAnchor.MiddleLeft, 0.01f, 0f, 0.12f, 0.48f, true);
+            _dayText = UIKit.Label(hud.transform, "", 34, UIKit.Cream, TextAnchor.MiddleLeft, 0.012f, 0f, 0.12f, 1, true);
+            BuildQueuePill();
             var qb = UIKit.Button(hud.transform, "", UIKit.Purple, ShowQuests, 0.125f, 0.12f, 0.265f, 0.88f, 26);
             _questBtn = qb.transform;
             _questText = qb.GetComponentInChildren<Text>();
@@ -906,15 +907,51 @@ namespace ValourGames.Shawarma
             _pauseOverlay.SetActive(false);
         }
 
+        // --- табличка «Очередь» под навесом ---
+        GameObject _queuePill;
+        Image _queueBg;
+        Text _queueText;
+        int _queueShown = -1;
+        bool _rushAnnounced;
+
+        void BuildQueuePill()
+        {
+            var pill = UIKit.Panel(_root, "QueuePill", UIKit.Hex("#3E2723"), 0.415f, 0.868f, 0.585f, 0.925f);
+            UIKit.AddShadow(pill, 6f, 0.4f);
+            UIKit.AddOutline(pill, UIKit.Gold, 2f);
+            _queueBg = pill;
+            Icons.People(pill.transform, 0.13f, 0.5f, 46f);
+            _queueText = UIKit.FitLabel(pill.transform, "", 30, UIKit.Gold, 0.26f, 0.08f, 0.96f, 0.92f);
+            UIKit.AddShadow(_queueText, 2f, 0.6f);
+            _queuePill = pill.gameObject;
+            _queuePill.SetActive(false);
+        }
+
+        void RefreshQueuePill()
+        {
+            if (_queuePill == null) return;
+            int n = _queue.Count;
+            if (n == _queueShown) return;
+            _queuePill.SetActive(n > 0);
+            if (n > 0)
+            {
+                _queueText.text = L.T("Очередь: ", "Queue: ") + n;
+                _queueBg.color = n >= 3 ? UIKit.Hex("#8E1B12") : UIKit.Hex("#3E2723");
+                if (n > _queueShown) Juice.Punch(_queuePill.transform, 0.15f, 0.25f);
+            }
+            _queueShown = n;
+        }
+
         void RefreshHud()
         {
             _dayText.text = L.T("День ", "Day ") + _day;
-            string ev = "";
-            if (Rain) ev = L.T("Дождь", "Rain");
-            if (_event == DayEvent.Rush) ev = RushNow ? L.T("ЧАС ПИК!", "RUSH HOUR!") : L.T("Час пик скоро", "Rush later");
-            if (_hypeT > 0f) ev = L.T("Хайп! ", "Hype! ") + Mathf.CeilToInt(_hypeT);
-            if (_queue.Count > 0) ev = "<color=" + (_queue.Count >= 3 ? "#FF5252" : "#FFE082") + ">" + L.T("Очередь: ", "Queue: ") + _queue.Count + "</color>  " + ev;
-            _eventText.text = ev;
+            RefreshQueuePill();
+            if (RushNow && !_rushAnnounced)
+            {
+                _rushAnnounced = true;
+                ShowBanner(L.T("ЧАС ПИК!\n<size=32>Клиенты идут вдвое чаще</size>", "RUSH HOUR!\n<size=32>Customers come twice as often</size>"), 2f);
+                Sfx.Play(Sound.Fanfare);
+            }
             _questText.text = L.T("Задания ", "Quests ") + QuestsDone() + "/" + _quests.Count;
 
             if (_timeLeft > 0f)

@@ -73,9 +73,19 @@ namespace ValourGames.Shawarma
             UIKit.Shape(win.transform, UIKit.Circle, Color.white, 0.35f, 0.8f, 40f, 38f);
             UIKit.Shape(win.transform, UIKit.RoundedSmall, Color.white, 0.35f, 0.685f, 62f, 20f);
             UIKit.Shape(win.transform, UIKit.RoundedSmall, UIKit.Hex("#E0E0E0"), 0.35f, 0.65f, 62f, 3f);
-            // вертел в окне
+            // вертел в окне: жаровня позади, стальной шампур, мясной конус (снизу уже, сверху шире)
+            var heater = UIKit.Panel(win.transform, "Heater", UIKit.Hex("#2A2A2A"), 0.83f, 0.14f, 0.9f, 0.88f);
             for (int i = 0; i < 5; i++)
-                UIKit.Shape(win.transform, UIKit.Rounded, UIKit.Hex(i % 2 == 0 ? "#A8461F" : "#8E3A18"), 0.72f, 0.2f + i * 0.13f, 70f - Mathf.Abs(i - 2) * 10f, 26f);
+                UIKit.Panel(heater.transform, "Glow", UIKit.Hex("#FF6A2B"), 0.2f, 0.08f + i * 0.19f, 0.8f, 0.18f + i * 0.19f);
+            UIKit.Shape(win.transform, UIKit.RoundedSmall, UIKit.Hex("#B0BEC5"), 0.72f, 0.5f, 6f, 200f);
+            UIKit.Shape(win.transform, UIKit.RoundedSmall, UIKit.Hex("#90A4AE"), 0.72f, 0.12f, 110f, 10f);
+            for (int i = 0; i < 6; i++)
+            {
+                float w = 46f + i * 9f;
+                var seg = UIKit.Shape(win.transform, UIKit.Rounded, UIKit.Hex(i % 2 == 0 ? "#A8461F" : "#8E3A18"), 0.72f, 0.2f + i * 0.11f, w, 30f);
+                UIKit.Shape(seg.transform, UIKit.RoundedSmall, UIKit.Hex("#D9824F"), 0.35f, 0.7f, w * 0.3f, 5f);
+            }
+            UIKit.Shape(win.transform, UIKit.RoundedSmall, UIKit.Hex("#90A4AE"), 0.72f, 0.86f, 100f, 10f);
             // навес над окном
             for (int i = 0; i < 8; i++)
             {

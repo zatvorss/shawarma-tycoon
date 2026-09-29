@@ -65,10 +65,16 @@ namespace ValourGames.Shawarma
                 }
                 case Up.Grill:
                 {
-                    var led = UIKit.Panel(holder, "Led", UIKit.Hex("#1B1B1B"), 0.05f, 0.3f, 0.95f, 0.7f);
-                    UIKit.AddOutline(led, steel, 2f);
-                    var t = UIKit.FitLabel(led.transform, "AUTO", 30, UIKit.Hex("#FF5252"), 0.05f, 0.1f, 0.95f, 0.9f);
-                    t.gameObject.AddComponent<Blinker>();
+                    // таймер без надписей: циферблат с бегущей стрелкой
+                    UIKit.Shape(holder, UIKit.CircleHD, UIKit.Hex("#263238"), 0.5f, 0.5f, size * 0.8f, size * 0.8f);
+                    UIKit.Shape(holder, UIKit.CircleHD, UIKit.Hex("#ECEFF1"), 0.5f, 0.5f, size * 0.64f, size * 0.64f);
+                    var hand = UIKit.Rect(holder, "Hand");
+                    UIKit.PlaceFixed(hand, 0.5f, 0.5f, size * 0.06f, size * 0.28f);
+                    hand.pivot = new Vector2(0.5f, 0f);
+                    hand.anchoredPosition = Vector2.zero;
+                    UIKit.Shape(hand, UIKit.RoundedSmall, UIKit.Hex("#E53935"), 0.5f, 0.5f, size * 0.06f, size * 0.28f);
+                    hand.gameObject.AddComponent<Spinner>().speed = -180f;
+                    UIKit.Shape(holder, UIKit.Circle, UIKit.Hex("#263238"), 0.5f, 0.5f, size * 0.1f, size * 0.1f);
                     break;
                 }
                 case Up.Sauce:

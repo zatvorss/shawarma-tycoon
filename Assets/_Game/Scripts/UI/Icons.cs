@@ -70,10 +70,16 @@ namespace ValourGames.Shawarma
                     S(b, C, "#D9A400", 0.62f, 0.4f, 0.1f, 0.1f);
                     S(b, C, "#D9A400", 0.72f, 0.56f, 0.08f, 0.08f);
                     break;
-                case Ing.Jalapeno:
-                    S(b, R, "#1B5E20", 0.5f, 0.46f, 0.84f, 0.3f, 35f);
-                    S(b, R, "#43A047", 0.48f, 0.5f, 0.74f, 0.2f, 35f);
-                    S(b, R, "#795548", 0.85f, 0.8f, 0.16f, 0.07f, 35f);
+                case Ing.Onion:
+                    // кольца маринованного лука
+                    S(b, UIKit.Circle, "#8E24AA", 0.38f, 0.55f, 0.56f, 0.56f);
+                    S(b, UIKit.Circle, "#F3E5F5", 0.38f, 0.55f, 0.4f, 0.4f);
+                    S(b, UIKit.Circle, "#CE93D8", 0.38f, 0.55f, 0.3f, 0.3f);
+                    S(b, UIKit.Circle, "#F3E5F5", 0.38f, 0.55f, 0.16f, 0.16f);
+                    S(b, UIKit.Circle, "#AB47BC", 0.66f, 0.4f, 0.46f, 0.46f);
+                    S(b, UIKit.Circle, "#F3E5F5", 0.66f, 0.4f, 0.32f, 0.32f);
+                    S(b, UIKit.Circle, "#CE93D8", 0.66f, 0.4f, 0.22f, 0.22f);
+                    S(b, UIKit.Circle, "#F3E5F5", 0.66f, 0.4f, 0.1f, 0.1f);
                     break;
                 case Ing.Fries:
                     S(b, R, "#F4C542", 0.3f, 0.66f, 0.1f, 0.5f, -8f);

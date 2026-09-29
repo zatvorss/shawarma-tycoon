@@ -10,7 +10,7 @@ namespace ValourGames.Shawarma
     public static class ShawarmaView
     {
         // порядок слоёв: мясо снизу, соусы сверху
-        static readonly Ing[] Layers = { Ing.Meat, Ing.Cabbage, Ing.Tomato, Ing.Cucumber, Ing.Jalapeno, Ing.Fries, Ing.Cheese, Ing.Garlic, Ing.Spicy };
+        static readonly Ing[] Layers = { Ing.Meat, Ing.Cabbage, Ing.Tomato, Ing.Cucumber, Ing.Onion, Ing.Fries, Ing.Cheese, Ing.Garlic, Ing.Spicy };
 
         /// <summary>Рисует раскрытый лаваш размером w×h с начинкой в центре (ax, ay) родителя.</summary>
         public static RectTransform DrawOpen(Transform parent, int[] counts, float ax, float ay, float w, float h)
@@ -84,13 +84,13 @@ namespace ValourGames.Shawarma
                         UIKit.Shape(box, UIKit.RoundedSmall, UIKit.Hex("#FFD54F"), pos.x, pos.y, 12f * s, 5f * s, rnd.Next(0, 180));
                     }
                     break;
-                case Ing.Jalapeno:
+                case Ing.Onion:
                     for (int i = 0; i < 3; i++)
                     {
                         var pos = InEllipse(rnd, 0.7f);
-                        var j = UIKit.Shape(box, UIKit.Circle, UIKit.Hex("#2E7D32"), pos.x, pos.y, 18f * s, 18f * s);
-                        UIKit.Shape(j.transform, UIKit.Circle, UIKit.Hex("#81C784"), 0.5f, 0.5f, 11f * s, 11f * s);
-                        UIKit.Shape(j.transform, UIKit.Circle, UIKit.Hex("#F1F8E9"), 0.5f, 0.5f, 4f * s, 4f * s);
+                        var j = UIKit.Shape(box, UIKit.Circle, UIKit.Hex("#8E24AA"), pos.x, pos.y, 20f * s, 20f * s);
+                        UIKit.Shape(j.transform, UIKit.Circle, UIKit.Hex("#F3E5F5"), 0.5f, 0.5f, 14f * s, 14f * s);
+                        UIKit.Shape(j.transform, UIKit.Circle, UIKit.Hex("#CE93D8"), 0.5f, 0.5f, 9f * s, 9f * s);
                     }
                     break;
                 case Ing.Fries:

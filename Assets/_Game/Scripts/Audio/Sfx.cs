@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace ValourGames.Shawarma
 {
-    public enum Sound { Click, Coin, Error, Chop, Slice, Done, Spawn, Burn, Combo, Pour, Wrap, Fanfare, Whoosh, Tick }
+    public enum Sound { Click, Coin, Error, Chop, Slice, Done, Spawn, Burn, Combo, Pour, Wrap, Fanfare, Whoosh, Tick, Ding }
 
     /// <summary>
     /// Звуки и музыка, синтезированные кодом (ассеты не нужны).
@@ -40,6 +40,7 @@ namespace ValourGames.Shawarma
                 Tone("fanfare", new float[] { 523f, 659f, 784f, 1047f, 784f, 1047f }, 0.1f, 0.25f, 1),
                 Noise("whoosh", 0.9f, 0.35f, 1.5f),
                 Tone("tick", new float[] { 1400f }, 0.03f, 0.15f, 0),
+                Bell("ding", 1760f, 0.9f, 0.3f),
             };
             _inst._music.clip = Music();
         }
@@ -89,6 +90,28 @@ namespace ValourGames.Shawarma
                     float env = Mathf.Min(1f, i / 150f) * (1f - (float)i / seg);
                     data[f * seg + i] = Wave(wave, t * freqs[f]) * env * vol;
                 }
+            }
+            var clip = AudioClip.Create(name, n, 1, rate, false);
+            clip.SetData(data, 0);
+            return clip;
+        }
+
+        /// <summary>Звоночек «бзыньк»: как у колокольчика на кухне — основной тон и звенящие обертоны.</summary>
+        static AudioClip Bell(string name, float freq, float dur, float vol)
+        {
+            const int rate = 44100;
+            int n = (int)(rate * dur);
+            var data = new float[n];
+            float[] mul = { 1f, 2.76f, 5.4f, 8.93f };
+            float[] amp = { 1f, 0.5f, 0.25f, 0.12f };
+            float[] dec = { 4f, 6f, 9f, 13f };
+            for (int i = 0; i < n; i++)
+            {
+                float t = (float)i / rate;
+                float v = 0f;
+                for (int k = 0; k < mul.Length; k++)
+                    v += Mathf.Sin(2f * Mathf.PI * freq * mul[k] * t) * amp[k] * Mathf.Exp(-dec[k] * t);
+                data[i] = v * vol * Mathf.Min(1f, i / 40f) * 0.55f;
             }
             var clip = AudioClip.Create(name, n, 1, rate, false);
             clip.SetData(data, 0);

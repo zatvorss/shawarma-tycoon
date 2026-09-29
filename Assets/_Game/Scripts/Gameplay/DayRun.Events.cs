@@ -48,8 +48,7 @@ namespace ValourGames.Shawarma
             if (_bakeLvl > 0)
                 for (int k = 0; k < (_bakeLvl >= 3 ? 2 : 1); k++) _bulkAt.Add(Random.Range(0.15f, 0.8f) * _dayDuration);
             // drive-thru: машины в течение дня
-            int dl = _save.biz[Meta.BizDrive];
-            for (int k = 0; k < Meta.DriveCars(dl); k++) _carAt.Add(Random.Range(0.08f, 0.85f) * _dayDuration);
+            _sauceLvl = _save.biz[Meta.BizSauce];
 
             // босс: каждый 5-й день приходит сам Мистер Мега
             if (_day % 5 == 0 && _eday >= 5) _bossAt = Random.Range(0.3f, 0.5f) * _dayDuration;
@@ -72,10 +71,8 @@ namespace ValourGames.Shawarma
             if (_bossAt >= 0f) { text.Add(L.T("БОСС-ДЕНЬ: придёт сам Мистер Мега!", "BOSS DAY: Mr. Mega himself is coming!")); col.Add("#FFD54F"); }
             if (_bakeLvl > 0) { text.Add(L.T("Тандыр горячий: шаурма на свежем лаваше +", "The tandoor is hot: shawarma on fresh lavash +") + Mathf.RoundToInt(Meta.BakeBonus(_bakeLvl) * 100f) + "%"); col.Add("#FFB74D"); }
             if (_bulkAt.Count > 0) { text.Add(L.T("Конкуренты придут за лавашом оптом", "Rivals will come to buy lavash in bulk")); col.Add("#FF8A65"); }
-            if (_carAt.Count > 0) { text.Add(L.T("ШаурмаАвто открыто: машин сегодня — ", "ShawarmaAuto is open: cars today — ") + _carAt.Count); col.Add("#CE93D8"); }
+            if (_sauceLvl > 0) { text.Add(L.T("Фирменный соус: гости будут просить бутылку с собой — жми на неё!", "Signature sauce: guests will ask for a bottle — tap it!")); col.Add("#EF9A9A"); }
             if (_courierBiz.Count > 0) { text.Add(L.T("Сегодня приедут курьеры за оптовыми заказами", "Couriers will come for bulk orders today")); col.Add("#81C784"); }
-            for (int b = 0; b < _boost.Length; b++)
-                if (_boost[b]) { text.Add(Meta.Boosts[b].Name + ": " + Meta.Boosts[b].Desc); col.Add("#FFC928"); }
         }
 
         void TickEvents(float dt)
@@ -134,7 +131,6 @@ namespace ValourGames.Shawarma
             }
 
             TickBakery(dt);
-            TickDrive(dt);
 
             // спринклер тушит сам
             if (_save.Lvl(Up.Fire) >= 2 && _grill != null)
@@ -548,48 +544,60 @@ namespace ValourGames.Shawarma
         // =====================================================================
         //  DRIVE-THRU: машины у окна — спешат, сигналят, платят больше
         // =====================================================================
-        readonly List<float> _carAt = new List<float>();
-        public int CarsServed { get; private set; }
+        // =====================================================================
+        //  ФИРМЕННЫЙ СОУС: довольный гость просит бутылку с собой — успей нажать
+        // =====================================================================
+        int _sauceLvl;
+        public int SauceSold { get; private set; }
 
-        void TickDrive(float dt)
+        void TryOfferSauce(int slot, Customer c)
         {
-            for (int i = _carAt.Count - 1; i >= 0; i--)
+            if (_sauceLvl <= 0 || c.IsCourier || c.boss || c.IsBulk) return;
+            if (Random.value > Meta.SauceChance(_sauceLvl)) return;
+            int price = Mathf.Max(20, Mathf.RoundToInt(80f * Meta.SauceMult(_sauceLvl) * _priceMult / 10f) * 10);
+
+            var offer = UIKit.Rect(_fx, "SauceOffer");
+            UIKit.PlaceFixed(offer, 0.5f, 0.5f, 150f, 170f);
+            offer.position = _slots[slot].position + new Vector3(60f, 110f, 0f);
+            var glow = UIKit.Shape(offer, UIKit.CircleHD, UIKit.Alpha(UIKit.Gold, 0.35f), 0.5f, 0.6f, 150f, 150f);
+            glow.gameObject.AddComponent<Blinker>().speed = 4f;
+            SauceBottle(offer, 0.5f, 0.62f, 96f);
+            var tag = UIKit.Panel(offer, "Price", UIKit.Green, 0.05f, 0f, 0.95f, 0.24f);
+            UIKit.AddOutline(tag, Color.white, 2f);
+            UIKit.FitLabel(tag.transform, "+" + GameData.Money(price), 26, Color.white, 0.05f, 0.08f, 0.95f, 0.92f);
+            offer.gameObject.AddComponent<Bobber>().amp = 6f;
+            Juice.Punch(offer, 0.3f, 0.3f);
+            var go = offer.gameObject;
+            bool sold = false;
+            UIKit.HitArea(offer, "Tap", () =>
             {
-                if (_elapsed < _carAt[i] || _timeLeft <= 0f) continue;
-                if (SpawnCar()) _carAt.RemoveAt(i);
-                break;
-            }
-            // гудок, когда водитель теряет терпение
-            foreach (var c in _customers)
-            {
-                if (c == null || !c.car || c.leaving || c.honked) continue;
-                if (c.PatienceFrac < 0.4f)
-                {
-                    c.honked = true;
-                    c.Say(L.T("Би-би-и-ип! Быстрее!", "Beep-beeep! Hurry!"), 2f);
-                    Sfx.Play(Sound.Error);
-                    Juice.Shake(c.root, 10f, 0.4f);
-                }
-            }
+                if (sold || go == null || _paused) return;
+                sold = true;
+                _save.money += price;
+                _save.lifetime += price;
+                Earned += price;
+                SauceSold++;
+                Juice.FloatText(_root, L.T("Соус продан! +", "Sauce sold! +") + price, UIKit.Gold, 34, 0.5f, 0.8f);
+                SpawnCoins(offer.position, 4);
+                Sfx.Play(Sound.Coin);
+                _game.OnStatsChanged();
+                Destroy(go);
+            }).transform.SetAsLastSibling();
+            c.Say(L.T("А соус с собой продадите?", "Can I buy the sauce to go?"), 2f);
+            StartCoroutine(FadeAway(go, Meta.SauceOfferTime(_sauceLvl)));
         }
 
-        bool SpawnCar()
+        /// <summary>Бутылка фирменного соуса с этикеткой.</summary>
+        static void SauceBottle(Transform p, float ax, float ay, float size)
         {
-            int slot = FreeSlot();
-            if (slot < 0) return false;
-            int l = _save.biz[Meta.BizDrive];
-            Drink drink = Drink.None;
-            var drinks = new List<Drink>();
-            if (GameData.Unlocked(Drink.Cola, _eday)) drinks.Add(Drink.Cola);
-            if (GameData.Unlocked(Drink.Fries, _eday)) drinks.Add(Drink.Fries);
-            if (drinks.Count > 0 && Random.value < 0.6f) drink = drinks[Random.Range(0, drinks.Count)];
-            float patience = _patience * Meta.DrivePatience(l);
-            var c = new Customer(_slots[slot], CustType.Regular, MakeOrder(), drink, patience, ServeMode.ToGo, true, false, -1, 1, false, false, true);
-            _customers[slot] = c;
-            c.Say(L.T("Один заказ в окно, пожалуйста!", "One order to the window, please!"), 2.5f);
-            Sfx.Play(Sound.Spawn);
-            Toast(L.T("Машина у окна ШаурмаАвто! Всё — с собой в пакет", "A car at the ShawarmaAuto window! Everything to go"));
-            return true;
+            var b = UIKit.Rect(p, "Bottle");
+            UIKit.PlaceFixed(b, ax, ay, size, size);
+            UIKit.Shape(b, UIKit.RoundedSmall, UIKit.Hex("#FAFAFA"), 0.5f, 0.92f, size * 0.2f, size * 0.12f);
+            UIKit.Shape(b, UIKit.RoundedSmall, UIKit.Hex("#B71C1C"), 0.5f, 0.78f, size * 0.22f, size * 0.2f);
+            UIKit.Shape(b, UIKit.Rounded, UIKit.Hex("#C62828"), 0.5f, 0.4f, size * 0.5f, size * 0.6f);
+            UIKit.Shape(b, UIKit.RoundedSmall, UIKit.Hex("#FFF8E1"), 0.5f, 0.4f, size * 0.42f, size * 0.26f);
+            UIKit.Shape(b, UIKit.Circle, UIKit.Hex("#FFB300"), 0.5f, 0.4f, size * 0.14f, size * 0.14f);
+            UIKit.Shape(b, UIKit.RoundedSmall, UIKit.Alpha(Color.white, 0.35f), 0.34f, 0.44f, size * 0.06f, size * 0.4f);
         }
 
         // =====================================================================

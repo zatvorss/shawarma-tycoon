@@ -95,7 +95,7 @@ namespace ValourGames.Shawarma
 
             if (golden)
             {
-                _aura = UIKit.Shape(root, UIKit.CircleHD, new Color(1f, 0.85f, 0.2f, 0.35f), 0.22f, 0.42f, 250f, 300f);
+                _aura = UIKit.Shape(root, UIKit.CircleHD, new Color(1f, 0.85f, 0.2f, 0.22f), 0.22f, 0.47f, 230f, 230f);
                 for (int i = 0; i < 6; i++)
                     UIKit.Shape(root, UIKit.Circle, UIKit.Gold, 0.22f + Mathf.Cos(i * 1.05f) * 0.18f, 0.45f + Mathf.Sin(i * 1.05f) * 0.28f, 10f, 10f);
             }
@@ -665,13 +665,17 @@ namespace ValourGames.Shawarma
                     UIKit.Shape(board.transform, R, Color.white, 0.5f, 0.5f, 10f, 230f);
                     break;
                 case CustType.Fan:
-                    UIKit.Shape(_char, R, UIKit.Hex("#FFFFFF"), 0.5f, 0.44f, 140f, 24f);
-                    UIKit.Shape(_char, R, UIKit.Hex("#1565C0"), 0.5f, 0.44f, 30f, 24f);
+                    // шарф болельщика — на шее, ниже подбородка
+                    UIKit.Shape(_char, R, UIKit.Hex("#FFFFFF"), 0.5f, 0.375f, 120f, 20f);
+                    UIKit.Shape(_char, R, UIKit.Hex("#1565C0"), 0.5f, 0.375f, 30f, 20f);
+                    UIKit.Shape(_char, R, UIKit.Hex("#1565C0"), 0.62f, 0.3f, 18f, 44f, -10f);
                     UIKit.Shape(_char, R, UIKit.Hex("#FFEB3B"), 0.9f, 0.5f, 40f, 96f);
                     UIKit.Shape(_char, R, UIKit.Hex("#FFEB3B"), 0.92f, 0.66f, 18f, 44f);
                     break;
                 case CustType.Stewardess:
-                    UIKit.Shape(_char, R, UIKit.Hex("#FFEB3B"), 0.5f, 0.44f, 60f, 18f, 10f);
+                    // шейный платок стюардессы — на шее, ниже лица
+                    UIKit.Shape(_char, R, UIKit.Hex("#FFEB3B"), 0.5f, 0.375f, 56f, 16f);
+                    UIKit.Shape(_char, R, UIKit.Hex("#FFEB3B"), 0.56f, 0.34f, 16f, 26f, -25f);
                     break;
                 case CustType.Musician:
                     UIKit.Shape(_char, C, UIKit.Hex("#D84315"), 0.3f, 0.18f, 96f, 84f);
