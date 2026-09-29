@@ -136,7 +136,7 @@ namespace ValourGames.Shawarma
                 else if (t == 2) CharmIcon(card.transform, v, 0.5f, 0.52f, 66f);
                 else if (t == 4) Icons.Chest(card.transform, 0.5f, 0.52f, 64f, false);
                 else Crown(card.transform, 0.5f, 0.52f, 60f);
-                UIKit.FitLabel(card.transform, Meta.PassRewardText(i), 18, UIKit.Dark, 0.03f, 0.03f, 0.97f, 0.24f);
+                UIKit.FitLabel(card.transform, Meta.PassRewardText(_save, i), 18, UIKit.Dark, 0.03f, 0.03f, 0.97f, 0.24f);
 
                 if (claimed)
                 {
@@ -153,7 +153,7 @@ namespace ValourGames.Shawarma
                         _save.passClaimed = lv;
                         SaveSystem.Save(_save);
                         Sfx.Play(Sound.Fanfare);
-                        Notify(L.T("Награда пасса", "Pass reward"), Meta.PassRewardText(lv));
+                        Notify(L.T("Награда пасса", "Pass reward"), Meta.PassRewardText(_save, lv));
                         ShowPass();
                     });
                 }

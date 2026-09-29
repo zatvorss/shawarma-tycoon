@@ -96,7 +96,8 @@ namespace ValourGames.Shawarma
         DragSource _fryDrag;
 
         // --- коробки фри ---
-        int _lvBox, _lvVeg, _lvFryLoad, _lvFryUnload;
+        int _lvBox, _lvVeg, _lvFryLoad, _lvFryUnload, _lvDrinks;
+        bool _grillOn, _packingOn;
         float _autoVegT;
         RectTransform[] _vegCells;
         DragSource _boxSrc;
@@ -174,6 +175,14 @@ namespace ValourGames.Shawarma
             float hands = 1f - 0.06f * Meta.P(_save, Perk.Hands);
             _fryTime *= hands;
             _grillTime *= hands;
+            // турбо-жар (люкс) и талисман «Золотая лопатка»
+            float turbo = GameData.TurboMult(_save.Lvl(Up.TurboGrill));
+            _fryTime *= turbo;
+            _grillTime *= turbo;
+            if (Meta.Has(_save, Meta.CharmSpatula)) _grillTime *= 0.85f;
+            _grillOn = GameData.GrillOn(_save.location);
+            _packingOn = GameData.PackingOn(_save.location);
+            _lvDrinks = _save.Lvl(Up.Drinks);
             if (_boost[(int)Boost.Speed])
             {
                 _fryTime *= 0.8f;
@@ -346,6 +355,7 @@ namespace ValourGames.Shawarma
             }
 
             TickFriesBox(dt);
+            TickCups(dt);
 
             // --- гриль ---
             bool autoGrill = GameData.GrillAuto(_lvGrill);
@@ -422,7 +432,7 @@ namespace ValourGames.Shawarma
                             Toast(L.T("Сгоревшее убрано автоматически", "Burnt food cleared automatically"));
                             continue;
                         }
-                        if (g.fireT > 3f && _save.Lvl(Up.Fire) < 3) Ignite(g);
+                        if (g.fireT > 3f && _save.Lvl(Up.Fire) < 3 && GameData.FireOn(_save.location)) Ignite(g);
                     }
                 }
             }
@@ -856,6 +866,24 @@ namespace ValourGames.Shawarma
         {
             if (_paused || _ended) return;
             if (!_hasLavash || GameData.Total(_cur) == 0) { Toast(L.T("Сначала собери шаурму", "Build a shawarma first")); Sfx.Play(Sound.Error); return; }
+            if (!_grillOn)
+            {
+                // гриля ещё нет (до 3-й локации): свёрнутая шаурма сразу идёт на выдачу
+                if (_tray.Count >= GameData.TrayCapacity) { Toast(L.T("Выдача заполнена — сначала отдай заказ", "The tray is full — serve first")); Sfx.Play(Sound.Error); return; }
+                _tray.Add(new TrayItem { isDrink = false, counts = (int[])_cur.Clone(), perfect = false, fresh = _curFresh, pack = NewPack });
+                _curFresh = false;
+                var fl = Icons.Shawarma(_fx, 0.5f, 0.5f, 120f);
+                fl.color = Icons.Toast(0.8f);
+                Juice.Fly((RectTransform)fl.transform.parent, _boardRt.position, _trayRoot.position, 0.3f, 0f, null);
+                _hasLavash = false;
+                System.Array.Clear(_cur, 0, _cur.Length);
+                Sfx.Play(Sound.Wrap);
+                _wrapsSinceClean++;
+                if (_wrapsSinceClean >= DirtyAfter && GameData.DirtOn(_save.location)) MakeDirty();
+                RefreshBoard();
+                RefreshTray();
+                return;
+            }
             int slot = -1;
             for (int s = 0; s < _grill.Length; s++) if (_grill[s].counts == null) { slot = s; break; }
             if (slot < 0) { Toast(L.T("Гриль занят — сними готовое", "Grill is full — take one off")); Sfx.Play(Sound.Error); return; }
@@ -883,7 +911,7 @@ namespace ValourGames.Shawarma
             System.Array.Clear(_cur, 0, _cur.Length);
             Sfx.Play(Sound.Wrap);
             _wrapsSinceClean++;
-            if (_wrapsSinceClean >= DirtyAfter) MakeDirty();
+            if (_wrapsSinceClean >= DirtyAfter && GameData.DirtOn(_save.location)) MakeDirty();
             RefreshBoard();
         }
 
@@ -1047,10 +1075,13 @@ namespace ValourGames.Shawarma
             Juice.Punch(box, 0.2f, 0.25f);
         }
 
+        /// <summary>Как упакована новая шаурма: без упаковки на 1-й локации (сразу «готова»), иначе по улучшению.</summary>
+        int NewPack { get { return !_packingOn ? 1 : (_packAuto ? 1 : 0); } }
+
         void TakeFromGrill(int s, bool perfect)
         {
             var g = _grill[s];
-            _tray.Add(new TrayItem { isDrink = false, counts = g.counts, perfect = perfect, fresh = g.fresh, pack = _packAuto ? 1 : 0 });
+            _tray.Add(new TrayItem { isDrink = false, counts = g.counts, perfect = perfect, fresh = g.fresh, pack = NewPack });
             if (perfect) Juice.FloatText(g.view, L.T("Идеально!", "Perfect!"), UIKit.Gold, 34, 0.5f, 0.7f);
             ClearGrill(g);
             Sfx.Play(Sound.Done);
@@ -1061,7 +1092,7 @@ namespace ValourGames.Shawarma
         float Burn(GrillSlot g) { return g.uneven ? _grillBurn * 0.5f : _grillBurn; }
 
         float FlipEnd { get { return _lvGrill >= 1 ? 0.9f : 0.8f; } }
-        float PerfectLimit { get { return 1f - GameData.PerfectWindow + (Meta.Has(_save, Meta.CharmSpatula) ? 0.15f : 0f); } }
+        float PerfectLimit { get { return 1f - GameData.PerfectWindow; } }
 
         void ClearGrill(GrillSlot g)
         {
@@ -1168,7 +1199,7 @@ namespace ValourGames.Shawarma
                 UIKit.MakeButton(bg, () => OnTray(idx));
                 if (it.isDrink)
                 {
-                    Icons.DrinkIcon(bg.transform, it.drink, 0.2f, 0.5f, 52f);
+                    Icons.DrinkIcon(bg.transform, it.drink, 0.2f, 0.5f, 56f);
                     UIKit.FitLabel(bg.transform, GameData.Get(it.drink).Name, 24, UIKit.Dark, 0.38f, 0.1f, 0.98f, 0.9f);
                     continue;
                 }
@@ -1185,7 +1216,7 @@ namespace ValourGames.Shawarma
                 }
                 if (it.perfect) Icons.Star(bg.transform, 0.06f, 0.85f, 22f, true);
                 if (it.fresh) UIKit.Shape(bg.transform, UIKit.Circle, UIKit.Orange, 0.06f, 0.18f, 16f, 20f).gameObject.AddComponent<Blinker>().speed = 3f;
-                string state = it.pack == 0 ? L.T("не упакована", "not packed") : (it.pack == 1 ? L.T("в обёртке", "wrapped") : L.T("в пакете", "bagged"));
+                string state = !_packingOn ? L.T("готова", "ready") : (it.pack == 0 ? L.T("не упакована", "not packed") : (it.pack == 1 ? L.T("в обёртке", "wrapped") : L.T("в пакете", "bagged")));
                 UIKit.FitLabel(bg.transform, GameData.ShortList(it.counts), 16, UIKit.Dark, 0.34f, 0.45f, 0.98f, 0.97f);
                 UIKit.FitLabel(bg.transform, state, 16, it.pack == 0 ? UIKit.Red : UIKit.Green, 0.34f, 0.05f, 0.98f, 0.45f);
             }
@@ -1534,6 +1565,15 @@ namespace ValourGames.Shawarma
 
         void BuildGrill(RectTransform p)
         {
+            if (!_grillOn)
+            {
+                var lk = UIKit.Panel(p, "Lock", UIKit.Hex("#2E3A40"), 0.04f, 0.04f, 0.96f, 0.86f);
+                UIKit.Panel(lk.transform, "Plate", UIKit.Hex("#262626"), 0.1f, 0.5f, 0.9f, 0.8f);
+                var t = UIKit.FitLabel(lk.transform, L.T("Гриль появится\nна 3-й локации", "Grill arrives\nat location 3"), 26, UIKit.Cream, 0.06f, 0.24f, 0.94f, 0.46f);
+                UIKit.AddShadow(t, 2f, 0.6f);
+                UIKit.FitLabel(lk.transform, L.T("Пока шаурма сразу\nидёт на выдачу", "For now shawarma goes\nstraight to the tray"), 18, UIKit.Alpha(UIKit.Cream, 0.7f), 0.06f, 0.04f, 0.94f, 0.22f);
+                return;
+            }
             int n = _grill.Length;
             float top = 0.87f, h = 0.84f / n;
             for (int s = 0; s < n; s++)
@@ -1559,44 +1599,55 @@ namespace ValourGames.Shawarma
 
         void BuildServe(RectTransform p)
         {
-            var tray = UIKit.Panel(p, "Tray", UIKit.Alpha(Color.black, 0.2f), 0.03f, 0.46f, 0.97f, 0.885f);
+            var tray = UIKit.Panel(p, "Tray", UIKit.Alpha(Color.black, 0.2f), 0.03f, 0.52f, 0.97f, 0.885f);
             _trayRoot = UIKit.Full(tray.transform, "Items");
-            // большие кнопки упаковки (удобно на телефоне)
-            _wrapBtn = UIKit.Button(p, L.T("ОБЁРТКА", "WRAP"), UIKit.Blue, () => OnPack(false), 0.03f, 0.25f, 0.49f, 0.445f, 24);
-            _bagBtn = UIKit.Button(p, L.T("ПАКЕТ", "BAG"), UIKit.Hex("#B07A4A"), () => OnPack(true), 0.51f, 0.25f, 0.97f, 0.445f, 24);
-            if (_packAuto) StationLook.Auto(p, Up.Pack, 0.9f, 0.9f, 44f);
+            // большие кнопки упаковки (удобно на телефоне) — с 2-й локации
+            if (_packingOn)
+            {
+                _wrapBtn = UIKit.Button(p, L.T("ОБЁРТКА", "WRAP"), UIKit.Blue, () => OnPack(false), 0.03f, 0.345f, 0.49f, 0.505f, 24);
+                _bagBtn = UIKit.Button(p, L.T("ПАКЕТ", "BAG"), UIKit.Hex("#B07A4A"), () => OnPack(true), 0.51f, 0.345f, 0.97f, 0.505f, 24);
+                if (_packAuto) StationLook.Auto(p, Up.Pack, 0.9f, 0.9f, 44f);
+            }
+            else
+            {
+                var info = UIKit.Panel(p, "NoPack", UIKit.Alpha(Color.black, 0.25f), 0.03f, 0.345f, 0.97f, 0.505f);
+                UIKit.FitLabel(info.transform, L.T("Упаковка «здесь / с собой»\nпоявится на 2-й локации", "Here / to-go packing\narrives at location 2"), 18, UIKit.Alpha(UIKit.Cream, 0.8f), 0.05f, 0.08f, 0.95f, 0.92f);
+            }
 
-            var fridge = UIKit.Panel(p, "Fridge", UIKit.Hex("#CFE8F5"), 0.04f, 0.02f, 0.96f, 0.24f);
-            UIKit.AddShadow(fridge, 4f, 0.3f);
-            var drinks = new List<Drink>();
-            if (GameData.DrinkOpen(Drink.Cola, _eday, _save.location)) drinks.Add(Drink.Cola);
-            if (GameData.DrinkOpen(Drink.Ayran, _eday, _save.location)) drinks.Add(Drink.Ayran);
-            bool boxes = _friesUnlocked;
-            int cells = drinks.Count + (boxes ? 1 : 0);
-            if (cells == 0)
+            // напитки и гарнир «под столом»: стаканы, коробки фри, краны колы и айрана
+            var under = UIKit.Panel(p, "Under", UIKit.Hex("#CFE8F5"), 0.03f, 0.015f, 0.97f, 0.33f);
+            UIKit.AddShadow(under, 4f, 0.3f);
+            var u = under.transform;
+            bool cola = GameData.DrinkOpen(Drink.Cola, _eday, _save.location);
+            bool ayran = GameData.DrinkOpen(Drink.Ayran, _eday, _save.location);
+
+            // стопка стаканов
+            var cups = UIKit.Panel(u, "Cups", Color.white, 0.04f, 0.53f, 0.48f, 0.96f);
+            if (cola || ayran)
             {
-                UIKit.FitLabel(fridge.transform, L.T("Напитки\nс 4-го дня", "Drinks\nfrom day 4"), 22, UIKit.Alpha(UIKit.Dark, 0.6f), 0.05f, 0.1f, 0.95f, 0.9f);
-                return;
+                Icons.DrinkCup(cups.transform, Drink.None, 0.36f, 0.45f, 50f, 0f);
+                Icons.DrinkCup(cups.transform, Drink.None, 0.5f, 0.52f, 50f, 0f);
+                Icons.DrinkCup(cups.transform, Drink.None, 0.64f, 0.45f, 50f, 0f);
+                cups.raycastTarget = true;
+                _cupSrc = cups.gameObject.AddComponent<DragSource>();
+                _cupSrc.canDrag = () => !_paused && !_ended;
+                _cupSrc.makeGhost = MakeCupGhost;
+                _cupSrc.onDrop = OnCupDrop;
+                _cupSrc.onTap = () => Toast(GameData.CupTap(_lvDrinks)
+                    ? L.T("Просто нажми на кран с нужным напитком", "Just tap the tap with the drink you need")
+                    : L.T("Тащи стакан под кран и держи, пока не нальётся", "Drag a cup under the tap and hold until it fills"));
             }
-            float w = 0.9f / cells;
-            for (int i = 0; i < drinks.Count; i++)
+            else LockedCell(cups.transform, L.T("Напитки —\nлокация 3", "Drinks —\nlocation 3"));
+
+            // коробки фри
+            var boxes = UIKit.Panel(u, "Boxes", UIKit.Hex("#FFE0B2"), 0.52f, 0.53f, 0.96f, 0.96f);
+            if (_friesUnlocked)
             {
-                float x0 = 0.05f + i * w;
-                var cell = UIKit.Panel(fridge.transform, "Drink", Color.white, x0, 0.08f, x0 + w - 0.03f, 0.92f);
-                var d = drinks[i];
-                UIKit.MakeButton(cell, () => OnDrink(d));
-                Icons.DrinkIcon(cell.transform, d, 0.5f, 0.5f, 62f);
-            }
-            if (boxes)
-            {
-                // стопка коробок для фри «под столом»: тащи коробку на лоток с картошкой
-                float x0 = 0.05f + drinks.Count * w;
-                var cell = UIKit.Panel(fridge.transform, "Boxes", UIKit.Hex("#FFE0B2"), x0, 0.08f, x0 + w - 0.03f, 0.92f);
-                Icons.FriesBox(cell.transform, 0.42f, 0.44f, 58f, 0f);
-                Icons.FriesBox(cell.transform, 0.58f, 0.56f, 58f, 0f);
-                _boxCell = cell.rectTransform;
-                cell.raycastTarget = true;
-                _boxSrc = cell.gameObject.AddComponent<DragSource>();
+                Icons.FriesBox(boxes.transform, 0.42f, 0.44f, 50f, 0f);
+                Icons.FriesBox(boxes.transform, 0.58f, 0.56f, 50f, 0f);
+                _boxCell = boxes.rectTransform;
+                boxes.raycastTarget = true;
+                _boxSrc = boxes.gameObject.AddComponent<DragSource>();
                 _boxSrc.canDrag = () => !_paused && !_ended;
                 _boxSrc.makeGhost = MakeBoxGhost;
                 _boxSrc.onDrop = OnBoxDrop;
@@ -1606,8 +1657,150 @@ namespace ValourGames.Shawarma
                     var bin = BinOf(Ing.Fries);
                     if (bin != null) Juice.Punch(bin.root, 0.15f, 0.3f);
                 };
-                if (GameData.BoxAuto(_lvBox)) StationLook.Auto(cell.transform, Up.FryBox, 0.85f, 0.8f, 30f);
+                if (GameData.BoxAuto(_lvBox)) StationLook.Auto(boxes.transform, Up.FryBox, 0.85f, 0.8f, 30f);
             }
+            else LockedCell(boxes.transform, L.T("Фри —\nлокация 4", "Fries —\nlocation 4"));
+
+            // краны
+            _tapCola = DispenserCell(u, Drink.Cola, 0.04f, cola, L.T("Кола —\nлокация 3", "Cola —\nlocation 3"));
+            _tapAyran = DispenserCell(u, Drink.Ayran, 0.52f, ayran, L.T("Айран —\nлокация 6", "Ayran —\nlocation 6"));
+            if (GameData.CupTap(_lvDrinks) && (cola || ayran)) StationLook.Auto(u, Up.Drinks, 0.93f, 0.5f, 34f);
+        }
+
+        static void LockedCell(Transform cell, string text)
+        {
+            var img = cell.GetComponent<Image>();
+            if (img != null) img.color = UIKit.Hex("#90A4AE");
+            UIKit.FitLabel(cell, text, 16, UIKit.Alpha(Color.white, 0.85f), 0.05f, 0.08f, 0.95f, 0.92f);
+        }
+
+        /// <summary>Кран напитка: под него подносят стакан (или просто касаются — с 4-го уровня «Напитков»).</summary>
+        RectTransform DispenserCell(Transform u, Drink d, float x0, bool open, string lockText)
+        {
+            var cell = UIKit.Panel(u, "Tap_" + d, UIKit.Hex(d == Drink.Cola ? "#B71C1C" : "#1565C0"), x0, 0.04f, x0 + 0.44f, 0.47f);
+            if (!open) { LockedCell(cell.transform, lockText); return null; }
+            var c = cell.transform;
+            UIKit.Panel(c, "Front", UIKit.Alpha(Color.white, 0.18f), 0.08f, 0.55f, 0.92f, 0.92f);
+            UIKit.FitLabel(c, GameData.Get(d).Name, 18, Color.white, 0.1f, 0.58f, 0.9f, 0.9f);
+            UIKit.Shape(c, UIKit.RoundedSmall, UIKit.Hex("#CFD8DC"), 0.5f, 0.46f, 16f, 14f);
+            UIKit.Shape(c, UIKit.RoundedSmall, UIKit.Hex("#90A4AE"), 0.5f, 0.12f, 60f, 8f);
+            UIKit.MakeButton(cell, () => OnTapDispenser(d));
+            return cell.rectTransform;
+        }
+
+        // =====================================================================
+        //  НАПИТКИ В СТАКАНАХ: взять стакан, подержать под краном, отдать
+        // =====================================================================
+        DragSource _cupSrc;
+        RectTransform _tapCola, _tapAyran;
+        float _cupFill, _autoCupT;
+        Drink _cupDrink = Drink.None, _cupHover = Drink.None;
+        int _cupDrawn = -1;
+
+        RectTransform MakeCupGhost()
+        {
+            var g = UIKit.Rect(_fx, "CupGhost");
+            UIKit.PlaceFixed(g, 0.5f, 0.5f, 100f, 100f);
+            _cupFill = 0f;
+            _cupDrink = Drink.None;
+            _cupHover = Drink.None;
+            _cupDrawn = -1;
+            DrawCupGhost(g, Drink.None, 0);
+            return g;
+        }
+
+        void DrawCupGhost(RectTransform g, Drink d, int step)
+        {
+            if (g == null) return;
+            int key = (int)d * 10 + step;
+            if (key == _cupDrawn) return;
+            _cupDrawn = key;
+            UIKit.Clear(g);
+            Icons.DrinkCup(g, d, 0.5f, 0.5f, 100f, step / 4f);
+            if (step > 0 && step < 4)
+            {
+                var bar = UIKit.Bar(g, UIKit.Alpha(Color.black, 0.5f), UIKit.Gold, 0.1f, -0.12f, 0.9f, -0.02f);
+                UIKit.SetFill(bar, step / 4f);
+            }
+        }
+
+        void TickCups(float dt)
+        {
+            if (_cupSrc != null && _cupSrc.Dragging && _cupDrink == Drink.None)
+            {
+                Drink over = Drink.None;
+                if (_tapCola != null && DragSource.Over(_tapCola, _cupSrc.Pos)) over = Drink.Cola;
+                else if (_tapAyran != null && DragSource.Over(_tapAyran, _cupSrc.Pos)) over = Drink.Ayran;
+                if (over != _cupHover) { _cupHover = over; _cupFill = 0f; }
+                if (over != Drink.None)
+                {
+                    _cupFill += dt;
+                    float need = GameData.CupFillTime(_lvDrinks);
+                    int step = Mathf.Clamp(Mathf.FloorToInt(_cupFill / need * 4f), 0, 4);
+                    DrawCupGhost(_cupSrc.Ghost, over, step);
+                    if (step == 1 && _cupFill - dt < need / 4f) Sfx.Play(Sound.Pour);
+                    if (step >= 4) { _cupDrink = over; Sfx.Play(Sound.Done); }
+                }
+                else DrawCupGhost(_cupSrc.Ghost, Drink.None, 0);
+            }
+
+            // ЛЕГЕНДА: стакан сам наливается и отдаётся клиенту
+            if (!GameData.CupDeliver(_lvDrinks)) return;
+            _autoCupT += dt;
+            if (_autoCupT < 1.2f) return;
+            _autoCupT = 0f;
+            for (int i = 0; i < _customers.Length; i++)
+            {
+                var c = _customers[i];
+                if (c == null || c.leaving) continue;
+                Drink want = c.WantsDrink(Drink.Cola) ? Drink.Cola : (c.WantsDrink(Drink.Ayran) ? Drink.Ayran : Drink.None);
+                if (want == Drink.None) continue;
+                var from = want == Drink.Cola ? _tapCola : _tapAyran;
+                if (from == null) continue;
+                var ic = Icons.DrinkCup(_fx, want, 0.5f, 0.5f, 70f, 1f);
+                Juice.Fly(ic, from.position, c.BubbleWorld, 0.35f, 0f, null);
+                c.Deliver(true);
+                Progress(QuestType.Drinks, 1);
+                Sfx.Play(Sound.Pour);
+                if (c.Done) Pay(i, c);
+                return;
+            }
+        }
+
+        void OnCupDrop(Vector2 pos)
+        {
+            if (_cupDrink == Drink.None)
+            {
+                Toast(L.T("Подержи стакан под краном, пока не нальётся", "Hold the cup under the tap until it fills"));
+                return;
+            }
+            var d = _cupDrink;
+            _cupDrink = Drink.None;
+            if (_tray.Count >= GameData.TrayCapacity) { Toast(L.T("Выдача заполнена", "Serving tray is full")); Sfx.Play(Sound.Error); return; }
+            _tray.Add(new TrayItem { isDrink = true, drink = d });
+            Sfx.Play(Sound.Click);
+            RefreshTray();
+        }
+
+        void OnTapDispenser(Drink d)
+        {
+            if (_paused || _ended) return;
+            if (!GameData.CupTap(_lvDrinks))
+            {
+                Toast(L.T("Возьми стакан из стопки и поднеси к крану", "Take a cup from the stack and hold it under the tap"));
+                if (_cupSrc != null) Juice.Punch(_cupSrc.transform, 0.15f, 0.3f);
+                return;
+            }
+            if (_tray.Count >= GameData.TrayCapacity) { Toast(L.T("Выдача заполнена", "Serving tray is full")); Sfx.Play(Sound.Error); return; }
+            var from = d == Drink.Cola ? _tapCola : _tapAyran;
+            if (from != null)
+            {
+                var ic = Icons.DrinkCup(_fx, d, 0.5f, 0.5f, 70f, 1f);
+                Juice.Fly(ic, from.position, _trayRoot.position, 0.3f, 0f, null);
+            }
+            _tray.Add(new TrayItem { isDrink = true, drink = d });
+            Sfx.Play(Sound.Pour);
+            RefreshTray();
         }
 
         void RefreshAllKitchen()

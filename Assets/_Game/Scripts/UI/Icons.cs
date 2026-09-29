@@ -82,12 +82,14 @@ namespace ValourGames.Shawarma
                     S(b, UIKit.Circle, "#F3E5F5", 0.66f, 0.4f, 0.1f, 0.1f);
                     break;
                 case Ing.Fries:
-                    S(b, R, "#F4C542", 0.3f, 0.66f, 0.1f, 0.5f, -8f);
-                    S(b, R, "#FFD867", 0.44f, 0.7f, 0.1f, 0.56f, 4f);
-                    S(b, R, "#F4C542", 0.58f, 0.68f, 0.1f, 0.52f, -3f);
-                    S(b, R, "#FFD867", 0.7f, 0.64f, 0.1f, 0.46f, 10f);
-                    S(b, R, "#D32F2F", 0.5f, 0.3f, 0.66f, 0.46f);
-                    S(b, R, "#FFFFFF", 0.5f, 0.3f, 0.2f, 0.12f);
+                    // горка картошки БЕЗ коробки — это начинка в шаурму (коробка фри — отдельный гарнир)
+                    S(b, R, "#E8B321", 0.28f, 0.4f, 0.1f, 0.5f, 35f);
+                    S(b, R, "#F4C542", 0.4f, 0.46f, 0.1f, 0.58f, 12f);
+                    S(b, R, "#FFD867", 0.52f, 0.48f, 0.1f, 0.6f, -8f);
+                    S(b, R, "#F4C542", 0.64f, 0.44f, 0.1f, 0.54f, -25f);
+                    S(b, R, "#E8B321", 0.74f, 0.38f, 0.1f, 0.44f, -40f);
+                    S(b, R, "#FFD867", 0.46f, 0.3f, 0.5f, 0.1f, 80f);
+                    S(b, R, "#F4C542", 0.56f, 0.24f, 0.5f, 0.1f, 95f);
                     break;
                 case Ing.Garlic:
                     Bottle(b, "#F2EDDC", "#8D8D8D", "#C9B98F");
@@ -138,6 +140,7 @@ namespace ValourGames.Shawarma
         public static RectTransform DrinkIcon(Transform parent, Drink d, float ax, float ay, float size)
         {
             if (d == Drink.Fries) return FriesBox(parent, ax, ay, size, 1f);
+            if (d == Drink.Cola || d == Drink.Ayran) return DrinkCup(parent, d, ax, ay, size, 1f);
             var b = Box(parent, "Drink_" + d, ax, ay, size);
             var R = UIKit.RoundedSmall;
             if (d == Drink.Cola)
@@ -220,16 +223,26 @@ namespace ValourGames.Shawarma
             return Color.Lerp(gold, burnt, Mathf.Clamp01(k - 1f));
         }
             // ---------------- v0.4: упаковка, мета, магазин ----------------
+        /// <summary>Крафт-пакет «с собой»: загнутый верх, ручки-верёвочки, наклейка с логотипом.</summary>
         public static RectTransform Bag(Transform parent, float ax, float ay, float size)
         {
             var b = Box(parent, "Bag", ax, ay, size);
             var R = UIKit.RoundedSmall;
-            S(b, R, "#00000030", 0.53f, 0.4f, 0.66f, 0.66f);
-            S(b, R, "#B07A4A", 0.5f, 0.42f, 0.66f, 0.66f);
-            S(b, R, "#C99762", 0.5f, 0.62f, 0.66f, 0.1f);
-            S(b, UIKit.Circle, "#7A4E2A", 0.38f, 0.82f, 0.12f, 0.2f);
-            S(b, UIKit.Circle, "#7A4E2A", 0.62f, 0.82f, 0.12f, 0.2f);
-            S(b, UIKit.Circle, "#FFC928", 0.5f, 0.4f, 0.26f, 0.26f);
+            // ручки
+            S(b, R, "#6D4C41", 0.38f, 0.8f, 0.05f, 0.26f, 12f);
+            S(b, R, "#6D4C41", 0.62f, 0.8f, 0.05f, 0.26f, -12f);
+            S(b, R, "#6D4C41", 0.5f, 0.92f, 0.28f, 0.05f);
+            // корпус с тенью и боковой складкой
+            S(b, R, "#00000033", 0.53f, 0.38f, 0.62f, 0.64f);
+            S(b, R, "#C9955E", 0.5f, 0.4f, 0.62f, 0.64f);
+            S(b, R, "#B3824F", 0.23f, 0.4f, 0.08f, 0.64f);
+            S(b, R, "#B3824F", 0.77f, 0.4f, 0.08f, 0.64f);
+            // загнутый верх
+            S(b, R, "#A8743F", 0.5f, 0.7f, 0.62f, 0.07f);
+            // наклейка
+            S(b, UIKit.Circle, "#C62828", 0.5f, 0.4f, 0.3f, 0.3f);
+            S(b, UIKit.Circle, "#FFC928", 0.5f, 0.4f, 0.22f, 0.22f);
+            S(b, R, "#C62828", 0.5f, 0.4f, 0.1f, 0.03f, 30f);
             return b;
         }
 
@@ -243,12 +256,42 @@ namespace ValourGames.Shawarma
             return b;
         }
 
+        /// <summary>«Здесь»: шаурма, завёрнутая в фирменную бумагу (вместо тарелки — не сливается с фоном).</summary>
         public static RectTransform Plate(Transform parent, float ax, float ay, float size)
         {
-            var b = Box(parent, "Plate", ax, ay, size);
-            S(b, UIKit.Circle, "#B0BEC5", 0.5f, 0.46f, 0.9f, 0.5f);
-            S(b, UIKit.Circle, "#FFFFFF", 0.5f, 0.5f, 0.88f, 0.48f);
-            S(b, UIKit.Circle, "#ECEFF1", 0.5f, 0.5f, 0.6f, 0.3f);
+            var b = Box(parent, "Wrapped", ax, ay, size);
+            var R = UIKit.RoundedSmall;
+            S(b, R, "#00000033", 0.54f, 0.47f, 0.34f, 0.84f, -20f);
+            S(b, UIKit.Rounded, "#C8793D", 0.54f, 0.64f, 0.3f, 0.34f, -20f);       // видна шаурма сверху
+            S(b, UIKit.Circle, "#E0413A", 0.5f, 0.76f, 0.08f, 0.08f);
+            S(b, UIKit.Circle, "#3E9B3E", 0.6f, 0.74f, 0.07f, 0.07f);
+            S(b, R, "#FAFAFA", 0.46f, 0.36f, 0.36f, 0.56f, -20f);                 // бумага
+            S(b, R, "#E53935", 0.44f, 0.4f, 0.36f, 0.08f, -20f);                  // красная полоса
+            S(b, R, "#E53935", 0.41f, 0.25f, 0.36f, 0.05f, -20f);
+            return b;
+        }
+
+        /// <summary>Пластиковый стакан с крышкой и трубочкой. fill 0..1 — сколько налито.</summary>
+        public static RectTransform DrinkCup(Transform parent, Drink d, float ax, float ay, float size, float fill)
+        {
+            var b = Box(parent, "Cup_" + d, ax, ay, size);
+            var R = UIKit.RoundedSmall;
+            string liquid = d == Drink.Ayran ? "#F5F5F5" : "#5D1F12";
+            string band = d == Drink.Ayran ? "#1E88E5" : "#E53935";
+            S(b, R, "#00000026", 0.53f, 0.42f, 0.5f, 0.7f);
+            S(b, R, "#E3F2FD", 0.5f, 0.44f, 0.5f, 0.7f);                           // стакан
+            if (fill > 0f)
+            {
+                float h = 0.64f * Mathf.Clamp01(fill);
+                S(b, R, liquid, 0.5f, 0.12f + h / 2f, 0.44f, h);
+            }
+            if (d != Drink.None && fill >= 1f)
+            {
+                S(b, R, band, 0.5f, 0.42f, 0.5f, 0.12f);                           // фирменная полоса
+                S(b, R, "#FAFAFA", 0.5f, 0.81f, 0.56f, 0.07f);                     // крышка
+                S(b, R, band, 0.6f, 0.93f, 0.05f, 0.26f, -15f);                    // трубочка
+            }
+            S(b, R, "#FFFFFF55", 0.33f, 0.46f, 0.05f, 0.56f);
             return b;
         }
 

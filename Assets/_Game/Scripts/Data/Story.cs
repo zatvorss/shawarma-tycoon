@@ -11,12 +11,12 @@ namespace ValourGames.Shawarma
     /// <summary>
     /// Сюжет: дядя Ашот передал тебе свой ларёк. Корпорация «МегаШаурма» забрала его ресторан.
     /// Пройди путь к миллиарду, переезжая всё выше, — и верни имя семьи.
-    /// Главы: 0 — начало, 1 — первая встреча с конкурентом, 2..10 — переезд на локацию 1..9, 11 — финал.
+    /// Главы: 0 — начало, 1 — первая встреча с конкурентом, 2..12 — переезд на локацию 1..11, 13 — финал.
     /// </summary>
     public static class Story
     {
         public const int Ashot = 0, King = 1, Reporter = 2, Me = 3;
-        public const int Chapters = 12;
+        public const int Chapters = 14;
 
         public static string Who(int w)
         {
@@ -95,6 +95,18 @@ namespace ValourGames.Shawarma
                     M("Скоро это будет наш этаж, мистер Мега.", "Soon this will be our floor, Mr. Mega."),
                 };
                 case 11: return new[]
+                {
+                    R("Вас пригласили кормить правительство! Депутаты и министры — народ капризный.", "You've been invited to feed the government! Deputies and ministers are picky."),
+                    K("Даже здесь мои связи... Министры едят только МегаШаурму!", "Even here I have connections... Ministers eat only MegaShawarma!"),
+                    A("Министры тоже люди. Накорми их честно — и связи не понадобятся.", "Ministers are people too. Feed them honestly — no connections needed."),
+                };
+                case 12: return new[]
+                {
+                    A("Дубай, сынок! Здесь шейхи платят золотом за настоящий вкус.", "Dubai, son! Here sheikhs pay in gold for real taste."),
+                    K("Это мой последний рубеж. Я построил здесь МегаБашню!", "This is my last stand. I built the MegaTower here!"),
+                    M("Ещё немного — и миллиард наш!", "Just a bit more — and the billion is ours!"),
+                };
+                case 13: return new[]
                 {
                     K("Невозможно... Миллиард?! Ты купил мою корпорацию?!", "Impossible... A billion?! You bought my corporation?!"),
                     A("Добро пожаловать домой, Магнат. Ресторан снова наш.", "Welcome home, Tycoon. The restaurant is ours again."),

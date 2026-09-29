@@ -37,20 +37,29 @@ namespace ValourGames.Shawarma
         // экран «Помощники»: всё, что переносит продукты само
         static readonly Spot[] Spots3 =
         {
-            new Spot { id = Up.VegFeed,   x = 0.2f, y = 0.33f, size = 190f },
-            new Spot { id = Up.FryLoad,   x = 0.4f, y = 0.33f, size = 190f },
-            new Spot { id = Up.FryUnload, x = 0.6f, y = 0.33f, size = 190f },
-            new Spot { id = Up.FryBox,    x = 0.8f, y = 0.33f, size = 190f },
+            new Spot { id = Up.VegFeed,   x = 0.17f,  y = 0.33f, size = 180f },
+            new Spot { id = Up.FryLoad,   x = 0.335f, y = 0.33f, size = 180f },
+            new Spot { id = Up.FryUnload, x = 0.5f,   y = 0.33f, size = 180f },
+            new Spot { id = Up.FryBox,    x = 0.665f, y = 0.33f, size = 180f },
+            new Spot { id = Up.Drinks,    x = 0.83f,  y = 0.33f, size = 180f },
+        };
+
+        // экран «Люкс»: улучшения для Правительственной столовой и Дубая
+        static readonly Spot[] Spots4 =
+        {
+            new Spot { id = Up.Premium,    x = 0.3f, y = 0.33f, size = 200f },
+            new Spot { id = Up.Lounge,     x = 0.5f, y = 0.33f, size = 200f },
+            new Spot { id = Up.TurboGrill, x = 0.7f, y = 0.33f, size = 200f },
         };
 
         int _shopTab;
-        const int ShopPages = 3;
+        const int ShopPages = 4;
 
-        static Spot[] PageSpots(int page) { return page == 0 ? Spots : (page == 1 ? Spots2 : Spots3); }
+        static Spot[] PageSpots(int page) { return page == 0 ? Spots : (page == 1 ? Spots2 : (page == 2 ? Spots3 : Spots4)); }
 
         static string PageName(int page)
         {
-            return page == 0 ? L.T("Кухня", "Kitchen") : (page == 1 ? L.T("Порядок", "Order") : L.T("Помощники", "Helpers"));
+            return page == 0 ? L.T("Кухня", "Kitchen") : (page == 1 ? L.T("Порядок", "Order") : (page == 2 ? L.T("Помощники", "Helpers") : L.T("Люкс", "Luxury")));
         }
 
         static int PageOf(Up id)
@@ -66,7 +75,7 @@ namespace ValourGames.Shawarma
             switch (id)
             {
                 case Up.Spit: case Up.Knife: case Up.Grill: case Up.Sauce: case Up.Pack: case Up.Tips:
-                case Up.Flies: case Up.Board: case Up.Fire: case Up.FryBox:
+                case Up.Flies: case Up.Board: case Up.Fire: case Up.FryBox: case Up.Drinks:
                     return 3;
                 case Up.VegFeed: case Up.FryLoad: case Up.FryUnload:
                     return 2;
@@ -120,12 +129,13 @@ namespace ValourGames.Shawarma
             int cap = UpgradeDef.CapAt(_save.location) + 1;
             string sub = _shopTab == 0 ? L.T("Нажми на предмет — откроется улучшение", "Tap an item to upgrade it")
                 : (_shopTab == 1 ? L.T("Мухи, грязь, пожары, очередь и грили", "Flies, dirt, fires, queue and grills")
-                                 : L.T("Помощники сами переносят продукты", "Helpers move food for you"));
+                : (_shopTab == 2 ? L.T("Помощники, напитки и коробки фри", "Helpers, drinks and fries boxes")
+                                 : L.T("Роскошь для министров и шейхов", "Luxury for ministers and sheikhs")));
             UIKit.Label(top.transform, sub +
                     "\n<size=18><color=#FFE082>" + L.T("На этой локации — максимум до ур. ", "Max level at this location: ") + cap + "</color></size>",
                 22, UIKit.Gold, TextAnchor.MiddleCenter, 0.46f, 0, 0.81f, 1, true);
             Icons.Coin(top.transform, 0.83f, 0.5f, 46f);
-            UIKit.Label(top.transform, _save.money.ToString(), 38, UIKit.Gold, TextAnchor.MiddleLeft, 0.85f, 0, 0.99f, 1, true);
+            UIKit.Label(top.transform, GameData.Money(_save.money), 38, UIKit.Gold, TextAnchor.MiddleLeft, 0.85f, 0, 0.99f, 1, true);
 
             foreach (var sp in PageSpots(_shopTab)) BuildSpot(s, sp);
 
@@ -301,8 +311,8 @@ namespace ValourGames.Shawarma
             names.Add(L.T("Двойная", "Double")); prices.Add(GameData.LavashPrice + meat * 2 + tom);
             if (GameData.IngOpen(Ing.Cheese, _save.location)) { names.Add(L.T("С сыром", "Cheesy")); prices.Add(GameData.LavashPrice + meat + tom + GameData.Get(Ing.Cheese).price); }
             if (GameData.DrinkOpen(Drink.Fries, eday, _save.location)) { names.Add(L.T("Фри", "Fries")); prices.Add(GameData.Get(Drink.Fries).price); }
-            if (GameData.Unlocked(Drink.Cola, eday)) { names.Add(L.T("Кола", "Cola")); prices.Add(GameData.Get(Drink.Cola).price); }
-            if (GameData.Unlocked(Drink.Ayran, eday)) { names.Add(L.T("Айран", "Ayran")); prices.Add(GameData.Get(Drink.Ayran).price); }
+            if (GameData.DrinkOpen(Drink.Cola, eday, _save.location)) { names.Add(L.T("Кола", "Cola")); prices.Add(GameData.Get(Drink.Cola).price); }
+            if (GameData.DrinkOpen(Drink.Ayran, eday, _save.location)) { names.Add(L.T("Айран", "Ayran")); prices.Add(GameData.Get(Drink.Ayran).price); }
             int n = Mathf.Min(names.Count, 6);
             float h = 0.74f / 6f;
             for (int i = 0; i < n; i++)
@@ -683,6 +693,32 @@ namespace ValourGames.Shawarma
                     UIKit.Panel(b, "Bin", UIKit.Hex("#E4E9EC"), 0.5f, 0.1f, 0.95f, 0.4f);
                     Icons.Ingredient(b, Ing.Fries, 0.72f, 0.28f, u * 0.3f);
                     UIKit.Shape(b, UIKit.Arrow, UIKit.Hex("#43A047"), 0.5f, 0.5f, u * 0.3f, u * 0.3f, -35f);
+                    break;
+                case Up.Drinks:
+                    UIKit.Panel(b, "Machine", UIKit.Hex("#455A64"), 0.1f, 0.1f, 0.6f, 0.85f);
+                    UIKit.Panel(b, "Label", UIKit.Hex("#E53935"), 0.15f, 0.6f, 0.55f, 0.78f);
+                    UIKit.Shape(b, UIKit.RoundedSmall, UIKit.Hex("#B0BEC5"), 0.35f, 0.5f, u * 0.08f, u * 0.1f);
+                    Icons.DrinkCup(b, Drink.Cola, 0.35f, 0.3f, u * 0.3f, 1f);
+                    Icons.DrinkCup(b, Drink.Ayran, 0.78f, 0.3f, u * 0.34f, 1f);
+                    break;
+                case Up.Premium:
+                    UIKit.Shape(b, UIKit.CircleHD, UIKit.Hex("#ECEFF1"), 0.5f, 0.4f, u * 0.9f, u * 0.5f);
+                    UIKit.Shape(b, UIKit.CircleHD, Color.white, 0.5f, 0.42f, u * 0.7f, u * 0.36f);
+                    UIKit.Shape(b, UIKit.RoundedSmall, UIKit.Gold, 0.12f, 0.45f, u * 0.05f, u * 0.5f);
+                    UIKit.Shape(b, UIKit.RoundedSmall, UIKit.Gold, 0.88f, 0.45f, u * 0.05f, u * 0.5f);
+                    Icons.Shawarma(b, 0.5f, 0.46f, u * 0.5f).color = Icons.Toast(1f);
+                    break;
+                case Up.Lounge:
+                    UIKit.Shape(b, UIKit.RoundedSmall, UIKit.Gold, 0.15f, 0.35f, u * 0.05f, u * 0.5f);
+                    UIKit.Shape(b, UIKit.RoundedSmall, UIKit.Gold, 0.85f, 0.35f, u * 0.05f, u * 0.5f);
+                    UIKit.Shape(b, UIKit.Rounded, UIKit.Hex("#B71C1C"), 0.5f, 0.52f, u * 0.7f, u * 0.08f);
+                    UIKit.Shape(b, UIKit.Rounded, UIKit.Hex("#6A1B9A"), 0.5f, 0.2f, u * 0.7f, u * 0.2f);
+                    UIKit.Shape(b, UIKit.Rounded, UIKit.Hex("#8E24AA"), 0.5f, 0.3f, u * 0.64f, u * 0.12f);
+                    break;
+                case Up.TurboGrill:
+                    UIKit.Panel(b, "Plate", UIKit.Hex("#263238"), 0.05f, 0.18f, 0.95f, 0.55f);
+                    for (int i = 0; i < 4; i++) UIKit.Shape(b, UIKit.Circle, UIKit.Hex(lvl >= 2 ? "#40C4FF" : "#FF7043"), 0.2f + i * 0.2f, 0.3f, u * 0.14f, u * 0.14f);
+                    Icons.Shawarma(b, 0.5f, 0.45f, u * 0.6f).color = Icons.Toast(1f);
                     break;
                 case Up.FryBox:
                     Icons.FriesBox(b, 0.3f, 0.3f, u * 0.4f, 0f);

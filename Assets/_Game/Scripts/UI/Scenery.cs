@@ -40,6 +40,7 @@ namespace ValourGames.Shawarma
             sky.raycastTarget = false;
 
             if (mall) { BuildMall(area); return; }
+            if (loc.scene == "gov") { BuildGov(area); return; }
 
             if (night)
             {
@@ -80,7 +81,8 @@ namespace ValourGames.Shawarma
                 }
             }
 
-            if (beach) BuildBeach(area);
+            if (loc.scene == "dubai") BuildDubai(area);
+            else if (beach) BuildBeach(area);
             else if (loc.scene == "towers") BuildTowers(area);
             else
             {
@@ -401,6 +403,117 @@ namespace ValourGames.Shawarma
                 for (int k = 0; k < 5; k++)
                     UIKit.Shape(area, UIKit.Rounded, UIKit.Hex(k % 2 == 0 ? "#43A047" : "#2E7D32"), x, 0.17f, 22f, 70f, -50f + k * 25f);
             }
+        }
+
+        /// <summary>
+        /// Правительственная столовая: дубовые панели, мраморные колонны, флаги, люстры,
+        /// длинные столы с белыми скатертями и красная ковровая дорожка.
+        /// </summary>
+        void BuildGov(RectTransform area)
+        {
+            UIKit.Panel(area, "Wall", UIKit.Hex("#EFE6D2"), 0f, 0.35f, 1f, 1f, false);
+            UIKit.Panel(area, "Cornice", UIKit.Hex("#C8B48A"), 0f, 0.9f, 1f, 0.94f, false);
+            UIKit.Panel(area, "Ceiling", UIKit.Hex("#F7F1E3"), 0f, 0.94f, 1f, 1f, false);
+            // дубовые панели
+            UIKit.Panel(area, "Wood", UIKit.Hex("#6D4C41"), 0f, 0.16f, 1f, 0.42f, false);
+            for (int i = 0; i < 16; i++)
+                UIKit.Panel(area, "Frame", UIKit.Hex("#5D4037"), i / 16f + 0.006f, 0.2f, (i + 1) / 16f - 0.006f, 0.38f);
+            UIKit.Panel(area, "Rail", UIKit.Hex("#FFD54F"), 0f, 0.415f, 1f, 0.425f, false);
+            // колонны
+            for (int i = 0; i < 5; i++)
+            {
+                float x = 0.1f + i * 0.2f;
+                UIKit.Panel(area, "Column", UIKit.Hex("#FAFAFA"), x - 0.02f, 0.16f, x + 0.02f, 0.9f, false);
+                for (int k = 0; k < 3; k++) UIKit.Panel(area, "Flute", UIKit.Hex("#E0E0E0"), x - 0.012f + k * 0.01f, 0.2f, x - 0.008f + k * 0.01f, 0.86f, false);
+                UIKit.Panel(area, "Cap", UIKit.Hex("#E0D5B7"), x - 0.03f, 0.86f, x + 0.03f, 0.9f);
+                UIKit.Panel(area, "Base", UIKit.Hex("#E0D5B7"), x - 0.028f, 0.16f, x + 0.028f, 0.2f);
+            }
+            // флаги и герб между колоннами
+            for (int i = 0; i < 4; i++)
+            {
+                float x = 0.2f + i * 0.2f;
+                UIKit.Panel(area, "Pole", UIKit.Hex("#8D6E63"), x - 0.03f, 0.45f, x - 0.027f, 0.8f, false);
+                UIKit.Panel(area, "FlagW", Color.white, x - 0.027f, 0.72f, x + 0.02f, 0.76f, false);
+                UIKit.Panel(area, "FlagB", UIKit.Hex("#1565C0"), x - 0.027f, 0.68f, x + 0.02f, 0.72f, false);
+                UIKit.Panel(area, "FlagR", UIKit.Hex("#C62828"), x - 0.027f, 0.64f, x + 0.02f, 0.68f, false);
+                var crest = UIKit.Shape(area, UIKit.CircleHD, UIKit.Hex("#FFC107"), x + 0.035f, 0.62f, 60f, 60f);
+                UIKit.Shape(crest.transform, UIKit.CircleHD, UIKit.Hex("#B71C1C"), 0.5f, 0.5f, 44f, 44f);
+                UIKit.Shape(crest.transform, UIKit.RoundedSmall, UIKit.Hex("#FFC107"), 0.5f, 0.5f, 16f, 26f);
+            }
+            // люстры
+            for (int i = 0; i < 3; i++)
+            {
+                float x = 0.2f + i * 0.3f;
+                UIKit.Panel(area, "Chain", UIKit.Hex("#B8860B"), x - 0.001f, 0.84f, x + 0.001f, 0.94f, false);
+                UIKit.Shape(area, UIKit.CircleHD, new Color(1f, 0.93f, 0.7f, 0.25f), x, 0.8f, 200f, 110f);
+                UIKit.Shape(area, UIKit.Rounded, UIKit.Hex("#FFD54F"), x, 0.82f, 110f, 22f);
+                for (int k = 0; k < 5; k++) UIKit.Shape(area, UIKit.Circle, UIKit.Hex("#FFF8E1"), x - 0.024f + k * 0.012f, 0.795f, 12f, 16f);
+            }
+            // пол с ковровой дорожкой и столы с белыми скатертями
+            UIKit.Panel(area, "Floor", UIKit.Hex("#A1887F"), 0f, 0f, 1f, 0.16f, false);
+            UIKit.Panel(area, "Carpet", UIKit.Hex("#B71C1C"), 0f, 0.04f, 1f, 0.12f, false);
+            UIKit.Panel(area, "CarpetEdge", UIKit.Hex("#FFC107"), 0f, 0.115f, 1f, 0.12f, false);
+            float[] tx = { 0.15f, 0.5f, 0.85f };
+            foreach (var x in tx)
+            {
+                UIKit.Panel(area, "Table", Color.white, x - 0.1f, 0.14f, x + 0.1f, 0.2f);
+                UIKit.Panel(area, "Cloth", UIKit.Hex("#ECEFF1"), x - 0.1f, 0.12f, x + 0.1f, 0.15f, false);
+                for (int k = 0; k < 3; k++) UIKit.Shape(area, UIKit.Circle, UIKit.Hex("#E0E0E0"), x - 0.06f + k * 0.06f, 0.2f, 34f, 12f);
+                UIKit.Shape(area, UIKit.RoundedSmall, UIKit.Hex("#90CAF9"), x + 0.08f, 0.225f, 10f, 30f);
+            }
+        }
+
+        /// <summary>Дубай: закатное небо, Бурдж-Халифа и небоскрёбы, море, пальмы и песок.</summary>
+        void BuildDubai(RectTransform area)
+        {
+            // далёкие небоскрёбы
+            string[] glass = { "#90A4AE", "#78909C", "#B0BEC5", "#8DA3AE" };
+            float px = -0.02f;
+            int n = 0;
+            while (px < 1f)
+            {
+                float w = Random.Range(0.05f, 0.09f), h = Random.Range(0.3f, 0.6f);
+                if (Mathf.Abs(px + w * 0.5f - 0.5f) > 0.08f)
+                {
+                    var t = UIKit.Panel(area, "Tower", UIKit.Hex(glass[n % glass.Length]), px, 0.3f, px + w - 0.006f, 0.3f + h, false);
+                    for (int r = 0; r < 10; r++)
+                        UIKit.Panel(t.transform, "Band", UIKit.Alpha(Color.white, 0.25f), 0.1f, 0.05f + r * 0.095f, 0.9f, 0.07f + r * 0.095f, false);
+                }
+                px += w;
+                n++;
+            }
+            // Бурдж-Халифа: ступенчатая игла в центре
+            float[] ww = { 0.07f, 0.055f, 0.042f, 0.03f, 0.02f, 0.011f };
+            float y = 0.3f;
+            for (int i = 0; i < ww.Length; i++)
+            {
+                float h = 0.1f;
+                UIKit.Panel(area, "Burj", UIKit.Hex(i % 2 == 0 ? "#CFD8DC" : "#B0BEC5"), 0.5f - ww[i] / 2f, y, 0.5f + ww[i] / 2f, y + h, false);
+                y += h;
+            }
+            UIKit.Panel(area, "Spire", UIKit.Hex("#ECEFF1"), 0.498f, y, 0.502f, y + 0.1f, false);
+            var tip = UIKit.Shape(area, UIKit.Circle, UIKit.Red, 0.5f, y + 0.1f, 10f, 10f);
+            _twinkle.Add(tip);
+            // солнце у горизонта и море
+            UIKit.Shape(area, UIKit.CircleHD, new Color(1f, 0.8f, 0.4f, 0.35f), 0.82f, 0.45f, 240f, 240f);
+            UIKit.Shape(area, UIKit.CircleHD, UIKit.Hex("#FFCA28"), 0.82f, 0.45f, 130f, 130f);
+            var sea = UIKit.Rect(area, "Sea");
+            UIKit.Place(sea, 0, 0.15f, 1, 0.32f);
+            var img = sea.gameObject.AddComponent<Image>();
+            img.sprite = UIKit.Gradient(UIKit.Hex("#26A69A"), UIKit.Hex("#80CBC4"));
+            img.raycastTarget = false;
+            for (int i = 0; i < 5; i++)
+                UIKit.Shape(sea, UIKit.RoundedSmall, new Color(1, 1, 1, 0.35f), Random.Range(0.05f, 0.95f), 0.25f + i * 0.14f, Random.Range(60f, 140f), 5f);
+            // яхта
+            var yacht = UIKit.Rect(area, "Yacht");
+            UIKit.PlaceFixed(yacht, 0.3f, 0.24f, 160f, 60f);
+            UIKit.Shape(yacht, UIKit.Rounded, Color.white, 0.5f, 0.35f, 160f, 26f);
+            UIKit.Shape(yacht, UIKit.RoundedSmall, UIKit.Hex("#ECEFF1"), 0.45f, 0.65f, 80f, 20f);
+            UIKit.Shape(yacht, UIKit.RoundedSmall, UIKit.Hex("#263238"), 0.45f, 0.65f, 60f, 6f);
+            _clouds.Add(new Mover { rt = yacht, x = 0.3f, y = 0.24f, vx = 0.01f });
+            // пальмы
+            Palm(area, 0.07f, 0.03f);
+            Palm(area, 0.93f, -0.03f);
         }
 
         static void SetPos(Mover m)

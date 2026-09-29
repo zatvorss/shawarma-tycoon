@@ -105,18 +105,23 @@ namespace ValourGames.Shawarma
             if (Meta.Has(save, Meta.CharmBell)) _patience *= 1.08f;
             _cutMult = 1f - 0.08f * Meta.P(save, Perk.Hands);
 
+            // люкс-улучшения (Правительственная столовая, Дубай)
+            _priceMult *= GameData.PremiumMult(save.Lvl(Up.Premium));
+            _patience *= GameData.LoungePatience(save.Lvl(Up.Lounge));
+            _tipMult *= GameData.LoungeTips(save.Lvl(Up.Lounge));
             if (_boost[(int)Boost.Speed]) _cutMult *= 0.5f;
-            if (_boost[(int)Boost.Ads]) { _spawnInterval *= 0.75f; _maxActive = Mathf.Min(_maxActive + 1, GameData.MaxSlots); }
+            if (_boost[(int)Boost.Ads]) _spawnInterval *= 0.75f;
             if (_boost[(int)Boost.Gold]) _priceMult *= 1.25f;
 
             _event = DayEvent.None;
-            if (_day >= 3)
+            if (_day >= 3 && GameData.EventsOn(_save.location))
             {
                 float r = Random.value;
-                if (r < 0.3f && !_loc.night && _loc.scene != "mall") _event = DayEvent.Rain;
+                if (r < 0.3f && !_loc.night && _loc.scene != "mall" && _loc.scene != "gov" && _loc.scene != "dubai") _event = DayEvent.Rain;
                 else if (r < 0.6f) _event = DayEvent.Rush;
             }
 
+            Customer.PackingOn = GameData.PackingOn(_save.location);
             InitKitchen();
 
             BuildStreet();
@@ -352,7 +357,7 @@ namespace ValourGames.Shawarma
             if (drinks.Count > 0 && Random.value < Mathf.Min(0.8f, _drinkChance + 0.1f)) drink = drinks[Random.Range(0, drinks.Count)];
 
             var mode = Random.value < 0.5f ? ServeMode.Here : ServeMode.ToGo;
-            bool known = _autoAsk || (type != CustType.Tourist && Random.value < GameData.ModeKnownChance);
+            bool known = !GameData.PackingOn(_save.location) || _autoAsk || (type != CustType.Tourist && Random.value < GameData.ModeKnownChance);
             bool golden = _eday >= 3 && Random.value < GameData.GoldenChance * (Meta.Has(_save, Meta.CharmMagnet) ? 2f : 1f);
             bool special = false;
             var order = MakeOrder(type);
@@ -391,16 +396,24 @@ namespace ValourGames.Shawarma
             if (c.type == CustType.Musician) Toast(L.T("Музыкант играет — все ждут спокойнее", "The musician plays — everyone waits calmly"));
         }
 
+        /// <summary>Критику нужна идеальная прожарка — без гриля он не приходит; пожарному нечего тушить без пожаров.</summary>
+        bool TypeAllowed(CustType t)
+        {
+            if (t == CustType.Critic && !GameData.GrillOn(_save.location)) return false;
+            if (t == CustType.Fireman && !GameData.FireOn(_save.location)) return false;
+            return true;
+        }
+
         CustType PickType()
         {
             int total = 0;
             foreach (var c in GameData.Customers)
-                if (c.unlockDay <= _eday) total += GameData.Weight(_loc, c.id);
+                if (c.unlockDay <= _eday && TypeAllowed(c.id)) total += GameData.Weight(_loc, c.id);
             if (total <= 0) return CustType.Regular;
             int r = Random.Range(0, total);
             foreach (var c in GameData.Customers)
             {
-                if (c.unlockDay > _eday) continue;
+                if (c.unlockDay > _eday || !TypeAllowed(c.id)) continue;
                 int w = GameData.Weight(_loc, c.id);
                 if (r < w) return c.id;
                 r -= w;
@@ -499,7 +512,7 @@ namespace ValourGames.Shawarma
             {
                 c.gotPerfect = item.perfect;
                 if (item.fresh) c.gotFresh = true;
-                c.packOk = c.mode == ServeMode.Here ? item.pack == 1 : item.pack == 2;
+                c.packOk = !GameData.PackingOn(_save.location) || (c.mode == ServeMode.Here ? item.pack == 1 : item.pack == 2);
             }
             else if (item.drink != Drink.Fries) Progress(QuestType.Drinks, 1);
             c.Deliver(item.isDrink);
@@ -546,7 +559,7 @@ namespace ValourGames.Shawarma
                 if (dirty)
                 {
                     int fine = Mathf.RoundToInt(_goal * 0.15f / 10f) * 10;
-                    _save.money = Mathf.Max(0, _save.money - fine);
+                    _save.money = System.Math.Max(0L, _save.money - fine);
                     Served++;
                     ChangeRep(-0.3f);
                     ResetCombo();
@@ -627,7 +640,6 @@ namespace ValourGames.Shawarma
             string thanks = c.type == CustType.Critic ? L.T("Шедевр! 5/5", "Masterpiece! 5/5")
                 : (tip > price / 5 ? L.T("Супер!", "Awesome!") : (tip > 0 ? L.T("Спасибо!", "Thanks!") : L.T("Норм", "OK")));
             c.Leave(true, thanks);
-            TryOfferSauce(slot, c);
             LiveStats(c, total, true);
             Juice.FloatText(_slots[slot], "+" + total, UIKit.Gold, 60, 0.7f, 0.65f);
             SpawnCoins(c.BubbleWorld, Mathf.Clamp(total / 40, 3, 8));
@@ -699,7 +711,7 @@ namespace ValourGames.Shawarma
             if (_nightTint == null) return;
             float k = Mathf.Clamp01(_elapsed / _dayDuration);
             Color c;
-            if (_loc.night || _loc.scene == "mall") c = new Color(0, 0, 0, 0);
+            if (_loc.night || _loc.scene == "mall" || _loc.scene == "gov") c = new Color(0, 0, 0, 0);
             else if (k < 0.55f) c = new Color(1f, 0.6f, 0.2f, 0f);
             else if (k < 0.8f) c = new Color(1f, 0.55f, 0.2f, Mathf.Lerp(0f, 0.22f, (k - 0.55f) / 0.25f));
             else c = Color.Lerp(new Color(1f, 0.55f, 0.2f, 0.22f), new Color(0.05f, 0.07f, 0.25f, 0.5f), (k - 0.8f) / 0.2f);
@@ -784,7 +796,7 @@ namespace ValourGames.Shawarma
             Scenery.Build(_street, _loc, Rain);
 
             _nightTint = UIKit.Panel(_street, "NightTint", new Color(0, 0, 0, 0), 0, 0, 1, 1, false);
-            if (_loc.scene != "mall")
+            if (_loc.scene != "mall" && _loc.scene != "gov")
             {
                 float[] lampX = { 0.2575f, 0.5025f, 0.7475f };
                 foreach (var lx in lampX)
@@ -843,7 +855,8 @@ namespace ValourGames.Shawarma
 
             // рейтинг ларька
             Icons.Star(hud.transform, 0.705f, 0.5f, 40f, true);
-            _repText = UIKit.Label(hud.transform, "", 30, UIKit.Gold, TextAnchor.MiddleLeft, 0.72f, 0, 0.78f, 1, true);
+            _repText = UIKit.Label(hud.transform, "", 30, UIKit.Gold, TextAnchor.MiddleLeft, 0.722f, 0, 0.785f, 1, true);
+            _repText.lineSpacing = 0.8f;
 
             _comboText = UIKit.Label(hud.transform, "", 30, UIKit.Orange, TextAnchor.MiddleCenter, 0.625f, 0, 0.69f, 1, true);
 
@@ -968,7 +981,7 @@ namespace ValourGames.Shawarma
             _goalFill.GetComponent<Image>().color = got >= _goal ? UIKit.Gold : UIKit.Green;
             _goalText.text = L.T("Цель ", "Goal ") + got + " / " + _goal;
 
-            _moneyText.text = _save.money.ToString();
+            _moneyText.text = GameData.Money(_save.money);
             _comboText.text = _feverT > 0f ? L.T("ЖАРА ×2 ", "FEVER ×2 ") + Mathf.CeilToInt(_feverT)
                 : (_combo >= 2 ? "×" + GameData.ComboMult(_combo).ToString("0.0") : "");
             _comboText.color = _feverT > 0f ? (Mathf.PingPong(Time.time * 6f, 1f) > 0.5f ? UIKit.Gold : UIKit.Red) : UIKit.Orange;
@@ -976,7 +989,7 @@ namespace ValourGames.Shawarma
             string hint = Hint();
             _hintBulb.SetActive(hint.Length > 0);
             _hintText.text = hint;
-            _repText.text = _save.rep.ToString("0.0");
+            _repText.text = "<size=15><color=#FFE9A8>" + L.T("рейтинг", "rating") + "</color></size>\n" + _save.rep.ToString("0.0");
         }
 
         public void Toast(string msg)

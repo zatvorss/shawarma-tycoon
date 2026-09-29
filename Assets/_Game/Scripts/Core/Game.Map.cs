@@ -61,9 +61,9 @@ namespace ValourGames.Shawarma
                 26, UIKit.Hex("#A5D6A7"), TextAnchor.MiddleCenter, 0.26f, 0.45f, 0.62f, 1f, true);
             UIKit.Label(top.transform, GameData.RankName(GameData.RankOf(_save.lifetime)) + "  •  " + GameData.Money(_save.lifetime),
                 22, UIKit.Alpha(UIKit.Cream, 0.75f), TextAnchor.MiddleCenter, 0.26f, 0f, 0.62f, 0.5f, true);
-            UIKit.Label(top.transform, "★ " + _save.stars, 32, UIKit.Gold, TextAnchor.MiddleCenter, 0.62f, 0, 0.72f, 1, true);
+            UIKit.Label(top.transform, "<size=15><color=#FFE9A8>" + L.T("звёзды", "stars") + "</color></size>\n★ " + _save.stars, 30, UIKit.Gold, TextAnchor.MiddleCenter, 0.62f, 0, 0.72f, 1, true).lineSpacing = 0.8f;
             Crown(top.transform, 0.745f, 0.5f, 44f);
-            UIKit.Label(top.transform, _save.fame.ToString(), 32, UIKit.Gold, TextAnchor.MiddleLeft, 0.765f, 0, 0.82f, 1, true);
+            UIKit.Label(top.transform, "<size=15><color=#FFE9A8>" + L.T("слава", "fame") + "</color></size>\n" + _save.fame, 30, UIKit.Gold, TextAnchor.MiddleLeft, 0.765f, 0, 0.83f, 1, true).lineSpacing = 0.8f;
             Icons.Coin(top.transform, 0.84f, 0.5f, 44f);
             UIKit.Label(top.transform, GameData.Money(_save.money), 34, UIKit.Gold, TextAnchor.MiddleLeft, 0.86f, 0, 0.99f, 1, true);
             UIKit.Button(s, L.T("Меню", "Menu"), UIKit.Steel, () => { Sfx.Play(Sound.Click); ShowMenu(); }, 0.005f, 0.915f, 0.115f, 0.99f, 32);
@@ -273,7 +273,7 @@ namespace ValourGames.Shawarma
             UIKit.Label(c, L.T("Что даёт на один день:", "Effect for one day:"), 26, UIKit.Gray, TextAnchor.UpperLeft, 0.4f, 0.86f, 1f, 1f, true);
             UIKit.Label(c, def.Desc, 34, UIKit.Dark, TextAnchor.UpperLeft, 0.4f, 0.55f, 1f, 0.86f, true);
             string how = def.id == Boost.Speed ? L.T("Вертел и нож режут в 2 раза быстрее, гриль и фритюр готовят на 20% быстрее.", "Spit and knife cut 2× faster, grill and fryer cook 20% faster.")
-                : (def.id == Boost.Ads ? L.T("Клиенты приходят на 25% чаще, у окна может стоять на 1 человека больше.", "Customers come 25% more often, one extra spot at the window.")
+                : (def.id == Boost.Ads ? L.T("Клиенты приходят на 25% чаще — больше заказов и денег за день.", "Customers come 25% more often — more orders and money per day.")
                 : L.T("Каждый заказ стоит на 25% дороже. Отлично вместе с золотыми клиентами!", "Every order costs 25% more. Great with golden customers!"));
             UIKit.Label(c, how, 24, UIKit.Wood, TextAnchor.UpperLeft, 0.4f, 0.36f, 1f, 0.56f);
             UIKit.Label(c, L.T("У тебя: ", "You have: ") + _save.boosts[i] + L.T(" шт.  Тратится 1 в начале дня, если включён.", ".  Uses 1 at day start if ON."),
@@ -354,7 +354,7 @@ namespace ValourGames.Shawarma
             }
             // открыть
             _save.chests++;
-            int coins = 200 + _save.day * 120;
+            long coins = Meta.PassCoins(_save, 10);
             int b = Random.Range(0, 3);
             _save.money += coins;
             _save.boosts[b]++;
@@ -363,7 +363,7 @@ namespace ValourGames.Shawarma
             Juice.Punch(chest, 0.3f, 0.5f);
             Juice.Burst(c, UIKit.Gold, 20, 0.5f, 0.7f, 20f);
             Sfx.Play(Sound.Fanfare);
-            UIKit.Label(c, "+" + coins + L.T(" монет и бустер «", " coins and booster “") + Meta.Boosts[b].Name + L.T("»!", "”!"),
+            UIKit.Label(c, "+" + GameData.Money(coins) + L.T(" монет и бустер «", " coins and booster “") + Meta.Boosts[b].Name + L.T("»!", "”!"),
                 32, UIKit.Green, TextAnchor.MiddleCenter, 0f, 0.12f, 1f, 0.32f, true);
             UIKit.Button(c, L.T("Отлично!", "Great!"), UIKit.Green, () => BuildMap(-1), 0.25f, 0f, 0.75f, 0.12f, 32);
         }

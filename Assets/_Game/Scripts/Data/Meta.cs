@@ -132,7 +132,7 @@ namespace ValourGames.Shawarma
             new BoostDef { id = Boost.Speed, ru = "Эспрессо", en = "Espresso", cost = 300,
                 descRu = "Режешь вдвое быстрее, гриль и фритюр −20%", descEn = "Cut 2× faster, grill & fryer −20%" },
             new BoostDef { id = Boost.Ads, ru = "Листовки", en = "Flyers", cost = 400,
-                descRu = "Больше клиентов (+1 место у окна)", descEn = "More customers (+1 at the window)" },
+                descRu = "Клиенты приходят на 25% чаще", descEn = "Customers come 25% more often" },
             new BoostDef { id = Boost.Gold, ru = "Золотой лаваш", en = "Golden lavash", cost = 500,
                 descRu = "Все цены ×1.25 на день", descEn = "All prices ×1.25 for the day" },
         };
@@ -192,10 +192,23 @@ namespace ValourGames.Shawarma
             if (lvl == 8 || lvl == 18 || lvl == 28) { type = 3; value = 2; return; }
             if (lvl % 4 == 2) { type = 4; value = 1; return; }
             if (lvl % 3 == 0) { type = 1; value = (lvl / 3) % 3; return; }
-            type = 0; value = 200 * lvl;
+            type = 0; value = 0;
         }
 
-        public static string PassRewardText(int lvl)
+        /// <summary>
+        /// Монеты за уровень пасса — считаются от дохода на твоей текущей локации:
+        /// примерно треть рабочего дня на 1-м уровне пасса и почти целый день на 30-м.
+        /// Сундук — ещё щедрее (+ случайный бустер).
+        /// </summary>
+        public static long PassCoins(SaveData s, int lvl)
+        {
+            float day = GameData.ExpectedDayIncome(s.location, 5);
+            return (long)(Mathf.Round(day * (0.3f + lvl * 0.02f) / 10f) * 10f);
+        }
+
+        public static long ChestCoins(SaveData s, int lvl) { return PassCoins(s, lvl) * 2; }
+
+        public static string PassRewardText(SaveData s, int lvl)
         {
             int t, v;
             PassReward(lvl, out t, out v);
@@ -205,7 +218,7 @@ namespace ValourGames.Shawarma
                 case 2: return Charms[v].Name;
                 case 3: return "+" + FamePts(v);
                 case 4: return L.T("Сундук", "Chest");
-                default: return "+" + v;
+                default: return "+" + GameData.Money(PassCoins(s, lvl));
             }
         }
 
@@ -213,13 +226,15 @@ namespace ValourGames.Shawarma
         {
             int t, v;
             PassReward(lvl, out t, out v);
-            if (t == 0) s.money += v;
+            if (t == 0) { long c = PassCoins(s, lvl); s.money += c; s.lifetime += c; }
             else if (t == 1) s.boosts[v]++;
             else if (t == 2) s.charms[v] = 1;
             else if (t == 3) s.fame += v;
             else
             {
-                s.money += 300 + lvl * 150;
+                long c = ChestCoins(s, lvl);
+                s.money += c;
+                s.lifetime += c;
                 s.boosts[UnityEngine.Random.Range(0, 3)]++;
             }
         }
@@ -229,7 +244,7 @@ namespace ValourGames.Shawarma
         {
             new PerkDef { id = Perk.Recipe,  ru = "Семейный рецепт", en = "Family recipe", descRu = "+10% к цене за уровень", descEn = "+10% price per level", max = 10 },
             new PerkDef { id = Perk.Hands,   ru = "Опытные руки", en = "Skilled hands", descRu = "Нарезка −8%, гриль и фритюр −6% за уровень", descEn = "Cutting −8%, grill & fryer −6% per level", max = 5 },
-            new PerkDef { id = Perk.Capital, ru = "Стартовый капитал", en = "Seed money", descRu = "+1000 монет после переезда за уровень", descEn = "+1000 coins after moving per level", max = 10 },
+            new PerkDef { id = Perk.Capital, ru = "Стартовый капитал", en = "Seed money", descRu = "Стартовые монеты после переезда (растут с локацией)", descEn = "Starting coins after moving (grow with location)", max = 10 },
             new PerkDef { id = Perk.Word,    ru = "Сарафанное радио", en = "Word of mouth", descRu = "Клиенты приходят на 6% чаще за уровень", descEn = "Customers come 6% more often per level", max = 5 },
             new PerkDef { id = Perk.Calm,    ru = "Уютная очередь", en = "Cozy queue", descRu = "+7% терпения за уровень", descEn = "+7% patience per level", max = 5 },
             new PerkDef { id = Perk.Legacy,  ru = "Наследство", en = "Legacy", descRu = "При переезде сохраняется 10% монет за уровень", descEn = "Keep 10% coins when moving per level", max = 5 },
@@ -238,7 +253,7 @@ namespace ValourGames.Shawarma
         public static int P(SaveData s, Perk p) { return s.perks[(int)p]; }
 
         // ---------------- бизнесы ----------------
-        public const int BizCourier = 0, BizBakery = 1, BizSauce = 2;
+        public const int BizCourier = 0, BizBakery = 1, BizKiosk2 = 2;
 
         public static readonly BizDef[] Businesses =
         {
@@ -254,11 +269,11 @@ namespace ValourGames.Shawarma
                 lvRu = new[] { "Лаваш за 14 сек, шаурма +20%, 1 оптовик в день", "12 сек, шаурма +25%", "10 сек, +30%, 2 лаваша сразу, 2 оптовика", "8 сек, шаурма +40%", "6 сек, +50%, 3 лаваша сразу" },
                 lvEn = new[] { "Lavash in 14 s, shawarma +20%, 1 bulk buyer a day", "12 s, shawarma +25%", "10 s, +30%, 2 at once, 2 buyers", "8 s, shawarma +40%", "6 s, +50%, 3 at once" },
                 costs = new[] { 40000, 100000, 250000, 600000, 1500000 } },
-            new BizDef { ru = "Фирменный соус", en = "Signature sauce", color = "#C62828", unlockLoc = 8,
-                descRu = "Как в лучших шаурмичных: свой соус «Секрет Ашота» в бутылках. Довольные гости просят бутылочку с собой — успей нажать на неё и продать.",
-                descEn = "Like the best shawarma places: your own “Ashot's Secret” sauce in bottles. Happy guests ask for a bottle to go — tap it quickly to sell.",
-                lvRu = new[] { "Бутылку просит каждый 4-й гость", "Каждый 3-й, бутылка дороже ×1.5", "Каждый 3-й, ×2", "Каждый 2-й, ×2.5", "Каждый 2-й, ×3 и ждут дольше" },
-                lvEn = new[] { "Every 4th guest asks for a bottle", "Every 3rd, bottle ×1.5", "Every 3rd, ×2", "Every 2nd, ×2.5", "Every 2nd, ×3, waits longer" },
+            new BizDef { ru = "Второй ларёк", en = "Second kiosk", color = "#2E7D32", unlockLoc = 8,
+                descRu = "Свой второй ларёк с наёмным поваром. Работать не нужно: закупай продукты — каждый день он сам продаёт порции, а ты забираешь выручку.",
+                descEn = "Your second kiosk with a hired cook. No work: buy food — every day it sells portions by itself, you collect the cash.",
+                lvRu = new[] { "Продаёт до 6 порций в день", "До 10 порций, продукты дешевле", "До 15 порций", "До 22 порций, продукты ещё дешевле", "До 30 порций в день" },
+                lvEn = new[] { "Sells up to 6 portions a day", "Up to 10, cheaper food", "Up to 15 portions", "Up to 22, even cheaper food", "Up to 30 portions a day" },
                 costs = new[] { 200000, 500000, 1200000, 3000000, 7000000 } },
         };
 
@@ -268,9 +283,34 @@ namespace ValourGames.Shawarma
         public static float BakeBonus(int l) { float[] b = { 0f, 0.2f, 0.25f, 0.3f, 0.4f, 0.5f }; return b[Mathf.Clamp(l, 0, 5)]; }
         public static int BakeCap(int l) { return l >= 5 ? 3 : (l >= 3 ? 2 : 1); }
         public const float LavashHot = 14f;
-        public static float SauceChance(int l) { return l <= 0 ? 0f : (l >= 4 ? 0.5f : (l >= 2 ? 0.33f : 0.25f)); }
-        public static float SauceMult(int l) { float[] m = { 0f, 1f, 1.5f, 2f, 2.5f, 3f }; return m[Mathf.Clamp(l, 0, 5)]; }
-        public static float SauceOfferTime(int l) { return l >= 5 ? 4f : 2.8f; }
+        // ---------------- второй ларёк ----------------
+        // Экономика: порция стоит 100 × «масштаб» текущей локации; закупка — 55%…45% от цены.
+        // На 5-м уровне ларёк приносит примерно 3/4 того, что ты сам зарабатываешь за день.
+        public static int Kiosk2Cap(int l) { int[] c = { 0, 6, 10, 15, 22, 30 }; return c[Mathf.Clamp(l, 0, 5)]; }
+        public static int Kiosk2Storage(int l) { return Kiosk2Cap(l) * 3; }
+        public static long Kiosk2Price(int loc) { return (long)Mathf.Max(20f, Mathf.Round(100f * GameData.EconScale(loc) / 10f) * 10f); }
+        public static float Kiosk2CostShare(int l) { return l >= 4 ? 0.45f : (l >= 2 ? 0.5f : 0.55f); }
+        public static long Kiosk2UnitCost(int l, int loc) { return (long)Mathf.Max(10f, Mathf.Round(Kiosk2Price(loc) * Kiosk2CostShare(l) / 10f) * 10f); }
+
+        /// <summary>Прошёл рабочий день — второй ларёк продал свои порции. Возвращает, сколько продал.</summary>
+        public static int Kiosk2Day(SaveData s)
+        {
+            int l = s.biz[BizKiosk2];
+            if (l <= 0) { s.kiosk2LastSold = 0; return 0; }
+            int sold = Mathf.Min(s.kiosk2Stock, Kiosk2Cap(l));
+            s.kiosk2Stock -= sold;
+            s.kiosk2Cash += sold * Kiosk2Price(s.location);
+            s.kiosk2LastSold = sold;
+            return sold;
+        }
+
+        /// <summary>Цена бизнеса растёт вместе с доходами: чем дальше локация, тем дороже.</summary>
+        public static long BizCost(int biz, int lvl, int loc)
+        {
+            var b = Businesses[biz];
+            float k = GameData.EconScale(loc) / GameData.EconScale(b.unlockLoc);
+            return (long)(Mathf.Max(1f, k) * b.Cost(lvl) / 10f) * 10;
+        }
 
         // ---------------- талисманы Шаурма-Пасса ----------------
         public const int CharmCoin = 0, CharmBell = 1, CharmBowl = 2, CharmSpatula = 3, CharmMagnet = 4, CharmCrown = 5;
@@ -280,7 +320,7 @@ namespace ValourGames.Shawarma
             new CharmDef { ru = "Счастливая монетка", en = "Lucky coin", descRu = "Цены +5% навсегда", descEn = "Prices +5% forever", passLevel = 5, color = "#FFC928" },
             new CharmDef { ru = "Колокольчик", en = "Door bell", descRu = "Терпение клиентов +8%", descEn = "Customer patience +8%", passLevel = 10, color = "#FFB300" },
             new CharmDef { ru = "Кошачья миска", en = "Cat bowl", descRu = "Кот приходит 3 раза и даёт вдвое больше", descEn = "The cat comes 3 times and gives double", passLevel = 15, color = "#F48FB1" },
-            new CharmDef { ru = "Золотая лопатка", en = "Golden spatula", descRu = "Окно «идеально» на гриле шире", descEn = "Wider “perfect” grill window", passLevel = 20, color = "#FFD54F" },
+            new CharmDef { ru = "Золотая лопатка", en = "Golden spatula", descRu = "Гриль жарит на 15% быстрее", descEn = "The grill cooks 15% faster", passLevel = 20, color = "#FFD54F" },
             new CharmDef { ru = "Магнит для гостей", en = "Guest magnet", descRu = "Золотые клиенты вдвое чаще", descEn = "Golden customers twice as often", passLevel = 25, color = "#E53935" },
             new CharmDef { ru = "Корона магната", en = "Tycoon crown", descRu = "Все доходы +15% навсегда", descEn = "All income +15% forever", passLevel = 30, color = "#FFC928" },
         };
@@ -302,29 +342,44 @@ namespace ValourGames.Shawarma
         public static readonly int[] WheelValue = { 50, 150, 1, 300, 1, 600, 1, 1500 };
         public static readonly string[] WheelColor = { "#E53935", "#FB8C00", "#8E24AA", "#43A047", "#1E88E5", "#F4511E", "#FDD835", "#00897B" };
 
+        /// <summary>Монеты на колесе растут вместе с доходами локации.</summary>
+        public static long WheelCoins(SaveData s, int i) { return (long)(Mathf.Round(WheelValue[i] * GameData.EconScale(s.location) / 10f) * 10f); }
+
         public static bool WheelFree(SaveData s) { return s.wheelDate != DateTime.Now.ToString("yyyy-MM-dd"); }
 
         // ---------------- ежедневный бонус ----------------
-        public static readonly int[] DailyRewards = { 50, 100, 150, 250, 400, 600, 1000 };
+        // 1-й день — 100 монет. Дальше каждый день — 15% от твоих денег,
+        // но не больше 20 млн и не больше 30% цены следующей локации.
+        public const int DailyCells = 7;
 
-        /// <summary>Возвращает номер дня серии (0..6), если сегодня бонус ещё не получен, иначе -1.</summary>
+        /// <summary>Какой по счёту день серии сегодня (1, 2, 3...), если бонус ещё не забран, иначе -1.</summary>
         public static int DailyAvailable(SaveData s)
         {
             string today = DateTime.Now.ToString("yyyy-MM-dd");
             if (s.lastLogin == today) return -1;
             string yesterday = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
-            int streak = s.lastLogin == yesterday ? s.streak + 1 : 1;
-            return (streak - 1) % DailyRewards.Length;
+            return s.lastLogin == yesterday ? s.streak + 1 : 1;
         }
 
-        public static int ClaimDaily(SaveData s)
+        public static long DailyReward(SaveData s, int streakDay)
         {
-            string today = DateTime.Now.ToString("yyyy-MM-dd");
-            string yesterday = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
-            s.streak = s.lastLogin == yesterday ? s.streak + 1 : 1;
-            s.lastLogin = today;
-            int reward = DailyRewards[(s.streak - 1) % DailyRewards.Length];
+            if (streakDay <= 1) return 100;
+            long cap = 20000000L;
+            int next = s.location + 1;
+            if (next < GameData.Locations.Length) cap = Math.Min(cap, (long)(GameData.Locations[next].cost * 0.3));
+            long v = (long)(s.money * 0.15);
+            return Math.Max(100L, Math.Min(v, cap));
+        }
+
+        public static long ClaimDaily(SaveData s)
+        {
+            int day = DailyAvailable(s);
+            if (day < 0) return 0;
+            long reward = DailyReward(s, day);
+            s.streak = day;
+            s.lastLogin = DateTime.Now.ToString("yyyy-MM-dd");
             s.money += reward;
+            s.lifetime += reward;
             return reward;
         }
 
@@ -450,7 +505,7 @@ namespace ValourGames.Shawarma
             var rnd = new System.Random(day * 7919 + loc.id * 31);
             var pool = new List<QuestType> { QuestType.Serve, QuestType.Perfect, QuestType.Combo, QuestType.ToGo, QuestType.NoBurn, QuestType.Earn };
             if (day >= 2) pool.Add(QuestType.ServeType);
-            if (GameData.Unlocked(Drink.Cola, day)) pool.Add(QuestType.Drinks);
+            if (GameData.DrinkOpen(Drink.Cola, day, loc.id)) pool.Add(QuestType.Drinks);
 
             var result = new List<Quest>();
             int reward = 60 + day * 15;
@@ -459,7 +514,7 @@ namespace ValourGames.Shawarma
                 int pi = rnd.Next(pool.Count);
                 var t = pool[pi];
                 pool.RemoveAt(pi);
-                var q = new Quest { type = t, reward = Mathf.RoundToInt(reward * loc.price / 10f) * 10 };
+                var q = new Quest { type = t, reward = Mathf.RoundToInt(reward * GameData.EconScale(loc.id) / 10f) * 10 };
                 switch (t)
                 {
                     case QuestType.Serve: q.target = 4 + day; break;
@@ -516,6 +571,10 @@ namespace ValourGames.Shawarma
             new[] { "А подешевле?", "Давай скидку, брат!", "На рынке дешевле было", "Торг уместен?" },
             new[] { "Только без мяса!", "Я веган, запомните", "Побольше овощей", "Мясо — ни кусочка!" },
             new[] { "Самую лучшую шаурму!", "Деньги не проблема", "Удиви меня, друг", "Золотой лаваш есть?" },
+            new[] { "Мне как обычно, без очереди", "Я на заседании через 10 минут", "Народу нравится шаурма!", "Запишите в протокол: вкусно" },
+            new[] { "Министр проголодался", "Быстро и по регламенту", "Это пойдёт в госзаказ", "Подайте, как положено" },
+            new[] { "Деньги — не вопрос!", "Мне всё самое лучшее", "Сдачу оставьте себе", "Удивите миллионера!" },
+            new[] { "Сделайте красиво, я сниму", "Только самое свежее, дорогой", "Это будет в моём блоге", "Шаурма — новый тренд!" },
         };
         static readonly string[][] HelloEn =
         {
@@ -549,6 +608,10 @@ namespace ValourGames.Shawarma
             new[] { "Any cheaper?", "Give me a discount!", "It was cheaper at the market", "Can we haggle?" },
             new[] { "No meat please!", "I'm vegan, remember", "Extra veggies", "Not a single piece of meat!" },
             new[] { "Your very best shawarma!", "Money is no problem", "Impress me, friend", "Is there a golden lavash?" },
+            new[] { "The usual, skip the line", "I have a session in 10 minutes", "The people love shawarma!", "For the record: tasty" },
+            new[] { "The minister is hungry", "Quick and by the rules", "This goes into a state order", "Serve it properly" },
+            new[] { "Money is no issue!", "Only the best for me", "Keep the change", "Impress a millionaire!" },
+            new[] { "Make it pretty, I'm filming", "Only the freshest, darling", "It'll be on my blog", "Shawarma is the new trend!" },
         };
 
         public static string Hello(CustType t)

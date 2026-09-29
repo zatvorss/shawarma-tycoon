@@ -17,6 +17,7 @@ namespace ValourGames.Shawarma
         DayRun _run;
         bool _readySent, _dailyChecked;
         long _lastBizIncome;
+        int _lastKiosk2;
 
         // уведомления о достижениях
         class Note { public string title, text; }
@@ -165,7 +166,7 @@ namespace ValourGames.Shawarma
             {
                 _passSeen++;
                 Notify(L.T("Шаурма-Пасс: уровень ", "Shawarma Pass: level ") + _passSeen + "!",
-                    L.T("Награда: ", "Reward: ") + Meta.PassRewardText(_passSeen) + L.T(" — забери в меню", " — claim in menu"));
+                    L.T("Награда: ", "Reward: ") + Meta.PassRewardText(_save, _passSeen) + L.T(" — забери в меню", " — claim in menu"));
             }
         }
 
@@ -348,44 +349,60 @@ namespace ValourGames.Shawarma
         string MusicLabel() { return _save.music ? L.T("Музыка: вкл", "Music: on") : L.T("Музыка: выкл", "Music: off"); }
 
         // ---------- ежедневный бонус ----------
-        void ShowDaily(RectTransform s, int dayIndex)
+        void ShowDaily(RectTransform s, int streakDay)
         {
             var c = UIKit.Popup(s, L.T("Ежедневный бонус", "Daily bonus"), UIKit.Orange, 0.15f, 0.2f, 0.85f, 0.8f, null);
-            UIKit.Label(c, L.T("Заходи каждый день — награда растёт!", "Come back every day — the reward grows!"), 32, UIKit.Dark,
+            UIKit.Label(c, L.T("Заходи каждый день — завтра будет сюрприз!", "Come back every day — a surprise awaits tomorrow!"), 32, UIKit.Dark,
                 TextAnchor.MiddleCenter, 0f, 0.82f, 1f, 1f, true);
-            var r = Meta.DailyRewards;
-            for (int i = 0; i < r.Length; i++)
+            long reward = Meta.DailyReward(_save, streakDay);
+            int first = Mathf.Max(1, streakDay - 2);   // показываем пару прошлых дней, сегодня и будущие
+            for (int i = 0; i < Meta.DailyCells; i++)
             {
+                int day = first + i;
                 float x0 = 0.01f + i * 0.1414f;
-                bool past = i < dayIndex, now = i == dayIndex;
+                bool past = day < streakDay, now = day == streakDay;
                 var cell = UIKit.Panel(c, "Cell", now ? UIKit.Gold : (past ? UIKit.Hex("#C8E6C9") : Color.white), x0, 0.34f, x0 + 0.13f, 0.78f);
                 UIKit.AddShadow(cell, 5f, 0.3f);
-                UIKit.FitLabel(cell.transform, L.T("День ", "Day ") + (i + 1), 26, UIKit.Dark, 0.05f, 0.78f, 0.95f, 0.97f);
-                if (i == r.Length - 1) Icons.Bag(cell.transform, 0.5f, 0.48f, 80f);
-                else Icons.Coin(cell.transform, 0.5f, 0.48f, 64f);
-                UIKit.FitLabel(cell.transform, "+" + r[i], 30, UIKit.Dark, 0.05f, 0.04f, 0.95f, 0.22f);
-                if (now) Juice.Punch(cell.rectTransform, 0.15f, 0.6f);
+                UIKit.FitLabel(cell.transform, L.T("День ", "Day ") + day, 26, UIKit.Dark, 0.05f, 0.78f, 0.95f, 0.97f);
+                if (now)
+                {
+                    Icons.Coin(cell.transform, 0.5f, 0.48f, 64f);
+                    UIKit.FitLabel(cell.transform, "+" + GameData.Money(reward), 30, UIKit.Dark, 0.05f, 0.04f, 0.95f, 0.22f);
+                    Juice.Punch(cell.rectTransform, 0.15f, 0.6f);
+                }
+                else if (past)
+                {
+                    var ok = UIKit.Shape(cell.transform, UIKit.Circle, UIKit.Green, 0.5f, 0.48f, 60f, 60f);
+                    UIKit.FitLabel(ok.transform, "OK", 26, Color.white, 0.1f, 0.2f, 0.9f, 0.8f);
+                }
+                else
+                {
+                    var q = UIKit.Shape(cell.transform, UIKit.Circle, UIKit.Purple, 0.5f, 0.48f, 64f, 64f);
+                    UIKit.FitLabel(q.transform, "?", 44, Color.white, 0.1f, 0.1f, 0.9f, 0.9f);
+                    UIKit.FitLabel(cell.transform, L.T("сюрприз", "surprise"), 22, UIKit.Gray, 0.05f, 0.04f, 0.95f, 0.22f);
+                }
             }
             var popup = c.parent.parent.gameObject;
-            UIKit.Button(c, L.T("Забрать +", "Claim +") + r[dayIndex], UIKit.Green, () =>
+            UIKit.Button(c, L.T("Забрать +", "Claim +") + GameData.Money(reward), UIKit.Green, () =>
             {
-                int got = Meta.ClaimDaily(_save);
+                long got = Meta.ClaimDaily(_save);
                 SaveSystem.Save(_save);
                 Sfx.Play(Sound.Coin);
                 Destroy(popup);
-                Notify(L.T("Бонус получен", "Bonus claimed"), "+" + got);
+                Notify(L.T("Бонус получен", "Bonus claimed"), "+" + GameData.Money(got));
                 ShowMenu();
             }, 0.08f, 0.03f, 0.48f, 0.26f, 40);
             UIKit.Button(c, L.T("×2 за рекламу", "×2 for an ad"), UIKit.Orange, () =>
             {
                 Platform.ShowRewarded("daily_x2", () =>
                 {
-                    int got = Meta.ClaimDaily(_save);
+                    long got = Meta.ClaimDaily(_save);
                     _save.money += got;
+                    _save.lifetime += got;
                     SaveSystem.Save(_save);
                     Sfx.Play(Sound.Coin);
                     Destroy(popup);
-                    Notify(L.T("Бонус ×2 получен", "Bonus ×2 claimed"), "+" + (got * 2));
+                    Notify(L.T("Бонус ×2 получен", "Bonus ×2 claimed"), "+" + GameData.Money(got * 2));
                     ShowMenu();
                 }, null);
             }, 0.52f, 0.03f, 0.92f, 0.26f, 40);
@@ -444,6 +461,7 @@ namespace ValourGames.Shawarma
             _save.stars += stars;
             _save.bestStarsDay = Mathf.Max(_save.bestStarsDay, stars);
             _lastBizIncome = run.CourierIncome;
+            _lastKiosk2 = Meta.Kiosk2Day(_save);
             if (total > _save.bestDay)
             {
                 _save.bestDay = total;
@@ -501,6 +519,8 @@ namespace ValourGames.Shawarma
             UIKit.Label(box.transform, sub, 22, ok ? UIKit.Gray : UIKit.Red, TextAnchor.MiddleCenter, 0.04f, 0.3f, 0.96f, 0.36f, true);
 
             string tot = "+" + total + "   <size=28><color=#6A1B9A>" + L.T("Пасс +", "Pass +") + run.DayXp + " XP</color></size>";
+            if (_lastKiosk2 > 0) tot += "\n<size=28><color=#2E7D32>" + L.T("Второй ларёк продал порций: ", "Second kiosk sold: ") + _lastKiosk2 + L.T(" — выручка ждёт в «Бизнесах»", " — cash waits in Businesses") + "</color></size>";
+            else if (_save.biz[Meta.BizKiosk2] > 0) tot += "\n<size=28><color=#C62828>" + L.T("Второй ларёк простаивает — закупи продукты!", "Second kiosk is idle — buy food!") + "</color></size>";
             if (_lastBizIncome > 0) tot += "   <size=30><color=#6A1B9A>" + L.T("(из них курьеры ", "(couriers ") + GameData.Money(_lastBizIncome) + ")</color></size>";
             var tl = UIKit.Label(box.transform, tot, 54, UIKit.Green, TextAnchor.MiddleCenter, 0, 0.21f, 1, 0.3f, true);
             Juice.Punch(tl.transform, 0.2f, 0.5f);

@@ -117,6 +117,11 @@ namespace ValourGames.Shawarma
 
                 var pic = UIKit.Panel(card.transform, "Pic", UIKit.Hex("#BBDEFB"), 0.04f, 0.56f, 0.96f, 0.97f);
                 DrawBiz(pic.transform, i, !locked && lvl > 0, locked);
+                if (i == Meta.BizKiosk2 && lvl > 0)
+                {
+                    var mb = UIKit.Button(pic.transform, L.T("Управлять →", "Manage →"), UIKit.Green, () => { Sfx.Play(Sound.Click); ShowKiosk2(); }, 0.52f, 0.04f, 0.97f, 0.26f, 24);
+                    if (_save.kiosk2Cash > 0 || _save.kiosk2Stock == 0) mb.gameObject.AddComponent<Bobber>().amp = 3f;
+                }
 
                 UIKit.FitLabel(card.transform, b.Name, 34, UIKit.Dark, 0.04f, 0.47f, 0.96f, 0.555f);
                 UIKit.Label(card.transform, b.Desc, 20, UIKit.Wood, TextAnchor.UpperLeft, 0.05f, 0.3f, 0.95f, 0.47f);
@@ -143,15 +148,15 @@ namespace ValourGames.Shawarma
                     UIKit.Label(card.transform, L.T("Максимум!", "Maxed!"), 32, UIKit.Gold, TextAnchor.MiddleCenter, 0.05f, 0.03f, 0.95f, 0.17f, true);
                     continue;
                 }
-                long cost = b.Cost(lvl);
+                long cost = Meta.BizCost(i, lvl, _save.location);
                 bool can = _save.money >= cost;
                 int idx = i;
                 string txt = lvl == 0 ? L.T("Открыть", "Open") : L.T("Улучшить", "Upgrade");
                 var btn = UIKit.PriceButton(card.transform, txt, cost, can ? UIKit.Green : UIKit.Gray, () =>
                 {
-                    long c = Meta.Businesses[idx].Cost(_save.biz[idx]);
+                    long c = Meta.BizCost(idx, _save.biz[idx], _save.location);
                     if (_save.money < c) { Sfx.Play(Sound.Error); return; }
-                    _save.money -= (int)c;
+                    _save.money -= c;
                     _save.biz[idx]++;
                     SaveSystem.Save(_save);
                     Sfx.Play(Sound.Fanfare);
@@ -161,6 +166,100 @@ namespace ValourGames.Shawarma
                 btn.interactable = can;
             }
             UIKit.Button(s, L.T("← Назад", "← Back"), UIKit.Steel, () => { Sfx.Play(Sound.Click); ShowMenu(); }, 0.02f, 0.01f, 0.2f, 0.1f, 36);
+        }
+
+        // =====================================================================
+        //  ВТОРОЙ ЛАРЁК: закупка продуктов, склад, касса
+        // =====================================================================
+        void ShowKiosk2()
+        {
+            var s = NewScreen("Kiosk2");
+            Backdrop(s, true);
+            int l = _save.biz[Meta.BizKiosk2];
+            int cap = Meta.Kiosk2Cap(l), storage = Meta.Kiosk2Storage(l);
+            long price = Meta.Kiosk2Price(_save.location), unit = Meta.Kiosk2UnitCost(l, _save.location);
+
+            var top = UIKit.Panel(s, "Top", UIKit.Hex("#1B5E20"), 0.02f, 0.84f, 0.98f, 0.92f);
+            UIKit.AddShadow(top, 8f, 0.4f);
+            UIKit.Label(top.transform, L.T("Второй ларёк", "Second kiosk"), 42, UIKit.Gold, TextAnchor.MiddleLeft, 0.02f, 0, 0.4f, 1, true);
+            UIKit.Label(top.transform, L.T("Уровень ", "Level ") + l + " / " + BizDef.MaxLevel, 30, Color.white, TextAnchor.MiddleCenter, 0.4f, 0, 0.62f, 1, true);
+            Icons.Coin(top.transform, 0.8f, 0.5f, 46f);
+            UIKit.Label(top.transform, GameData.Money(_save.money), 38, UIKit.Gold, TextAnchor.MiddleLeft, 0.82f, 0, 0.99f, 1, true);
+
+            // картинка
+            var pic = UIKit.Panel(s, "Pic", UIKit.Hex("#BBDEFB"), 0.03f, 0.3f, 0.36f, 0.8f);
+            UIKit.AddShadow(pic, 6f, 0.35f);
+            DrawBiz(pic.transform, Meta.BizKiosk2, true, false);
+
+            // цифры
+            var info = UIKit.Panel(s, "Info", UIKit.Cream, 0.39f, 0.3f, 0.97f, 0.8f);
+            UIKit.AddShadow(info, 6f, 0.35f);
+            var it = info.transform;
+            string[] names = { L.T("Продаёт в день", "Sells per day"), L.T("Цена порции", "Portion price"), L.T("Закупка порции", "Portion cost"),
+                               L.T("Прибыль с порции", "Profit per portion"), L.T("Вчера продано", "Sold yesterday") };
+            string[] vals = { cap + L.T(" порций", " portions"), GameData.Money(price), GameData.Money(unit), GameData.Money(price - unit),
+                              _save.kiosk2LastSold + L.T(" порций", " portions") };
+            for (int i = 0; i < names.Length; i++)
+            {
+                float y1 = 0.96f - i * 0.1f;
+                UIKit.Label(it, names[i], 28, UIKit.Wood, TextAnchor.MiddleLeft, 0.04f, y1 - 0.09f, 0.6f, y1, false);
+                UIKit.Label(it, vals[i], 30, UIKit.Dark, TextAnchor.MiddleRight, 0.55f, y1 - 0.09f, 0.96f, y1, true);
+            }
+            // склад
+            UIKit.Label(it, L.T("Склад продуктов: ", "Food in stock: ") + _save.kiosk2Stock + " / " + storage, 28, UIKit.Dark, TextAnchor.MiddleLeft, 0.04f, 0.36f, 0.96f, 0.45f, true);
+            var bar = UIKit.Bar(it, UIKit.Alpha(UIKit.Dark, 0.15f), UIKit.Green, 0.04f, 0.3f, 0.96f, 0.36f);
+            UIKit.SetFill(bar, storage > 0 ? (float)_save.kiosk2Stock / storage : 0f);
+            int days = cap > 0 ? _save.kiosk2Stock / cap : 0;
+            UIKit.Label(it, _save.kiosk2Stock == 0 ? L.T("Склад пуст — ларёк простаивает! Закупи продукты.", "Stock is empty — the kiosk is idle! Buy food.")
+                                                  : L.T("Хватит примерно на дней: ", "Enough for about days: ") + Mathf.Max(1, days),
+                22, _save.kiosk2Stock == 0 ? UIKit.Red : UIKit.Gray, TextAnchor.MiddleLeft, 0.04f, 0.2f, 0.96f, 0.29f, true);
+
+            // закупка
+            int room = storage - _save.kiosk2Stock;
+            int buyDay = Mathf.Min(cap, room);
+            long costDay = buyDay * unit;
+            var b1 = UIKit.PriceButton(it, L.T("На 1 день", "For 1 day"), costDay, UIKit.Blue, () => BuyKiosk2(buyDay), 0.04f, 0.03f, 0.48f, 0.17f, 28);
+            b1.interactable = buyDay > 0 && _save.money >= costDay;
+            long costFull = room * unit;
+            var b2 = UIKit.PriceButton(it, L.T("Заполнить склад", "Fill the stock"), costFull, UIKit.Blue, () => BuyKiosk2(room), 0.52f, 0.03f, 0.96f, 0.17f, 28);
+            b2.interactable = room > 0 && _save.money >= costFull;
+
+            // касса
+            var cash = UIKit.Button(s, "", _save.kiosk2Cash > 0 ? UIKit.Green : UIKit.Gray, () =>
+            {
+                if (_save.kiosk2Cash <= 0) { Sfx.Play(Sound.Error); return; }
+                long got = _save.kiosk2Cash;
+                _save.money += got;
+                _save.lifetime += got;
+                _save.kiosk2Cash = 0;
+                SaveSystem.Save(_save);
+                Sfx.Play(Sound.Coin);
+                Notify(L.T("Выручка второго ларька", "Second kiosk cash"), "+" + GameData.Money(got));
+                CheckAchievements();
+                ShowKiosk2();
+            }, 0.39f, 0.13f, 0.97f, 0.27f, 36);
+            Icons.Coin(cash.transform, 0.1f, 0.5f, 60f);
+            UIKit.FitLabel(cash.transform, _save.kiosk2Cash > 0 ? L.T("Забрать выручку +", "Collect cash +") + GameData.Money(_save.kiosk2Cash)
+                                                               : L.T("Касса пуста — выручка появится после рабочего дня", "No cash yet — it appears after a work day"),
+                34, Color.white, 0.18f, 0.1f, 0.97f, 0.9f);
+            if (_save.kiosk2Cash > 0) cash.gameObject.AddComponent<Bobber>().amp = 3f;
+
+            UIKit.Label(s, L.T("Каждый твой рабочий день второй ларёк продаёт порции со склада. Цена порции растёт вместе с твоей локацией.",
+                "Every work day the second kiosk sells portions from its stock. The portion price grows with your location."),
+                22, UIKit.Cream, TextAnchor.MiddleCenter, 0.03f, 0.13f, 0.36f, 0.28f, false);
+            UIKit.Button(s, L.T("← Бизнесы", "← Businesses"), UIKit.Steel, () => { Sfx.Play(Sound.Click); ShowBusinesses(); }, 0.02f, 0.01f, 0.22f, 0.1f, 34);
+        }
+
+        void BuyKiosk2(int portions)
+        {
+            int l = _save.biz[Meta.BizKiosk2];
+            long cost = portions * Meta.Kiosk2UnitCost(l, _save.location);
+            if (portions <= 0 || _save.money < cost) { Sfx.Play(Sound.Error); return; }
+            _save.money -= cost;
+            _save.kiosk2Stock += portions;
+            SaveSystem.Save(_save);
+            Sfx.Play(Sound.Coin);
+            ShowKiosk2();
         }
 
         /// <summary>Картинка бизнеса: курьер на скутере, фермерский фургон с ящиками, телестудия с камерой.</summary>
@@ -225,28 +324,28 @@ namespace ValourGames.Shawarma
                         }
                     break;
                 default:
-                    // полка с фирменным соусом «Секрет Ашота»
-                    UIKit.Panel(p, "Wall", UIKit.Hex("#FFF3E0"), 0f, 0.2f, 1f, 1f, false);
-                    UIKit.Panel(p, "Counter", UIKit.Hex("#8D6E63"), 0f, 0f, 1f, 0.2f, false);
-                    UIKit.Panel(p, "Shelf", UIKit.Hex("#6D4C41"), 0.08f, 0.52f, 0.92f, 0.56f, false);
-                    for (int k = 0; k < 5; k++)
+                    // второй ларёк: маленькая будка с навесом, наёмный повар и ящики с продуктами
+                    UIKit.Panel(p, "Street", UIKit.Hex("#BCAAA4"), 0f, 0f, 1f, 0.2f, false);
+                    var kb = UIKit.Rect(p, "Kiosk2");
+                    UIKit.PlaceFixed(kb, 0.42f, 0.5f, 220f, 190f);
+                    UIKit.Shape(kb, UIKit.RoundedSmall, UIKit.Hex("#E9D8B8"), 0.5f, 0.38f, 200f, 130f);
+                    UIKit.Shape(kb, UIKit.RoundedSmall, UIKit.Hex("#3B2A1E"), 0.5f, 0.46f, 130f, 70f);
+                    for (int k = 0; k < 6; k++)
+                        UIKit.Shape(kb, UIKit.RoundedSmall, k % 2 == 0 ? col : Color.white, 0.12f + k * 0.152f, 0.76f, 36f, 26f);
+                    UIKit.Shape(kb, UIKit.RoundedSmall, UIKit.Dark, 0.5f, 0.9f, 170f, 30f);
+                    UIKit.FitLabel(kb, L.T("ЛАРЁК №2", "KIOSK #2"), 20, UIKit.Gold, 0.12f, 0.82f, 0.88f, 0.98f);
+                    // повар в окне
+                    UIKit.Shape(kb, UIKit.Circle, UIKit.Hex("#F6D2B0"), 0.45f, 0.52f, 40f, 40f);
+                    UIKit.Shape(kb, UIKit.RoundedSmall, Color.white, 0.45f, 0.66f, 36f, 16f);
+                    UIKit.Shape(kb, UIKit.RoundedSmall, Color.white, 0.45f, 0.36f, 56f, 30f);
+                    UIKit.Shape(kb, UIKit.RoundedSmall, UIKit.Wood, 0.5f, 0.24f, 210f, 14f);
+                    // ящики с продуктами
+                    for (int k = 0; k < 2; k++)
                     {
-                        float bx = 0.16f + k * 0.17f;
-                        var bottle = UIKit.Rect(p, "Bottle");
-                        UIKit.PlaceFixed(bottle, bx, 0.7f, 70f, 70f);
-                        UIKit.Shape(bottle, UIKit.RoundedSmall, UIKit.Hex("#FAFAFA"), 0.5f, 0.95f, 14f, 8f);
-                        UIKit.Shape(bottle, UIKit.RoundedSmall, UIKit.Hex("#B71C1C"), 0.5f, 0.82f, 16f, 14f);
-                        UIKit.Shape(bottle, UIKit.Rounded, col, 0.5f, 0.42f, 36f, 44f);
-                        UIKit.Shape(bottle, UIKit.RoundedSmall, UIKit.Hex("#FFF8E1"), 0.5f, 0.42f, 30f, 18f);
-                        UIKit.Shape(bottle, UIKit.Circle, UIKit.Hex("#FFB300"), 0.5f, 0.42f, 10f, 10f);
+                        var cr = UIKit.Shape(p, UIKit.RoundedSmall, UIKit.Hex("#A1887F"), 0.82f, 0.22f + k * 0.16f, 70f, 40f);
+                        Icons.Ingredient(cr.transform, k == 0 ? Ing.Tomato : Ing.Meat, 0.5f, 0.8f, 30f);
                     }
-                    // большая бутылка на прилавке
-                    UIKit.Shape(art, UIKit.RoundedSmall, UIKit.Hex("#FAFAFA"), 0.5f, 0.5f, 26f, 14f);
-                    UIKit.Shape(art, UIKit.RoundedSmall, UIKit.Hex("#B71C1C"), 0.5f, 0.44f, 30f, 24f);
-                    var big = UIKit.Shape(art, UIKit.Rounded, col, 0.5f, 0.26f, 80f, 70f);
-                    var lbl = UIKit.Panel(big.transform, "Label", UIKit.Hex("#FFF8E1"), 0.1f, 0.25f, 0.9f, 0.75f);
-                    UIKit.FitLabel(lbl.transform, L.T("СЕКРЕТ\nАШОТА", "ASHOT'S\nSECRET"), 14, UIKit.Hex("#B71C1C"), 0.04f, 0.04f, 0.96f, 0.96f);
-                    if (owned) big.gameObject.AddComponent<Bobber>().amp = 3f;
+                    if (owned) kb.gameObject.AddComponent<Bobber>().amp = 2f;
                     break;
             }
             if (locked)
@@ -322,7 +421,7 @@ namespace ValourGames.Shawarma
                 int t = Meta.WheelType[i];
                 if (t == 0)
                 {
-                    var lbl = UIKit.Label(arm, Meta.WheelValue[i].ToString(), 44, Color.white, TextAnchor.MiddleCenter, 0.45f, 0f, 0.95f, 1f, true);
+                    var lbl = UIKit.Label(arm, GameData.Money(Meta.WheelCoins(_save, i)), 44, Color.white, TextAnchor.MiddleCenter, 0.45f, 0f, 0.95f, 1f, true);
                     UIKit.AddOutline(lbl, UIKit.Alpha(Color.black, 0.5f), 2f);
                 }
                 else
@@ -402,9 +501,11 @@ namespace ValourGames.Shawarma
             int t = Meta.WheelType[i];
             if (t == 0)
             {
-                _save.money += Meta.WheelValue[i];
+                long wc = Meta.WheelCoins(_save, i);
+                _save.money += wc;
+                _save.lifetime += wc;
                 Sfx.Play(Sound.Coin);
-                return "+" + Meta.WheelValue[i] + L.T(" монет!", " coins!");
+                return "+" + GameData.Money(wc) + L.T(" монет!", " coins!");
             }
             int b = t - 1;
             _save.boosts[b]++;
