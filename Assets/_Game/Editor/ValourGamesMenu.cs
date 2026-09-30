@@ -56,8 +56,14 @@ namespace ValourGames.Shawarma.EditorTools
             PlayerSettings.defaultWebScreenWidth = 960;
             PlayerSettings.defaultWebScreenHeight = 540;
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Brotli;
-            PlayerSettings.WebGL.decompressionFallback = true;
+            PlayerSettings.WebGL.decompressionFallback = true;   // работает на любом хостинге, без настройки заголовков
             PlayerSettings.WebGL.dataCaching = true;
+            PlayerSettings.WebGL.nameFilesAsHashes = false;      // имена файлов латиницей, без пробелов
+            // шаблон страницы с SDK Яндекс Игр (Assets/WebGLTemplates/YandexGames)
+            if (Directory.Exists("Assets/WebGLTemplates/YandexGames"))
+                PlayerSettings.WebGL.template = "PROJECT:YandexGames";
+            else
+                Debug.LogWarning("[Valour Games] Нет папки Assets/WebGLTemplates/YandexGames — распакуй её из архива в Assets!");
 
             Debug.Log("[Valour Games] Настройки WebGL применены");
         }
@@ -83,7 +89,7 @@ namespace ValourGames.Shawarma.EditorTools
             {
                 EditorUtility.RevealInFinder(BuildDir + "/index.html");
                 EditorUtility.DisplayDialog("Valour Games",
-                    "Билд готов: папка " + BuildDir + "\n\nДля Яндекса запакуй СОДЕРЖИМОЕ этой папки (index.html, Build, TemplateData) в zip.",
+                    "Билд готов: папка " + BuildDir + "\n\nДля Яндекса запакуй СОДЕРЖИМОЕ этой папки (index.html и папку Build) в zip — index.html должен лежать в корне архива.",
                     "Ок");
             }
             else

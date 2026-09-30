@@ -9,7 +9,7 @@ namespace ValourGames.Shawarma
     /// </summary>
     public partial class Game
     {
-        public const bool AdminPanel = true;
+        public const bool AdminPanel = false;
 
         void AdminButton(RectTransform s)
         {

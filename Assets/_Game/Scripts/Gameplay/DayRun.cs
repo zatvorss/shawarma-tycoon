@@ -109,7 +109,7 @@ namespace ValourGames.Shawarma
             _cutMult = 1f - 0.08f * Meta.P(save, Perk.Hands);
             if (Meta.Has(save, Meta.CharmGoldKnife)) _cutMult *= 0.85f;
 
-            // люкс-улучшения (Правительственная столовая, Дубай)
+            // люкс-улучшения (Бизнес-клуб, Дубай)
             _priceMult *= GameData.PremiumMult(save.Lvl(Up.Premium));
             _patience *= GameData.LoungePatience(save.Lvl(Up.Lounge));
             _tipMult *= GameData.LoungeTips(save.Lvl(Up.Lounge));

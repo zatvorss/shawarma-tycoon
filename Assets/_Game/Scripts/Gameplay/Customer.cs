@@ -219,12 +219,7 @@ namespace ValourGames.Shawarma
                 UIKit.Shape(_char, R, UIKit.Hex("#B83B5E"), 0.5f, 0.44f, 60f, 30f, 45f);
             }
             // длинные волосы — позади головы
-            if (type == CustType.Sheikh)
-            {
-                UIKit.Shape(_char, C, UIKit.Hex("#FAFAFA"), 0.5f, 0.55f, 160f, 170f);
-                UIKit.Shape(_char, R, UIKit.Hex("#FAFAFA"), 0.5f, 0.4f, 170f, 70f);
-            }
-            else if (type == CustType.Surfer || type == CustType.Stewardess || type == CustType.Socialite || (type != CustType.Granny && type != CustType.Business && !HasHat() && Random.value < 0.4f))
+            if (type == CustType.Surfer || type == CustType.Stewardess || type == CustType.Socialite || (type != CustType.Granny && type != CustType.Business && !HasHat() && Random.value < 0.4f))
                 UIKit.Shape(_char, R, UIKit.Hex(hair), 0.5f, 0.54f, 150f, 130f);
 
             // голова
@@ -395,7 +390,7 @@ namespace ValourGames.Shawarma
                 case CustType.Inspector: shirt = "#607D8B"; hair = "#3E2723"; break;
                 case CustType.Haggler: shirt = "#FF8F00"; hair = "#1A1A1A"; break;
                 case CustType.Vegan: shirt = "#66BB6A"; break;
-                case CustType.Sheikh: shirt = "#FAFAFA"; hair = "#1A1A1A"; break;
+                case CustType.Sheikh: shirt = "#0D2A4F"; hair = "#6D4C41"; break;
                 case CustType.Deputy: shirt = "#263238"; break;
                 case CustType.Minister: shirt = "#1A237E"; hair = "#BDBDBD"; break;
                 case CustType.Millionaire: shirt = "#111111"; break;
@@ -499,16 +494,17 @@ namespace ValourGames.Shawarma
                     UIKit.Shape(body, R, UIKit.Hex("#A5D6A7"), 0.5f, 0.57f, 16f, 34f, 30f);
                     break;
                 case CustType.Sheikh:
-                    UIKit.Shape(body, R, UIKit.Hex("#E0E0E0"), 0.5f, 0.5f, 8f, 170f);
+                    // морской пиджак: белая рубашка, золотые пуговицы
+                    UIKit.Shape(body, R, Color.white, 0.5f, 0.78f, 40f, 60f);
+                    for (int k = 0; k < 3; k++) UIKit.Shape(body, C, UIKit.Gold, 0.36f, 0.62f - k * 0.14f, 12f, 12f);
+                    for (int k = 0; k < 3; k++) UIKit.Shape(body, C, UIKit.Gold, 0.64f, 0.62f - k * 0.14f, 12f, 12f);
                     break;
                 case CustType.Deputy:
                 case CustType.Minister:
                     UIKit.Shape(body, R, Color.white, 0.5f, 0.8f, 44f, 56f);
                     UIKit.Shape(body, R, UIKit.Hex(type == CustType.Deputy ? "#C62828" : "#FFC928"), 0.5f, 0.66f, 16f, 76f);
-                    // значок-флажок на лацкане
-                    UIKit.Shape(body, R, Color.white, 0.24f, 0.78f, 18f, 5f);
-                    UIKit.Shape(body, R, UIKit.Hex("#1565C0"), 0.24f, 0.745f, 18f, 5f);
-                    UIKit.Shape(body, R, UIKit.Hex("#C62828"), 0.24f, 0.71f, 18f, 5f);
+                    // платочек в нагрудном кармане
+                    UIKit.Shape(body, R, UIKit.Hex(type == CustType.Deputy ? "#FFD54F" : "#E53935"), 0.26f, 0.74f, 18f, 12f, 12f);
                     if (type == CustType.Minister)
                     {
                         UIKit.Shape(body, C, UIKit.Gold, 0.76f, 0.7f, 24f, 24f);
@@ -608,9 +604,11 @@ namespace ValourGames.Shawarma
                     UIKit.Shape(h, R, UIKit.Hex("#3E2723"), 0.5f, 0.83f, 164f, 14f);
                     return true;
                 case CustType.Sheikh:
-                    UIKit.Shape(h, Rr, UIKit.Hex("#FAFAFA"), 0.5f, 0.9f, 150f, 56f);
-                    UIKit.Shape(h, R, UIKit.Hex("#212121"), 0.5f, 0.95f, 140f, 10f);
-                    UIKit.Shape(h, R, UIKit.Hex("#212121"), 0.5f, 0.87f, 140f, 10f);
+                    // капитанская фуражка
+                    UIKit.Shape(h, Rr, UIKit.Hex("#FAFAFA"), 0.5f, 0.95f, 150f, 44f);
+                    UIKit.Shape(h, R, UIKit.Hex("#0D2A4F"), 0.5f, 0.85f, 150f, 16f);
+                    UIKit.Shape(h, R, UIKit.Hex("#212121"), 0.5f, 0.8f, 110f, 12f);
+                    UIKit.Shape(h, C, UIKit.Gold, 0.5f, 0.92f, 26f, 22f);
                     return true;
                 case CustType.Millionaire:
                     // цилиндр с золотой лентой
