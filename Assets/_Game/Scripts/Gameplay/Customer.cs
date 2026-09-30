@@ -683,10 +683,6 @@ namespace ValourGames.Shawarma
                     UIKit.Shape(h, C, UIKit.Alpha(Color.white, 0.6f), 0.45f, 0.46f, 8f, 8f);
                     break;
                 case CustType.Fan:
-                    UIKit.Shape(h, R, UIKit.Hex("#1565C0"), 0.22f, 0.38f, 22f, 8f);
-                    UIKit.Shape(h, R, Color.white, 0.22f, 0.33f, 22f, 8f);
-                    UIKit.Shape(h, R, UIKit.Hex("#1565C0"), 0.78f, 0.38f, 22f, 8f);
-                    UIKit.Shape(h, R, Color.white, 0.78f, 0.33f, 22f, 8f);
                     break;
                 case CustType.Doctor:
                     UIKit.Shape(h, C, UIKit.Hex("#CFD8DC"), 0.5f, 0.97f, 34f, 34f);
@@ -722,10 +718,16 @@ namespace ValourGames.Shawarma
                     UIKit.Shape(board.transform, R, Color.white, 0.5f, 0.5f, 10f, 230f);
                     break;
                 case CustType.Fan:
-                    // шарф болельщика — на шее, ниже подбородка
-                    UIKit.Shape(_char, R, UIKit.Hex("#FFFFFF"), 0.5f, 0.375f, 120f, 20f);
-                    UIKit.Shape(_char, R, UIKit.Hex("#1565C0"), 0.5f, 0.375f, 30f, 20f);
-                    UIKit.Shape(_char, R, UIKit.Hex("#1565C0"), 0.62f, 0.3f, 18f, 44f, -10f);
+                    // полосатый шарф болельщика: ровные полосы вокруг шеи и свисающий конец с бахромой
+                    UIKit.Shape(_char, R, UIKit.Hex("#E53935"), 0.5f, 0.375f, 122f, 22f);
+                    for (int k = 0; k < 5; k++)
+                        UIKit.Shape(_char, R, Color.white, 0.32f + k * 0.09f, 0.375f, 10f, 22f);
+                    var tail = UIKit.Rect(_char, "ScarfTail");
+                    UIKit.PlaceFixed(tail, 0.63f, 0.3f, 20f, 50f);
+                    tail.localRotation = Quaternion.Euler(0, 0, -8f);
+                    UIKit.Shape(tail, R, UIKit.Hex("#E53935"), 0.5f, 0.5f, 20f, 50f);
+                    for (int k = 0; k < 2; k++) UIKit.Shape(tail, R, Color.white, 0.5f, 0.3f + k * 0.35f, 20f, 8f);
+                    for (int k = 0; k < 3; k++) UIKit.Shape(tail, R, Color.white, 0.2f + k * 0.3f, -0.08f, 3f, 10f);
                     UIKit.Shape(_char, R, UIKit.Hex("#FFEB3B"), 0.9f, 0.5f, 40f, 96f);
                     UIKit.Shape(_char, R, UIKit.Hex("#FFEB3B"), 0.92f, 0.66f, 18f, 44f);
                     break;

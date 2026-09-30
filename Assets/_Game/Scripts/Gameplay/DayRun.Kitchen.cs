@@ -1218,8 +1218,11 @@ namespace ValourGames.Shawarma
                 if (it.perfect) Icons.Star(bg.transform, 0.06f, 0.85f, 22f, true);
                 if (it.fresh) UIKit.Shape(bg.transform, UIKit.Circle, UIKit.Orange, 0.06f, 0.18f, 16f, 20f).gameObject.AddComponent<Blinker>().speed = 3f;
                 string state = !_packingOn ? L.T("готова", "ready") : (it.pack == 0 ? L.T("не упакована", "not packed") : (it.pack == 1 ? L.T("в обёртке", "wrapped") : L.T("в пакете", "bagged")));
-                UIKit.FitLabel(bg.transform, GameData.ShortList(it.counts), 16, UIKit.Dark, 0.34f, 0.45f, 0.98f, 0.97f);
-                UIKit.FitLabel(bg.transform, state, 16, it.pack == 0 ? UIKit.Red : UIKit.Green, 0.34f, 0.05f, 0.98f, 0.45f);
+                // полный состав: мелкий шрифт в две-три строки, ничего не обрезается
+                var comp = UIKit.FitLabel(bg.transform, GameData.ShortList(it.counts), 16, UIKit.Dark, 0.33f, 0.36f, 0.99f, 0.98f);
+                comp.resizeTextMinSize = 8;
+                comp.lineSpacing = 0.85f;
+                UIKit.FitLabel(bg.transform, state, 15, it.pack == 0 ? UIKit.Red : UIKit.Green, 0.33f, 0.03f, 0.99f, 0.36f);
             }
             RefreshPackButtons();
         }
