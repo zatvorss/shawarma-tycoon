@@ -356,7 +356,7 @@ namespace ValourGames.Shawarma
             }
             // открыть
             _save.chests++;
-            long coins = Meta.PassCoins(_save, 10);
+            long coins = Meta.PassCoins(_save, 10, false);
             int b = Random.Range(0, 3);
             _save.money += coins;
             _save.boosts[b]++;

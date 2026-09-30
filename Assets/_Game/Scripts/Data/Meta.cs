@@ -97,6 +97,8 @@ namespace ValourGames.Shawarma
     {
         public string ru, en, descRu, descEn, color;
         public int passLevel;
+        /// <summary>Откуда берётся: 0 — бесплатный пасс, 1 — Шаурма-Пасс+, 2 — награда за время в игре.</summary>
+        public int source;
         public string Name { get { return L.T(ru, en); } }
         public string Desc { get { return L.T(descRu, descEn); } }
     }
@@ -162,13 +164,15 @@ namespace ValourGames.Shawarma
         public static Color Stripe(SaveData s, LocationDef loc, int i)
         {
             var d = Skins[0]; // скины убраны: всегда цвет локации
+            if (s != null && s.goldAwning) return i % 2 == 1 ? UIKit.Hex("#FFF8E1") : UIKit.Hex("#FFC928");
             if (i % 2 == 1) return UIKit.Hex(d.b);
             if (d.a == "rainbow") return UIKit.Hex(Rainbow[(i / 2) % Rainbow.Length]);
             return UIKit.Hex(string.IsNullOrEmpty(d.a) ? loc.kiosk : d.a);
         }
 
-        // ---------------- Шаурма-Пасс: 30 уровней наград ----------------
-        public const int PassLevels = 30;
+        // ---------------- Шаурма-Пасс: 50 уровней, бесплатная дорожка и Шаурма-Пасс+ ----------------
+        public const int PassLevels = 50;
+        public const int PassPlusYan = 99;
         public static int PassXpFor(int lvl) { return 100 + lvl * 25; }   // опыт на переход lvl -> lvl+1
 
         public static int PassLevel(int xp)
@@ -185,58 +189,193 @@ namespace ValourGames.Shawarma
             return l >= PassLevels ? 1f : (float)xp / PassXpFor(l);
         }
 
-        /// <summary>Награда за уровень (1..30): 0 монеты, 1 бустер, 2 талисман, 3 очки славы, 4 сундук.</summary>
-        public static void PassReward(int lvl, out int type, out int value)
+        /// <summary>
+        /// Награда за уровень (1..50). plus — дорожка Шаурма-Пасс+.
+        /// Типы: 0 монеты, 1 бустер, 2 талисман, 3 очки славы, 4 сундук, 5 вращения колеса.
+        /// </summary>
+        public static void PassReward(int lvl, bool plus, out int type, out int value)
         {
-            for (int i = 0; i < Charms.Length; i++) if (Charms[i].passLevel == lvl) { type = 2; value = i; return; }
-            if (lvl == 8 || lvl == 18 || lvl == 28) { type = 3; value = 2; return; }
-            if (lvl % 4 == 2) { type = 4; value = 1; return; }
-            if (lvl % 3 == 0) { type = 1; value = (lvl / 3) % 3; return; }
+            for (int i = 0; i < Charms.Length; i++)
+                if (Charms[i].source == (plus ? 1 : 0) && Charms[i].passLevel == lvl) { type = 2; value = i; return; }
+            if (!plus)
+            {
+                if (lvl % 10 == 0) { type = 3; value = 2; return; }
+                if (lvl % 5 == 0) { type = 4; value = 1; return; }
+                if (lvl % 3 == 0) { type = 1; value = (lvl / 3) % 3; return; }
+                type = 0; value = 0; return;
+            }
+            if (lvl % 10 == 5) { type = 3; value = 3; return; }
+            if (lvl % 4 == 0) { type = 4; value = 2; return; }
+            if (lvl % 6 == 2) { type = 5; value = 2; return; }
+            if (lvl % 3 == 1) { type = 1; value = (lvl + 1) % 3; return; }
             type = 0; value = 0;
         }
 
         /// <summary>
-        /// Монеты за уровень пасса — считаются от дохода на твоей текущей локации:
-        /// примерно треть рабочего дня на 1-м уровне пасса и почти целый день на 30-м.
-        /// Сундук — ещё щедрее (+ случайный бустер).
+        /// Монеты за уровень пасса — от дохода на твоей текущей локации:
+        /// ≈ треть рабочего дня на 1-м уровне и почти целый день на 50-м. В Пасс+ — в 1.6 раза больше.
         /// </summary>
-        public static long PassCoins(SaveData s, int lvl)
+        public static long PassCoins(SaveData s, int lvl, bool plus)
         {
             float day = GameData.ExpectedDayIncome(s.location, 5);
-            return (long)(Mathf.Round(day * (0.3f + lvl * 0.02f) / 10f) * 10f);
+            return (long)(Mathf.Round(day * (0.3f + lvl * 0.012f) * (plus ? 1.6f : 1f) / 10f) * 10f);
         }
 
-        public static long ChestCoins(SaveData s, int lvl) { return PassCoins(s, lvl) * 2; }
+        public static long ChestCoins(SaveData s, int lvl, bool plus) { return PassCoins(s, lvl, plus) * (plus ? 3 : 2); }
 
-        public static string PassRewardText(SaveData s, int lvl)
+        public static string PassRewardText(SaveData s, int lvl, bool plus)
         {
             int t, v;
-            PassReward(lvl, out t, out v);
+            PassReward(lvl, plus, out t, out v);
             switch (t)
             {
                 case 1: return Boosts[v].Name;
                 case 2: return Charms[v].Name;
                 case 3: return "+" + FamePts(v);
-                case 4: return L.T("Сундук", "Chest");
-                default: return "+" + GameData.Money(PassCoins(s, lvl));
+                case 4: return plus ? L.T("Большой сундук", "Big chest") : L.T("Сундук", "Chest");
+                case 5: return L.T("Колесо ×", "Wheel ×") + v;
+                default: return "+" + GameData.Money(PassCoins(s, lvl, plus));
             }
         }
 
-        public static void GivePassReward(SaveData s, int lvl)
+        /// <summary>Сколько наград можно забрать прямо сейчас (обе дорожки пасса + время в игре).</summary>
+        public static int PassReadyCount(SaveData s)
+        {
+            int lvl = PassLevel(s.passXp), n = 0;
+            for (int i = 1; i <= lvl; i++)
+            {
+                if (!PassClaimed(s, i, false)) n++;
+                if (s.passPlus && !PassClaimed(s, i, true)) n++;
+            }
+            for (int i = 0; i < PlayMinutes.Length; i++) if (PlayReady(s, i)) n++;
+            return n;
+        }
+
+        public static bool PassClaimed(SaveData s, int lvl, bool plus)
+        {
+            var a = plus ? s.passPrem : s.passFree;
+            return a != null && lvl >= 0 && lvl < a.Length && a[lvl] == 1;
+        }
+
+        public static void GivePassReward(SaveData s, int lvl, bool plus)
         {
             int t, v;
-            PassReward(lvl, out t, out v);
-            if (t == 0) { long c = PassCoins(s, lvl); s.money += c; s.lifetime += c; }
+            PassReward(lvl, plus, out t, out v);
+            if (t == 0) { long c = PassCoins(s, lvl, plus); s.money += c; s.lifetime += c; }
             else if (t == 1) s.boosts[v]++;
             else if (t == 2) s.charms[v] = 1;
             else if (t == 3) s.fame += v;
+            else if (t == 5) s.bonusSpins += v;
             else
             {
-                long c = ChestCoins(s, lvl);
+                long c = ChestCoins(s, lvl, plus);
                 s.money += c;
                 s.lifetime += c;
                 s.boosts[UnityEngine.Random.Range(0, 3)]++;
+                if (plus) s.boosts[UnityEngine.Random.Range(0, 3)]++;
             }
+            if (plus) s.passPrem[lvl] = 1; else s.passFree[lvl] = 1;
+        }
+
+        // ---------------- награды за время в игре ----------------
+        public static readonly int[] PlayMinutes = { 5, 15, 30, 60, 120, 180, 300, 480, 720 };
+
+        public static string PlayTimeText(int minutes)
+        {
+            if (minutes < 60) return minutes + L.T(" мин", " min");
+            return (minutes / 60) + L.T(" ч", " h") + (minutes % 60 > 0 ? " " + (minutes % 60) + L.T(" мин", " min") : "");
+        }
+
+        public static string PlayRewardText(int i)
+        {
+            switch (i)
+            {
+                case 0: return L.T("Набор бустеров", "Booster pack");
+                case 1: return L.T("Сундук повара", "Cook's chest");
+                case 2: return L.T("Колесо ×3", "Wheel ×3");
+                case 3: return "+" + FamePts(2);
+                case 4: return Charms[CharmHourglass].Name;
+                case 5: return L.T("Мега-сундук", "Mega chest");
+                case 6: return "+" + FamePts(5);
+                case 7: return Charms[CharmChefStar].Name;
+                default: return L.T("Золотой навес", "Golden awning");
+            }
+        }
+
+        public static string PlayRewardDesc(int i)
+        {
+            switch (i)
+            {
+                case 0: return L.T("По одному бустеру каждого вида", "One booster of each kind");
+                case 1: return L.T("Монеты за полдня работы и бустер", "Half a day of coins and a booster");
+                case 2: return L.T("Три бесплатных вращения колеса удачи", "Three free lucky-wheel spins");
+                case 3: return L.T("Очки славы на вечные бонусы", "Fame for permanent perks");
+                case 4: return Charms[CharmHourglass].Desc;
+                case 5: return L.T("Монеты за 3 дня работы и 3 бустера", "3 days of coins and 3 boosters");
+                case 6: return L.T("Много славы на вечные бонусы", "Lots of Fame for perks");
+                case 7: return Charms[CharmChefStar].Desc;
+                default: return L.T("Навсегда золотой навес на ларьке и +10 славы", "A golden kiosk awning forever and +10 Fame");
+            }
+        }
+
+        public static bool PlayReady(SaveData s, int i)
+        {
+            return s.playClaimed[i] == 0 && s.playSeconds >= PlayMinutes[i] * 60f;
+        }
+
+        public static void GivePlayReward(SaveData s, int i)
+        {
+            if (!PlayReady(s, i)) return;
+            float day = GameData.ExpectedDayIncome(s.location, 5);
+            switch (i)
+            {
+                case 0: for (int b = 0; b < 3; b++) s.boosts[b]++; break;
+                case 1: { long c = (long)(day * 0.5f); s.money += c; s.lifetime += c; s.boosts[UnityEngine.Random.Range(0, 3)]++; break; }
+                case 2: s.bonusSpins += 3; break;
+                case 3: s.fame += 2; break;
+                case 4: s.charms[CharmHourglass] = 1; break;
+                case 5: { long c = (long)(day * 3f); s.money += c; s.lifetime += c; for (int b = 0; b < 3; b++) s.boosts[b]++; break; }
+                case 6: s.fame += 5; break;
+                case 7: s.charms[CharmChefStar] = 1; break;
+                default: s.goldAwning = true; s.fame += 10; break;
+            }
+            s.playClaimed[i] = 1;
+        }
+
+        // ---------------- сотрудники на прошлых локациях (за яны) ----------------
+        // Нанятый повар держит твой старый ларёк: закупаешь продукты — он каждый день продаёт порции.
+        // Чем дальше была локация, тем больше он приносит (и тем дороже найм).
+        public static readonly int[] StaffYan = { 9, 19, 29, 39, 49, 69, 89, 109, 129, 149, 199, 249 };
+        public const int StaffPortions = 10;
+        public const int StaffStorage = 30;
+
+        /// <summary>Доля твоего дневного дохода, которую приносит сотрудник при полном складе (выручка).</summary>
+        public static float StaffShare(int loc) { return 0.1f + 0.025f * loc; }
+
+        public static long StaffPrice(SaveData s, int loc)
+        {
+            float v = GameData.ExpectedDayIncome(s.location, 5) * StaffShare(loc) / StaffPortions;
+            return (long)Mathf.Max(10f, Mathf.Round(v / 10f) * 10f);
+        }
+
+        public static long StaffUnitCost(SaveData s, int loc) { return (long)Mathf.Max(5f, Mathf.Round(StaffPrice(s, loc) * 0.45f / 5f) * 5f); }
+
+        public static bool StaffHired(SaveData s, int loc) { return loc >= 0 && loc < s.staffHired.Length && s.staffHired[loc] == 1; }
+
+        /// <summary>Прошёл рабочий день — все сотрудники продали порции. Возвращает, сколько продано всего.</summary>
+        public static int StaffDay(SaveData s)
+        {
+            int total = 0;
+            for (int i = 0; i < s.staffHired.Length; i++)
+            {
+                if (s.staffHired[i] != 1) { s.staffSold[i] = 0; continue; }
+                int sold = Mathf.Min(s.staffStock[i], StaffPortions);
+                s.staffStock[i] -= sold;
+                s.staffCash[i] += sold * StaffPrice(s, i);
+                s.staffSold[i] = sold;
+                total += sold;
+            }
+            return total;
         }
 
         // ---------------- слава ----------------
@@ -346,17 +485,37 @@ namespace ValourGames.Shawarma
         public static int BulkMax(int l) { int[] m = { 6, 6, 8, 12, 18, 25 }; return m[Mathf.Clamp(l, 0, 5)]; }
 
         // ---------------- талисманы Шаурма-Пасса ----------------
-        public const int CharmCoin = 0, CharmBell = 1, CharmBowl = 2, CharmSpatula = 3, CharmMagnet = 4, CharmCrown = 5;
+        public const int CharmCoin = 0, CharmBell = 1, CharmBowl = 2, CharmSpatula = 3, CharmMagnet = 4, CharmCrown = 5,
+                         CharmClover = 6, CharmHourglass = 7, CharmPepper = 8, CharmPiggy = 9, CharmChefStar = 10, CharmGoldKnife = 11;
 
         public static readonly CharmDef[] Charms =
         {
-            new CharmDef { ru = "Счастливая монетка", en = "Lucky coin", descRu = "Цены +5% навсегда", descEn = "Prices +5% forever", passLevel = 5, color = "#FFC928" },
-            new CharmDef { ru = "Колокольчик", en = "Door bell", descRu = "Терпение клиентов +8%", descEn = "Customer patience +8%", passLevel = 10, color = "#FFB300" },
-            new CharmDef { ru = "Кошачья миска", en = "Cat bowl", descRu = "Кот приходит 3 раза и даёт вдвое больше", descEn = "The cat comes 3 times and gives double", passLevel = 15, color = "#F48FB1" },
-            new CharmDef { ru = "Золотая лопатка", en = "Golden spatula", descRu = "Гриль жарит на 15% быстрее", descEn = "The grill cooks 15% faster", passLevel = 20, color = "#FFD54F" },
-            new CharmDef { ru = "Магнит для гостей", en = "Guest magnet", descRu = "Золотые клиенты вдвое чаще", descEn = "Golden customers twice as often", passLevel = 25, color = "#E53935" },
-            new CharmDef { ru = "Корона магната", en = "Tycoon crown", descRu = "Все доходы +15% навсегда", descEn = "All income +15% forever", passLevel = 30, color = "#FFC928" },
+            new CharmDef { ru = "Счастливая монетка", en = "Lucky coin", descRu = "Цены +5% навсегда", descEn = "Prices +5% forever", passLevel = 5, source = 0, color = "#FFC928" },
+            new CharmDef { ru = "Колокольчик", en = "Door bell", descRu = "Терпение клиентов +8%", descEn = "Customer patience +8%", passLevel = 15, source = 0, color = "#FFB300" },
+            new CharmDef { ru = "Кошачья миска", en = "Cat bowl", descRu = "Кот приходит 3 раза и даёт вдвое больше", descEn = "The cat comes 3 times and gives double", passLevel = 8, source = 1, color = "#F48FB1" },
+            new CharmDef { ru = "Золотая лопатка", en = "Golden spatula", descRu = "Гриль жарит на 15% быстрее", descEn = "The grill cooks 15% faster", passLevel = 18, source = 1, color = "#FFD54F" },
+            new CharmDef { ru = "Магнит для гостей", en = "Guest magnet", descRu = "Золотые клиенты вдвое чаще", descEn = "Golden customers twice as often", passLevel = 32, source = 1, color = "#E53935" },
+            new CharmDef { ru = "Корона магната", en = "Tycoon crown", descRu = "Все доходы +15% навсегда", descEn = "All income +15% forever", passLevel = 50, source = 1, color = "#FFC928" },
+            new CharmDef { ru = "Клевер", en = "Clover", descRu = "Чаевые +15%", descEn = "Tips +15%", passLevel = 12, source = 1, color = "#66BB6A" },
+            new CharmDef { ru = "Песочные часы", en = "Hourglass", descRu = "Рабочий день на 10 секунд длиннее", descEn = "The work day lasts 10 seconds longer", passLevel = 0, source = 2, color = "#4FC3F7" },
+            new CharmDef { ru = "Перчик", en = "Chili", descRu = "Жара длится 25 секунд вместо 20", descEn = "Fever lasts 25 seconds instead of 20", passLevel = 27, source = 1, color = "#FF7043" },
+            new CharmDef { ru = "Копилка", en = "Piggy bank", descRu = "После каждого дня +5% к выручке", descEn = "+5% of the day's takings after each day", passLevel = 36, source = 1, color = "#F06292" },
+            new CharmDef { ru = "Звезда шефа", en = "Chef's star", descRu = "Первая ошибка за день не сбивает комбо", descEn = "Your first mistake each day doesn't break the combo", passLevel = 0, source = 2, color = "#FFEE58" },
+            new CharmDef { ru = "Золотой нож", en = "Golden knife", descRu = "Нарезка на 15% быстрее", descEn = "Cutting 15% faster", passLevel = 45, source = 1, color = "#BDBDBD" },
         };
+
+        /// <summary>Откуда талисман: «Пасс, ур. 5», «Пасс+, ур. 18», «За 2 ч игры».</summary>
+        public static string CharmSource(int i)
+        {
+            var d = Charms[i];
+            if (d.source == 2)
+            {
+                for (int k = 0; k < PlayMinutes.Length; k++)
+                    if ((k == 4 && i == CharmHourglass) || (k == 7 && i == CharmChefStar)) return L.T("За ", "For ") + PlayTimeText(PlayMinutes[k]) + L.T(" игры", " of play");
+                return L.T("За время в игре", "For play time");
+            }
+            return (d.source == 1 ? L.T("Пасс+, ур. ", "Pass+, lv ") : L.T("Пасс, ур. ", "Pass, lv ")) + d.passLevel;
+        }
 
         public static bool Has(SaveData s, int charm) { return charm < s.charms.Length && s.charms[charm] == 1; }
 
@@ -378,7 +537,14 @@ namespace ValourGames.Shawarma
         /// <summary>Монеты на колесе растут вместе с доходами локации.</summary>
         public static long WheelCoins(SaveData s, int i) { return (long)(Mathf.Round(WheelValue[i] * GameData.EconScale(s.location) / 10f) * 10f); }
 
-        public static bool WheelFree(SaveData s) { return s.wheelDate != DateTime.Now.ToString("yyyy-MM-dd"); }
+        public static bool WheelDaily(SaveData s) { return s.wheelDate != DateTime.Now.ToString("yyyy-MM-dd"); }
+        /// <summary>Бесплатное вращение: раз в день или из запаса (пасс, награды за время).</summary>
+        public static bool WheelFree(SaveData s) { return WheelDaily(s) || s.bonusSpins > 0; }
+        public static void UseFreeSpin(SaveData s)
+        {
+            if (WheelDaily(s)) s.wheelDate = DateTime.Now.ToString("yyyy-MM-dd");
+            else if (s.bonusSpins > 0) s.bonusSpins--;
+        }
 
         // ---------------- ежедневный бонус ----------------
         // 1-й день — 100 монет. Дальше каждый день — 15% от твоих денег,
@@ -524,13 +690,16 @@ namespace ValourGames.Shawarma
 
         /// <summary>Забрать награду за следующий уровень.</summary>
         /// <summary>Награда за уровень достижения, проиндексированная под экономику текущей локации.</summary>
+        public const long AchRewardCap = 20000000L;
+
         public static long AchReward(SaveData s, int i, int tier)
         {
             var a = Achievements[i];
             tier = Mathf.Clamp(tier, 0, a.rewards.Length - 1);
             double v = a.rewards[tier] * (double)GameData.EconScale(s.location);
             long step = v >= 100000 ? 1000 : (v >= 1000 ? 100 : 10);
-            return System.Math.Max(10L, (long)System.Math.Round(v / step) * step);
+            // потолок 20 млн — чтобы награды за достижения не превращались в бесконечный источник денег
+            return System.Math.Min(AchRewardCap, System.Math.Max(10L, (long)System.Math.Round(v / step) * step));
         }
 
         public static long Claim(SaveData s, int i)

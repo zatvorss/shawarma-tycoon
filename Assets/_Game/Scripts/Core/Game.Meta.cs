@@ -166,6 +166,19 @@ namespace ValourGames.Shawarma
                 btn.interactable = can;
             }
             UIKit.Button(s, L.T("← Назад", "← Back"), UIKit.Steel, () => { Sfx.Play(Sound.Click); ShowMenu(); }, 0.02f, 0.01f, 0.2f, 0.1f, 36);
+
+            // сотрудники на прошлых локациях
+            long staffCash = 0; int staffIdle = 0;
+            for (int i = 0; i < _save.staffHired.Length; i++)
+                if (Meta.StaffHired(_save, i)) { staffCash += _save.staffCash[i]; if (_save.staffStock[i] == 0) staffIdle++; }
+            var sb = UIKit.Button(s, "", UIKit.Hex("#1565C0"), () => { Sfx.Play(Sound.Click); ShowStaff(); }, 0.6f, 0.01f, 0.98f, 0.11f, 30);
+            UIKit.FitLabel(sb.transform, L.T("Сотрудники на прошлых локациях →", "Staff at previous locations →"), 28, Color.white, 0.05f, 0.1f, 0.95f, 0.9f);
+            if (staffCash > 0 || staffIdle > 0 || _save.location > 0)
+            {
+                var bd = UIKit.Shape(sb.transform, UIKit.Circle, staffCash > 0 ? UIKit.Green : UIKit.Red, 0.97f, 0.9f, 34f, 34f);
+                UIKit.FitLabel(bd.transform, "!", 22, Color.white, 0f, 0f, 1f, 1f);
+                if (staffCash > 0 || staffIdle > 0) sb.gameObject.AddComponent<Bobber>().amp = 2f;
+            }
         }
 
         // =====================================================================
@@ -476,7 +489,7 @@ namespace ValourGames.Shawarma
 
             bool free = Meta.WheelFree(_save);
             Button spinBtn = null;
-            spinBtn = UIKit.Button(panel.transform, free ? L.T("Крутить бесплатно!", "Spin for free!") : L.T("Крутить за рекламу", "Spin for an ad"),
+            spinBtn = UIKit.Button(panel.transform, free ? WheelFreeLabel() : L.T("Крутить за рекламу", "Spin for an ad"),
                 free ? UIKit.Green : UIKit.Orange, () =>
                 {
                     if (spin.Spinning) return;
@@ -493,13 +506,14 @@ namespace ValourGames.Shawarma
                             Sfx.Play(Sound.Fanfare);
                             SaveSystem.Save(_save);
                             spinBtn.interactable = true;
-                            UIKit.SetLabel(spinBtn, L.T("Ещё раз за рекламу", "Again for an ad"));
-                            ((Image)spinBtn.targetGraphic).color = UIKit.Orange;
+                            bool more = Meta.WheelFree(_save);
+                            UIKit.SetLabel(spinBtn, more ? WheelFreeLabel() : L.T("Ещё раз за рекламу", "Again for an ad"));
+                            ((Image)spinBtn.targetGraphic).color = more ? UIKit.Green : UIKit.Orange;
                         });
                     };
                     if (Meta.WheelFree(_save))
                     {
-                        _save.wheelDate = DateTime.Now.ToString("yyyy-MM-dd");
+                        Meta.UseFreeSpin(_save);
                         SaveSystem.Save(_save);
                         go();
                     }
@@ -508,6 +522,12 @@ namespace ValourGames.Shawarma
             spinBtn.gameObject.AddComponent<Bobber>().amp = 4f;
 
             UIKit.Button(s, L.T("← Назад", "← Back"), UIKit.Steel, () => { Sfx.Play(Sound.Click); ShowMenu(); }, 0.02f, 0.02f, 0.2f, 0.12f, 38);
+        }
+
+        string WheelFreeLabel()
+        {
+            int extra = _save.bonusSpins + (Meta.WheelDaily(_save) ? 1 : 0);
+            return extra > 1 ? L.T("Крутить бесплатно! (", "Spin for free! (") + extra + ")" : L.T("Крутить бесплатно!", "Spin for free!");
         }
 
         string GiveWheelPrize(int i)

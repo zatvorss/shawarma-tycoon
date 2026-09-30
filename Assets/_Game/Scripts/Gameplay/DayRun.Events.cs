@@ -363,7 +363,7 @@ namespace ValourGames.Shawarma
         // =====================================================================
         //  ЖАРА: каждые 5 комбо — 20 секунд двойных денег (пока жара идёт, новая не продлевает её)
         // =====================================================================
-        const float FeverTime = 20f;
+        float FeverTime { get { return Meta.Has(_save, Meta.CharmPepper) ? 25f : 20f; } }
 
         void StartFever()
         {
@@ -382,7 +382,7 @@ namespace ValourGames.Shawarma
                 _feverFrame = f.gameObject;
             }
             _feverFrame.SetActive(true);
-            ShowBanner(L.T("ЖАРА! Все деньги ×2 на 20 секунд!", "FEVER! All money ×2 for 20 seconds!"), 1.6f);
+            ShowBanner(L.T("ЖАРА!\nВсе деньги ×2 на ", "FEVER!\nAll money ×2 for ") + Mathf.RoundToInt(FeverTime) + L.T(" секунд", " seconds"), 1.6f, BannerKind.Fever);
             Sfx.Play(Sound.Combo);
             Sfx.Play(Sound.Fanfare);
         }

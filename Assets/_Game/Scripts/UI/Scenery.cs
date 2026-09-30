@@ -102,6 +102,7 @@ namespace ValourGames.Shawarma
             if (!beach)
                 for (int i = 0; i < 12; i++)
                     UIKit.Panel(area, "Seam", UIKit.Alpha(Color.black, 0.08f), i / 12f, 0, i / 12f + 0.003f, 0.15f, false);
+            if (loc.id == 2 && loc.scene == "city") BuildStationFront(area);
 
             if (rain)
             {
@@ -211,11 +212,18 @@ namespace ValourGames.Shawarma
             UIKit.AddOutline(board, UIKit.Hex("#455A64"), 3f);
             UIKit.FitLabel(board.transform, L.T("ПУТЬ 1 → ЦЕНТР", "TRACK 1 → CENTER"), 20, UIKit.Hex("#FFB300"), 0.04f, 0.1f, 0.96f, 0.9f);
             UIKit.Panel(area, "BoardLeg", UIKit.Hex("#37474F"), 0.707f, 0.44f, 0.713f, 0.5f, false);
-            // светофор
-            UIKit.Panel(area, "Signal", UIKit.Hex("#263238"), 0.045f, 0.2f, 0.05f, 0.36f, false);
+        }
+
+        /// <summary>Светофор вокзала — стоит на тротуаре на бетонной тумбе (рисуется поверх тротуара).</summary>
+        void BuildStationFront(RectTransform area)
+        {
+            UIKit.Panel(area, "SignalBase", UIKit.Hex("#9E9E9E"), 0.034f, 0.1f, 0.061f, 0.135f, false);
+            UIKit.Panel(area, "SignalBaseTop", UIKit.Hex("#BDBDBD"), 0.031f, 0.132f, 0.064f, 0.142f, false);
+            UIKit.Panel(area, "Signal", UIKit.Hex("#263238"), 0.045f, 0.14f, 0.05f, 0.36f, false);
             var head = UIKit.Panel(area, "SignalHead", UIKit.Hex("#212121"), 0.037f, 0.33f, 0.058f, 0.41f);
             UIKit.Shape(head.transform, UIKit.Circle, UIKit.Hex("#43A047"), 0.5f, 0.3f, 16f, 16f).gameObject.AddComponent<Blinker>().speed = 1f;
             UIKit.Shape(head.transform, UIKit.Circle, UIKit.Hex("#5D1A1A"), 0.5f, 0.72f, 16f, 16f);
+            UIKit.Panel(area, "Visor", UIKit.Hex("#111111"), 0.035f, 0.405f, 0.06f, 0.415f, false);
         }
 
         void BuildMarket(RectTransform area)
@@ -236,11 +244,75 @@ namespace ValourGames.Shawarma
 
         void BuildStadium(RectTransform area)
         {
-            UIKit.Shape(area, UIKit.CircleHD, UIKit.Hex("#90A4AE"), 0.5f, 0.3f, 1500f, 330f);
-            UIKit.Shape(area, UIKit.CircleHD, UIKit.Hex("#B0BEC5"), 0.5f, 0.32f, 1350f, 250f);
-            for (int i = 0; i < 40; i++)
-                UIKit.Shape(area, UIKit.Circle, UIKit.Hex(i % 3 == 0 ? "#E53935" : (i % 3 == 1 ? "#1E88E5" : "#FFEB3B")),
-                    0.1f + (i % 20) * 0.042f, 0.36f + (i / 20) * 0.06f, 14f, 14f);
+            // чаша стадиона: внешняя стена с арками, трибуны с болельщиками, козырёк крыши
+            UIKit.Shape(area, UIKit.CircleHD, UIKit.Hex("#78909C"), 0.5f, 0.3f, 1560f, 360f);
+            UIKit.Shape(area, UIKit.CircleHD, UIKit.Hex("#90A4AE"), 0.5f, 0.31f, 1500f, 330f);
+            // трибуны — ряды болельщиков в цветах двух команд
+            string[] fan = { "#E53935", "#FFFFFF", "#1E88E5", "#FFEB3B", "#E53935", "#1E88E5" };
+            for (int r = 0; r < 4; r++)
+            {
+                int n = 34 - r * 3;
+                float y = 0.34f + r * 0.035f;
+                float half = 0.4f - r * 0.035f;
+                for (int i = 0; i < n; i++)
+                {
+                    float x = 0.5f - half + (2f * half) * i / (n - 1);
+                    var hd = UIKit.Shape(area, UIKit.Circle, UIKit.Hex(fan[(i + r) % fan.Length]), x, y, 13f, 13f);
+                    if ((i + r) % 5 == 0) { var bb = hd.gameObject.AddComponent<Bobber>(); bb.amp = 3f; bb.speed = 5f + (i % 3); }
+                }
+            }
+            // козырёк
+            UIKit.Shape(area, UIKit.CircleHD, UIKit.Hex("#ECEFF1"), 0.5f, 0.49f, 1100f, 40f);
+            UIKit.Shape(area, UIKit.CircleHD, UIKit.Hex("#B0BEC5"), 0.5f, 0.485f, 1060f, 20f);
+            // внешняя стена с арками
+            UIKit.Panel(area, "Facade", UIKit.Hex("#B0BEC5"), 0.08f, 0.16f, 0.92f, 0.3f, false);
+            for (int i = 0; i < 14; i++)
+            {
+                float x = 0.11f + i * 0.058f;
+                UIKit.Shape(area, UIKit.Rounded, UIKit.Hex("#546E7A"), x, 0.225f, 42f, 60f);
+                UIKit.Shape(area, UIKit.Rounded, UIKit.Hex(i % 2 == 0 ? "#FFE082" : "#80CBC4"), x, 0.235f, 30f, 40f);
+            }
+            UIKit.Panel(area, "FacadeTop", UIKit.Hex("#1E88E5"), 0.08f, 0.29f, 0.92f, 0.305f, false);
+            UIKit.Panel(area, "FacadeTop2", UIKit.Hex("#E53935"), 0.08f, 0.305f, 0.92f, 0.315f, false);
+            // табло
+            UIKit.Panel(area, "BoardLeg", UIKit.Hex("#37474F"), 0.497f, 0.49f, 0.503f, 0.56f, false);
+            var board = UIKit.Panel(area, "Scoreboard", UIKit.Hex("#111827"), 0.42f, 0.55f, 0.58f, 0.66f);
+            UIKit.AddOutline(board, UIKit.Hex("#FFC107"), 3f);
+            UIKit.FitLabel(board.transform, L.T("ФИНАЛ  2 : 1", "FINAL  2 : 1"), 26, UIKit.Hex("#FFC107"), 0.05f, 0.4f, 0.95f, 0.95f);
+            var tm = UIKit.FitLabel(board.transform, "89'", 20, UIKit.Hex("#FF5252"), 0.3f, 0.05f, 0.7f, 0.4f);
+            tm.gameObject.AddComponent<Blinker>().speed = 2f;
+            // флаги на козырьке
+            float[] fx = { 0.2f, 0.33f, 0.67f, 0.8f };
+            for (int i = 0; i < fx.Length; i++)
+            {
+                UIKit.Panel(area, "FlagPole", UIKit.Hex("#455A64"), fx[i] - 0.0015f, 0.49f, fx[i] + 0.0015f, 0.6f, false);
+                var fl = UIKit.Rect(area, "Flag");
+                UIKit.PlaceFixed(fl, fx[i], 0.585f, 50f, 30f);
+                fl.pivot = new Vector2(0f, 0.5f);
+                fl.anchoredPosition = Vector2.zero;
+                UIKit.Shape(fl, UIKit.RoundedSmall, UIKit.Hex(i % 2 == 0 ? "#E53935" : "#1E88E5"), 0.5f, 0.5f, 50f, 30f);
+                UIKit.Shape(fl, UIKit.RoundedSmall, Color.white, 0.5f, 0.5f, 50f, 8f);
+                var pd = fl.gameObject.AddComponent<Pendulum>();
+                pd.angle = 8f; pd.speed = 2.5f + i * 0.4f;
+            }
+            // растяжка болельщиков и шарики
+            var ban = UIKit.Panel(area, "Banner", UIKit.Hex("#FFEB3B"), 0.3f, 0.43f, 0.46f, 0.47f, false);
+            UIKit.FitLabel(ban.transform, L.T("ВПЕРЁД!", "GO TEAM!"), 20, UIKit.Hex("#B71C1C"), 0.03f, 0.05f, 0.97f, 0.95f);
+            string[] bal = { "#E53935", "#1E88E5", "#FFEB3B", "#43A047" };
+            for (int i = 0; i < 4; i++)
+            {
+                var b = UIKit.Rect(area, "Balloon");
+                float x = 0.62f + i * 0.04f;
+                UIKit.PlaceFixed(b, x, 0.7f + (i % 2) * 0.05f, 30f, 60f);
+                UIKit.Shape(b, UIKit.CircleHD, UIKit.Hex(bal[i]), 0.5f, 0.7f, 30f, 36f);
+                UIKit.Shape(b, UIKit.RoundedSmall, UIKit.Alpha(Color.white, 0.6f), 0.5f, 0.2f, 2f, 30f);
+                var bb = b.gameObject.AddComponent<Bobber>(); bb.amp = 6f; bb.speed = 1.2f + i * 0.3f;
+            }
+            // касса у входа
+            var kassa = UIKit.Panel(area, "Tickets", UIKit.Hex("#1565C0"), 0.9f, 0.16f, 0.99f, 0.28f, false);
+            UIKit.Panel(kassa.transform, "Win", UIKit.Hex("#BBDEFB"), 0.15f, 0.3f, 0.85f, 0.7f, false);
+            UIKit.Panel(kassa.transform, "Roof", UIKit.Hex("#E53935"), -0.05f, 0.85f, 1.05f, 1f, false);
+            UIKit.FitLabel(kassa.transform, L.T("КАССА", "TICKETS"), 16, Color.white, 0.05f, 0.72f, 0.95f, 0.86f);
             // мачты прожекторов стоят на земле: от тротуара до самого верха
             float[] xs = { 0.12f, 0.88f };
             foreach (var x in xs)
