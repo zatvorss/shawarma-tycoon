@@ -539,7 +539,7 @@ namespace ValourGames.Shawarma
         void OnChop()
         {
             if (_paused || _ended) return;
-            if (_boardVeg < 0) { Toast(L.T("Перетащи овощ из ящика сверху на доску", "Drag a veggie from the crate onto the board")); Sfx.Play(Sound.Error); return; }
+            if (_boardVeg < 0) { Toast(L.T("Перетащи продукт из ящика сверху на доску", "Drag an item from the crate onto the board")); Sfx.Play(Sound.Error); return; }
             if (_chopCd > 0f) return;
             _chopCd = 0.22f * _cutMult;
             _chopsDone++;
@@ -566,7 +566,7 @@ namespace ValourGames.Shawarma
             UIKit.Clear(_chopHolder);
             if (_boardVeg < 0)
             {
-                _chopText.text = GameData.HelperAuto(_lvVeg) ? L.T("Помощник подаёт овощи", "Helper brings veggies") : L.T("Тащи овощ из ящика ↑", "Drag a veggie from the crate ↑");
+                _chopText.text = GameData.HelperAuto(_lvVeg) ? L.T("Помощник подаёт продукты", "Helper brings the food") : L.T("Тащи продукт из ящика ↑", "Drag an item from the crate ↑");
                 return;
             }
             var id = (Ing)_boardVeg;
@@ -1397,7 +1397,7 @@ namespace ValourGames.Shawarma
                 ds.onDrop = pos =>
                 {
                     if (DragSource.OverPad(_chopBoard, pos, 50f)) OnPickVeg(id);
-                    else Toast(L.T("Брось овощ на разделочную доску", "Drop the veggie on the cutting board"));
+                    else Toast(L.T("Брось «", "Drop “") + GameData.Get(id).Name + L.T("» на разделочную доску", "” on the cutting board"));
                 };
                 ds.onTap = () =>
                 {
@@ -1405,7 +1405,7 @@ namespace ValourGames.Shawarma
                     if (GameData.HelperTap(_lvVeg)) FeedVeg(id);
                     else
                     {
-                        Toast(L.T("Перетащи овощ из ящика на доску", "Drag the veggie from the crate onto the board"));
+                        Toast(L.T("Перетащи «", "Drag “") + GameData.Get(id).Name + L.T("» из ящика на доску", "” from the crate onto the board"));
                         Juice.Punch(cellRt, 0.15f, 0.25f);
                     }
                 };
@@ -1684,7 +1684,10 @@ namespace ValourGames.Shawarma
             if (!open) { LockedCell(cell.transform, lockText); return null; }
             var c = cell.transform;
             UIKit.Panel(c, "Front", UIKit.Alpha(Color.white, 0.18f), 0.08f, 0.55f, 0.92f, 0.92f);
-            UIKit.FitLabel(c, GameData.Get(d).Name, 18, Color.white, 0.1f, 0.58f, 0.9f, 0.9f);
+            // название одной строкой, без переноса по буквам («Апельси-н»)
+            var tl = UIKit.Label(c, GameData.Get(d).Name, 18, Color.white, TextAnchor.MiddleCenter, 0.02f, 0.58f, 0.98f, 0.9f, true);
+            tl.horizontalOverflow = HorizontalWrapMode.Overflow;
+            tl.verticalOverflow = VerticalWrapMode.Overflow;
             UIKit.Shape(c, UIKit.RoundedSmall, UIKit.Hex("#CFD8DC"), 0.5f, 0.46f, 16f, 14f);
             UIKit.Shape(c, UIKit.RoundedSmall, UIKit.Hex("#90A4AE"), 0.5f, 0.12f, 60f, 8f);
             UIKit.MakeButton(cell, () => OnTapDispenser(d));

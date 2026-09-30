@@ -382,7 +382,13 @@ namespace ValourGames.Shawarma
                 _feverFrame = f.gameObject;
             }
             _feverFrame.SetActive(true);
-            ShowBanner(L.T("ЖАРА!\nВсе деньги ×2 на ", "FEVER!\nAll money ×2 for ") + Mathf.RoundToInt(FeverTime) + L.T(" секунд", " seconds"), 1.6f, BannerKind.Fever);
+            // большое объявление — только в первый раз; дальше хватает рамки и таблички «ЖАРА»
+            if (!_save.feverSeen)
+            {
+                _save.feverSeen = true;
+                ShowBanner(L.T("ЖАРА!\nКаждые 5 комбо — все деньги ×2 на ", "FEVER!\nEvery 5 combo — all money ×2 for ") + Mathf.RoundToInt(FeverTime) + L.T(" секунд", " seconds"), 2.2f, BannerKind.Fever);
+            }
+            else Toast(L.T("ЖАРА! Деньги ×2", "FEVER! Money ×2"));
             Sfx.Play(Sound.Combo);
             Sfx.Play(Sound.Fanfare);
         }

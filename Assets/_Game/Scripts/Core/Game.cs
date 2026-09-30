@@ -278,6 +278,7 @@ namespace ValourGames.Shawarma
             SideButton(s, 0.83f, 0.22f, L.T("Колесо удачи", "Lucky wheel"), UIKit.Purple, 2, Meta.WheelFree(_save) ? 1 : 0, () => ShowWheel());
             int passReady = Meta.PassReadyCount(_save);
             SideButton(s, 0.01f, 0.46f, L.T("Шаурма-Пасс", "Shawarma Pass"), UIKit.Hex("#6A1B9A"), 3, passReady, () => ShowPass());
+            SideButton(s, 0.01f, 0.34f, L.T("Рекорды", "Leaderboard"), UIKit.Hex("#00838F"), 5, 0, () => ShowLeaders());
             AdminButton(s);
 
             Button soundBtn = null, musicBtn = null;
@@ -330,6 +331,14 @@ namespace ValourGames.Shawarma
             if (icon == 0) Icons.Trophy(b.transform, 0.14f, 0.5f, 60f, true);
             else if (icon == 1) Icons.Coin(b.transform, 0.14f, 0.5f, 54f);
             else if (icon == 3) Icons.Star(b.transform, 0.14f, 0.5f, 54f, true);
+            else if (icon == 5)
+            {
+                // пьедестал 2-1-3
+                UIKit.Shape(b.transform, UIKit.RoundedSmall, UIKit.Hex("#B0BEC5"), 0.08f, 0.4f, 20f, 28f);
+                UIKit.Shape(b.transform, UIKit.RoundedSmall, UIKit.Gold, 0.14f, 0.45f, 20f, 40f);
+                UIKit.Shape(b.transform, UIKit.RoundedSmall, UIKit.Hex("#D7A77A"), 0.2f, 0.37f, 20f, 22f);
+                Icons.Star(b.transform, 0.14f, 0.78f, 24f, true);
+            }
             else if (icon == 4)
             {
                 for (int i = 0; i < 4; i++)
@@ -499,6 +508,8 @@ namespace ValourGames.Shawarma
                 Platform.SubmitScore(total);
             }
             SaveSystem.Save(_save);
+            Platform.SubmitLeader(Platform.LbMoney, _save.lifetime);
+            Platform.SubmitLeader(Platform.LbServed, _save.totalServed);
             ShowResults(run, stars);
             CheckAchievements();
         }
@@ -571,6 +582,26 @@ namespace ValourGames.Shawarma
                 }, null);
             }, 0.1f, 0.12f, 0.9f, 0.2f, 38);
             doubleBtn.interactable = total > 0;
+
+            // не дотянул до цели, но заработал хотя бы половину — можно засчитать день за рекламу
+            if (!ok && run.Goal > 0 && total * 2 >= run.Goal)
+            {
+                var drt = doubleBtn.transform as RectTransform;
+                UIKit.Place(drt, 0.1f, 0.12f, 0.49f, 0.2f);
+                Button passBtn = null;
+                passBtn = UIKit.Button(box.transform, L.T("Засчитать день за рекламу", "Count the day for an ad"), UIKit.Purple, () =>
+                {
+                    passBtn.interactable = false;
+                    Platform.ShowRewarded("pass_day", () =>
+                    {
+                        _save.day++;
+                        SaveSystem.Save(_save);
+                        UIKit.SetLabel(passBtn, L.T("День засчитан!", "Day counted!"));
+                        Sfx.Play(Sound.Fanfare);
+                    }, null);
+                }, 0.51f, 0.12f, 0.9f, 0.2f, 30);
+                passBtn.gameObject.AddComponent<Bobber>().amp = 2f;
+            }
 
             UIKit.Button(box.transform, L.T("На карту", "To the map"), UIKit.Green, () =>
             {

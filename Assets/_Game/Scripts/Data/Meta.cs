@@ -715,7 +715,10 @@ namespace ValourGames.Shawarma
         public static List<Quest> MakeQuests(int day, LocationDef loc)
         {
             var rnd = new System.Random(day * 7919 + loc.id * 31);
-            var pool = new List<QuestType> { QuestType.Serve, QuestType.Perfect, QuestType.Combo, QuestType.ToGo, QuestType.NoBurn, QuestType.Earn };
+            // задания только про то, что уже есть на локации: прожарка — с грилем, «с собой» — с упаковкой
+            var pool = new List<QuestType> { QuestType.Serve, QuestType.Combo, QuestType.Earn };
+            if (GameData.GrillOn(loc.id)) { pool.Add(QuestType.Perfect); pool.Add(QuestType.NoBurn); }
+            if (GameData.PackingOn(loc.id)) pool.Add(QuestType.ToGo);
             if (day >= 2) pool.Add(QuestType.ServeType);
             if (GameData.DrinkOpen(Drink.Cola, day, loc.id)) pool.Add(QuestType.Drinks);
 
