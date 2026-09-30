@@ -304,55 +304,75 @@ namespace ValourGames.Shawarma
             // табличка «мест: N из 4» под окном
             var tag = UIKit.Panel(s, "SeatsTag", UIKit.Alpha(UIKit.Dark, 0.85f), 0.43f, 0.495f, 0.57f, 0.535f);
             UIKit.FitLabel(tag.transform, L.T("Мест у прилавка: ", "Counter seats: ") + seats + "/4", 20, UIKit.Cream, 0.04f, 0.05f, 0.96f, 0.95f);
-            // боковые стенки мини-ларька по краям окна — на них зелёные плюсы
-            var kc = UIKit.Hex(_save.Loc.kiosk);
-            float[] xs = { 0.31f, 0.69f };
-            foreach (var x in xs)
-            {
-                var post = UIKit.Panel(s, "SideWall", kc, x - 0.018f, 0.56f, x + 0.018f, 0.845f);
-                UIKit.AddOutline(post, UIKit.Hex("#3E2723"), 3f);
-                UIKit.Panel(post.transform, "Shade", UIKit.Alpha(Color.black, 0.18f), 0.6f, 0f, 1f, 1f, false);
-            }
             if (lvl >= def.MaxLevel) return;
             bool open = UpOpen(Up.Seats);
             int cost = UpCost(Up.Seats, lvl);
             bool can = open && _save.money >= cost;
+            // две вывески «+1 место» висят на ларьке по бокам окна
+            float[] xs = { 0.335f, 0.665f };
             foreach (var x in xs)
             {
-                var h = UIKit.Rect(s, "SeatPlus");
-                UIKit.PlaceFixed(h, x, 0.71f, 110f, 150f);
-                var body = UIKit.Rect(h, "Body");
-                UIKit.PlaceFixed(body, 0.5f, 0.62f, 90f, 90f);
-                Color c = open ? UIKit.Hex("#2ECC40") : UIKit.Hex("#90A4AE");
-                Color edge = open ? UIKit.Hex("#0B5D1E") : UIKit.Hex("#37474F");
-                // жирный зелёный крест с тёмной обводкой и бликом
-                UIKit.Shape(body, UIKit.RoundedSmall, new Color(0, 0, 0, 0.3f), 0.54f, 0.46f, 30f, 84f);
-                UIKit.Shape(body, UIKit.RoundedSmall, new Color(0, 0, 0, 0.3f), 0.54f, 0.46f, 84f, 30f);
-                UIKit.Shape(body, UIKit.RoundedSmall, edge, 0.5f, 0.5f, 34f, 88f);
-                UIKit.Shape(body, UIKit.RoundedSmall, edge, 0.5f, 0.5f, 88f, 34f);
-                UIKit.Shape(body, UIKit.RoundedSmall, c, 0.5f, 0.5f, 24f, 78f);
-                UIKit.Shape(body, UIKit.RoundedSmall, c, 0.5f, 0.5f, 78f, 24f);
-                UIKit.Shape(body, UIKit.RoundedSmall, UIKit.Alpha(Color.white, 0.35f), 0.44f, 0.62f, 6f, 26f);
-                if (!open)
+                var h = UIKit.Rect(s, "SeatCard");
+                UIKit.PlaceFixed(h, x, 0.705f, 160f, 210f);
+                var card = UIKit.Rect(h, "Card");
+                UIKit.PlaceFixed(card, 0.5f, 0.5f, 160f, 210f);
+                card.pivot = new Vector2(0.5f, 1f);          // висит на шнурках — качается от верха
+                card.anchoredPosition = new Vector2(0f, 105f);
+                // подвес: два шнурка от навеса
+                UIKit.Shape(card, UIKit.RoundedSmall, UIKit.Hex("#3E2723"), 0.3f, 1.08f, 4f, 40f);
+                UIKit.Shape(card, UIKit.RoundedSmall, UIKit.Hex("#3E2723"), 0.7f, 1.08f, 4f, 40f);
+                UIKit.Shape(card, UIKit.RoundedSmall, new Color(0, 0, 0, 0.35f), 0.53f, 0.47f, 156f, 206f);
+                UIKit.Shape(card, UIKit.RoundedSmall, UIKit.Hex("#5D4037"), 0.5f, 0.5f, 156f, 206f);            // деревянная рамка
+                var face = UIKit.Shape(card, UIKit.RoundedSmall, open ? UIKit.Hex("#FFF8E1") : UIKit.Hex("#CFD8DC"), 0.5f, 0.52f, 138f, 186f);
+                // табурет у прилавка
+                Color seat = open ? UIKit.Hex("#E53935") : UIKit.Hex("#90A4AE");
+                Color leg = open ? UIKit.Hex("#6D4C41") : UIKit.Hex("#78909C");
+                UIKit.Shape(card, UIKit.RoundedSmall, leg, 0.38f, 0.5f, 8f, 56f, 8f);
+                UIKit.Shape(card, UIKit.RoundedSmall, leg, 0.62f, 0.5f, 8f, 56f, -8f);
+                UIKit.Shape(card, UIKit.RoundedSmall, leg, 0.5f, 0.47f, 50f, 6f);
+                UIKit.Shape(card, UIKit.CircleHD, UIKit.Alpha(Color.black, 0.2f), 0.5f, 0.635f, 80f, 26f);
+                UIKit.Shape(card, UIKit.CircleHD, seat, 0.5f, 0.65f, 78f, 26f);
+                UIKit.Shape(card, UIKit.CircleHD, UIKit.Alpha(Color.white, 0.35f), 0.44f, 0.665f, 30f, 8f);
+                // заголовок
+                UIKit.FitLabel(card, L.T("+1 МЕСТО", "+1 SEAT"), 24, open ? UIKit.Hex("#1B5E20") : UIKit.Hex("#455A64"), 0.08f, 0.8f, 0.92f, 0.95f);
+                // зелёный значок «+» в углу
+                var badge = UIKit.Rect(card, "Plus");
+                UIKit.PlaceFixed(badge, 0.9f, 0.92f, 58f, 58f);
+                UIKit.Shape(badge, UIKit.CircleHD, UIKit.Hex("#1A0F08"), 0.5f, 0.5f, 58f, 58f);
+                UIKit.Shape(badge, UIKit.CircleHD, open ? UIKit.Hex("#2ECC40") : UIKit.Hex("#90A4AE"), 0.5f, 0.5f, 50f, 50f);
+                UIKit.Shape(badge, UIKit.CircleHD, UIKit.Alpha(Color.white, 0.3f), 0.5f, 0.66f, 32f, 16f);
+                UIKit.Shape(badge, UIKit.RoundedSmall, Color.white, 0.5f, 0.5f, 30f, 9f);
+                UIKit.Shape(badge, UIKit.RoundedSmall, Color.white, 0.5f, 0.5f, 9f, 30f);
+                if (can) { var bb = badge.gameObject.AddComponent<Bobber>(); bb.amp = 3f; bb.speed = 4f; }
+
+                // низ карточки: цена или когда откроется
+                if (open)
                 {
-                    var lk = UIKit.Rect(body, "Lock");
-                    UIKit.PlaceFixed(lk, 0.85f, 0.15f, 34f, 34f);
-                    UIKit.Shape(lk, UIKit.Circle, UIKit.Alpha(UIKit.Dark, 0.9f), 0.5f, 0.5f, 34f, 34f);
-                    UIKit.Shape(lk, UIKit.Circle, UIKit.Cream, 0.5f, 0.62f, 14f, 14f);
-                    UIKit.Shape(lk, UIKit.Circle, UIKit.Alpha(UIKit.Dark, 0.95f), 0.5f, 0.62f, 8f, 8f);
-                    UIKit.Shape(lk, UIKit.RoundedSmall, UIKit.Cream, 0.5f, 0.4f, 18f, 13f);
+                    var pb = UIKit.Rect(card, "PriceBar");
+                    UIKit.Place(pb, 0.08f, 0.06f, 0.92f, 0.26f);
+                    var pbi = pb.gameObject.AddComponent<Image>();
+                    pbi.sprite = UIKit.RoundedSmall;
+                    pbi.type = Image.Type.Sliced;
+                    pbi.color = can ? UIKit.Green : UIKit.Hex("#8D6E63");
+                    pbi.raycastTarget = false;
+                    Icons.Coin(pb, 0.17f, 0.5f, 26f);
+                    UIKit.FitLabel(pb, GameData.Money(cost), 24, Color.white, 0.3f, 0.08f, 0.96f, 0.92f);
+                }
+                else
+                {
+                    var lk = UIKit.Rect(card, "Lock");
+                    UIKit.PlaceFixed(lk, 0.5f, 0.35f, 30f, 30f);
+                    UIKit.Shape(lk, UIKit.Circle, UIKit.Hex("#455A64"), 0.5f, 0.66f, 18f, 18f);
+                    UIKit.Shape(lk, UIKit.Circle, UIKit.Hex("#CFD8DC"), 0.5f, 0.66f, 10f, 10f);
+                    UIKit.Shape(lk, UIKit.RoundedSmall, UIKit.Hex("#455A64"), 0.5f, 0.38f, 24f, 18f);
+                    UIKit.FitLabel(card, L.T("Откроется:\n", "Unlocks at:\n") + LocName(def.LocFor(lvl)), 18, UIKit.Hex("#37474F"), 0.06f, 0.04f, 0.94f, 0.26f);
                 }
                 if (can)
                 {
-                    var bob = body.gameObject.AddComponent<Bobber>();
-                    bob.amp = 4f;
+                    var pend = card.gameObject.AddComponent<Pendulum>();
+                    pend.angle = 4f;
+                    pend.speed = 2.2f;
                 }
-                // ценник: «+1 место» и цена (или где откроется)
-                var pill = UIKit.Panel(h, "Price", UIKit.Alpha(UIKit.Dark, 0.9f), -0.25f, 0.0f, 1.25f, 0.26f);
-                UIKit.AddOutline(pill, open ? UIKit.Hex("#2ECC40") : UIKit.Gray, 2f);
-                string txt = open ? L.T("+1 место  ", "+1 seat  ") + GameData.Money(cost)
-                                  : L.T("лок. ", "loc. ") + (def.LocFor(lvl) + 1);
-                UIKit.FitLabel(pill.transform, txt, 20, can ? UIKit.Gold : UIKit.Cream, 0.05f, 0.08f, 0.95f, 0.92f);
                 UIKit.HitArea(h, "Tap", () =>
                 {
                     Sfx.Play(Sound.Click);

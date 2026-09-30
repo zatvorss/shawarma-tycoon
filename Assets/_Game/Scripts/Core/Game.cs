@@ -17,7 +17,8 @@ namespace ValourGames.Shawarma
         DayRun _run;
         bool _readySent, _dailyChecked;
         long _lastBizIncome;
-        int _lastKiosk2;
+        int _lastKiosk2, _lastStaff;
+        long _lastPiggy;
 
         // уведомления о достижениях
         class Note { public string title, text; }
@@ -48,10 +49,32 @@ namespace ValourGames.Shawarma
                 if (portrait && _run != null) _run.SetPaused(true);
             }
             UpdateNotes(Time.unscaledDeltaTime);
+            TrackPlayTime(Time.unscaledDeltaTime);
+        }
+
+        // --- время в игре (для наград под Шаурма-Пассом) ---
+        bool _focused = true;
+        float _playSaveT;
+        int _playSeenReady = -1;
+
+        void TrackPlayTime(float dt)
+        {
+            if (!_focused || _save == null || dt > 1f) return;
+            _save.playSeconds += dt;
+            _playSaveT += dt;
+            if (_playSaveT >= 30f) { _playSaveT = 0f; SaveSystem.Save(_save); }
+            // впервые созрела награда за время — короткое уведомление
+            int ready = 0;
+            for (int i = 0; i < Meta.PlayMinutes.Length; i++) if (Meta.PlayReady(_save, i)) ready++;
+            if (_playSeenReady < 0) _playSeenReady = ready;
+            if (ready > _playSeenReady)
+                Notify(L.T("Награда за время в игре!", "Play time reward!"), L.T("Забери её в Шаурма-Пассе", "Claim it in the Shawarma Pass"));
+            _playSeenReady = ready;
         }
 
         void OnApplicationFocus(bool focus)
         {
+            _focused = focus;
             AudioListener.pause = !focus;
             if (!focus && _run != null) _run.SetPaused(true);
         }
@@ -166,7 +189,7 @@ namespace ValourGames.Shawarma
             {
                 _passSeen++;
                 Notify(L.T("Шаурма-Пасс: уровень ", "Shawarma Pass: level ") + _passSeen + "!",
-                    L.T("Награда: ", "Reward: ") + Meta.PassRewardText(_save, _passSeen) + L.T(" — забери в меню", " — claim in menu"));
+                    L.T("Награда: ", "Reward: ") + Meta.PassRewardText(_save, _passSeen, false) + L.T(" — забери в меню", " — claim in menu"));
             }
         }
 
@@ -253,7 +276,7 @@ namespace ValourGames.Shawarma
             SideButton(s, 0.83f, 0.46f, L.T("Достижения", "Achievements"), UIKit.Orange, 0, Meta.ReadyCount(_save), () => ShowAchievements());
             SideButton(s, 0.83f, 0.34f, L.T("Бизнесы", "Businesses"), UIKit.Green, 1, 0, () => ShowBusinesses());
             SideButton(s, 0.83f, 0.22f, L.T("Колесо удачи", "Lucky wheel"), UIKit.Purple, 2, Meta.WheelFree(_save) ? 1 : 0, () => ShowWheel());
-            int passReady = Mathf.Max(0, Meta.PassLevel(_save.passXp) - _save.passClaimed);
+            int passReady = Meta.PassReadyCount(_save);
             SideButton(s, 0.01f, 0.46f, L.T("Шаурма-Пасс", "Shawarma Pass"), UIKit.Hex("#6A1B9A"), 3, passReady, () => ShowPass());
             AdminButton(s);
 
@@ -462,6 +485,14 @@ namespace ValourGames.Shawarma
             _save.bestStarsDay = Mathf.Max(_save.bestStarsDay, stars);
             _lastBizIncome = run.CourierIncome;
             _lastKiosk2 = Meta.Kiosk2Day(_save);
+            _lastStaff = Meta.StaffDay(_save);
+            _lastPiggy = 0;
+            if (Meta.Has(_save, Meta.CharmPiggy) && total > 0)
+            {
+                _lastPiggy = (long)(total * 0.05f);
+                _save.money += _lastPiggy;
+                _save.lifetime += _lastPiggy;
+            }
             if (total > _save.bestDay)
             {
                 _save.bestDay = total;
@@ -521,6 +552,8 @@ namespace ValourGames.Shawarma
             string tot = "+" + total + "   <size=28><color=#6A1B9A>" + L.T("Пасс +", "Pass +") + run.DayXp + " XP</color></size>";
             if (_lastKiosk2 > 0) tot += "\n<size=28><color=#2E7D32>" + L.T("Второй ларёк продал порций: ", "Second kiosk sold: ") + _lastKiosk2 + L.T(" — выручка ждёт в «Бизнесах»", " — cash waits in Businesses") + "</color></size>";
             else if (_save.biz[Meta.BizKiosk2] > 0) tot += "\n<size=28><color=#C62828>" + L.T("Второй ларёк простаивает — закупи продукты!", "Second kiosk is idle — buy food!") + "</color></size>";
+            if (_lastStaff > 0) tot += "\n<size=26><color=#1565C0>" + L.T("Сотрудники продали порций: ", "Staff sold portions: ") + _lastStaff + "</color></size>";
+            if (_lastPiggy > 0) tot += "\n<size=26><color=#AD1457>" + L.T("Копилка: +", "Piggy bank: +") + GameData.Money(_lastPiggy) + "</color></size>";
             if (_lastBizIncome > 0) tot += "   <size=30><color=#6A1B9A>" + L.T("(из них курьеры ", "(couriers ") + GameData.Money(_lastBizIncome) + ")</color></size>";
             var tl = UIKit.Label(box.transform, tot, 54, UIKit.Green, TextAnchor.MiddleCenter, 0, 0.21f, 1, 0.3f, true);
             Juice.Punch(tl.transform, 0.2f, 0.5f);

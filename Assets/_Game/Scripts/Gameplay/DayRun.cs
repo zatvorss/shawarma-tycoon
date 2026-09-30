@@ -84,6 +84,7 @@ namespace ValourGames.Shawarma
             _root = root;
 
             _dayDuration   = GameData.DayDuration(_day);
+            if (Meta.Has(save, Meta.CharmHourglass)) _dayDuration += 10f;   // «Песочные часы» — до InitEvents, чтобы события раскладывались на весь день
             _spawnInterval = GameData.SpawnInterval(_day, _save.location) * _loc.spawn;
             _patience      = GameData.BasePatience(_day, _save.location) * _loc.patience * GameData.PatienceMult(save.Lvl(Up.Patience));
             _tipMult       = GameData.TipMult(save.Lvl(Up.Tips));
@@ -103,7 +104,10 @@ namespace ValourGames.Shawarma
             _spawnInterval *= 1f - 0.06f * Meta.P(save, Perk.Word);
             _patience *= 1f + 0.07f * Meta.P(save, Perk.Calm);
             if (Meta.Has(save, Meta.CharmBell)) _patience *= 1.08f;
+            // новые талисманы
+            if (Meta.Has(save, Meta.CharmClover)) _tipMult *= 1.15f;
             _cutMult = 1f - 0.08f * Meta.P(save, Perk.Hands);
+            if (Meta.Has(save, Meta.CharmGoldKnife)) _cutMult *= 0.85f;
 
             // люкс-улучшения (Правительственная столовая, Дубай)
             _priceMult *= GameData.PremiumMult(save.Lvl(Up.Premium));
@@ -770,8 +774,17 @@ namespace ValourGames.Shawarma
             _game.OnStatsChanged();
         }
 
+        bool _starUsed;
+
         void ResetCombo()
         {
+            // «Звезда шефа»: первая ошибка за день не сбивает комбо
+            if (_combo >= 2 && !_starUsed && Meta.Has(_save, Meta.CharmChefStar))
+            {
+                _starUsed = true;
+                Toast(L.T("Звезда шефа спасла комбо!", "Chef's star saved your combo!"));
+                return;
+            }
             if (_combo >= 3) Toast(L.T("Комбо сброшено", "Combo lost"));
             _combo = 0;
         }
@@ -895,30 +908,6 @@ namespace ValourGames.Shawarma
             _hintText.resizeTextMinSize = 12;
             _hintText.resizeTextMaxSize = 24;
             _toastText = UIKit.Label(counter.transform, "", 26, UIKit.Cream, TextAnchor.MiddleRight, 0.5f, 0, 0.985f, 0.78f, true);
-        }
-
-        void BuildBanner()
-        {
-            var b = UIKit.Panel(_root, "Banner", new Color(0.12f, 0.08f, 0.05f, 0.88f), 0.22f, 0.58f, 0.78f, 0.86f);
-            UIKit.AddShadow(b, 10f, 0.4f);
-            _banner = b.rectTransform;
-            _bannerText = UIKit.Label(b.transform, "", 54, UIKit.Cream, TextAnchor.MiddleCenter, 0.03f, 0.05f, 0.97f, 0.95f, true);
-            _banner.gameObject.SetActive(false);
-        }
-
-        void ShowBanner(string text, float dur)
-        {
-            _bannerText.text = text;
-            _bannerT = dur;
-            _banner.gameObject.SetActive(true);
-            Juice.Punch(_banner, 0.12f, 0.3f);
-        }
-
-        void UpdateBanner(float dt)
-        {
-            if (_bannerT <= 0f) return;
-            _bannerT -= dt;
-            if (_bannerT <= 0f) _banner.gameObject.SetActive(false);
         }
 
         void BuildPause()

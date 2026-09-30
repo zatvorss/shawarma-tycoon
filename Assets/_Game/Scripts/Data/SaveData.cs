@@ -65,6 +65,20 @@ namespace ValourGames.Shawarma
         public bool Tutored(string key) { return tutor != null && tutor.Contains("|" + key + "|"); }
         public void MarkTutored(string key) { if (!Tutored(key)) tutor = (string.IsNullOrEmpty(tutor) ? "|" : tutor) + key + "|"; }
 
+        // v0.17: Шаурма-Пасс на 50 уровней с дорожкой Пасс+, время в игре, сотрудники
+        public int passVer = 0;
+        public bool passPlus = false;
+        public int[] passFree = new int[51];   // 1 — награда бесплатной дорожки забрана
+        public int[] passPrem = new int[51];   // 1 — награда Пасс+ забрана
+        public int bonusSpins = 0;             // запас бесплатных вращений колеса
+        public float playSeconds = 0f;         // сколько всего сыграно
+        public int[] playClaimed = new int[9];
+        public bool goldAwning = false;
+        public int[] staffHired = new int[12];
+        public int[] staffStock = new int[12];
+        public long[] staffCash = new long[12];
+        public int[] staffSold = new int[12];
+
         // ежедневный бонус
         public string lastLogin = "";
         public int streak = 0;
@@ -104,6 +118,28 @@ namespace ValourGames.Shawarma
             if (skin < 0 || skin >= skins.Length || skins[skin] == 0) skin = 0;
             if (day < 1) day = 1;
             if (lang == null) lang = "";
+            passFree = Resize(passFree, Meta.PassLevels + 1);
+            passPrem = Resize(passPrem, Meta.PassLevels + 1);
+            if (passVer < 1)
+            {
+                for (int i = 1; i <= passClaimed && i < passFree.Length; i++) passFree[i] = 1;
+                passVer = 1;
+            }
+            playClaimed = Resize(playClaimed, Meta.PlayMinutes.Length);
+            int nl = GameData.Locations.Length;
+            staffHired = Resize(staffHired, nl);
+            staffStock = Resize(staffStock, nl);
+            staffSold = Resize(staffSold, nl);
+            staffCash = ResizeL(staffCash, nl);
+            if (playSeconds < 0f || float.IsNaN(playSeconds)) playSeconds = 0f;
+        }
+
+        static long[] ResizeL(long[] a, int n)
+        {
+            if (a != null && a.Length == n) return a;
+            var r = new long[n];
+            if (a != null) Array.Copy(a, r, Mathf.Min(n, a.Length));
+            return r;
         }
 
         static int[] Resize(int[] a, int n)
