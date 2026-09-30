@@ -41,6 +41,9 @@ namespace ValourGames.Shawarma
         {
             get
             {
+                // Свой шрифт с кириллицей (Liberation Sans, лицензия SIL OFL — метрики как у Arial).
+                // Встроенный LegacyRuntime в WebGL-сборке не содержит русских букв — без этого текст пропадает.
+                if (_font == null) _font = Resources.Load<Font>("Fonts/GameFont");
                 if (_font == null) _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
                 return _font;
             }
