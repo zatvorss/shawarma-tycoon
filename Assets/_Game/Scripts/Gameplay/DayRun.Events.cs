@@ -158,7 +158,8 @@ namespace ValourGames.Shawarma
             int slot = free[Random.Range(0, free.Count)];
             int lvl = _save.biz[biz];
             int qty = Mathf.Clamp(2 + lvl / 3, 2, 5);
-            float patience = _patience * 2.2f;
+            // времени хватает на всю партию: база + по заказу на каждую шаурму
+            float patience = Mathf.Max(_patience * 2.2f, _patience + qty * GameData.BaseService(_save.location, _eday) * 1.4f);
             var c = new Customer(_slots[slot], CustType.Regular, MakeOrder(), Drink.None, patience, ServeMode.ToGo, true, false, biz, qty, false);
             _customers[slot] = c;
             c.Say(L.T("Заказ для «", "Order for “") + Meta.Businesses[biz].Name + L.T("»!", "”!"), 3f);
@@ -399,7 +400,8 @@ namespace ValourGames.Shawarma
         int CourierPay()
         {
             int l = _save.biz[Meta.BizCourier];
-            return Mathf.RoundToInt(1500f * Meta.CourierPayMult(l) * _loc.price / 10f) * 10;
+            // ≈12% дневного дохода локации за уровень оплаты
+            return Mathf.RoundToInt(0.12f * GameData.ExpectedDayIncome(_save.location, 5) * Meta.CourierPayMult(l) / 10f) * 10;
         }
 
         // =====================================================================
@@ -473,14 +475,17 @@ namespace ValourGames.Shawarma
 
         readonly List<float> _bulkAt = new List<float>();
 
-        /// <summary>Оптовик из соседнего кафе: берёт от 5 до 30 горячих лавашей (в среднем около 10).</summary>
+        /// <summary>Оптовик из соседнего кафе: берёт столько горячих лавашей, сколько тандыр успеет испечь.</summary>
         bool SpawnBulk()
         {
             int slot = FreeSlot();
             if (slot < 0) return false;
-            float u = Mathf.Max(0.0001f, Random.value);
-            int qty = Mathf.Clamp(5 + Mathf.RoundToInt(-Mathf.Log(u) * 5f), 5, 30);
-            float patience = Mathf.Max(_patience, 30f + qty * 4.5f);
+            // размер заказа — по силам тандыра: на 1-м уровне 3–6 лавашей, на 5-м до 25
+            int qMin = Meta.BulkMin(_bakeLvl), qMax = Meta.BulkMax(_bakeLvl);
+            int qty = Mathf.Clamp(Random.Range(qMin, qMax + 1), qMin, qMax);
+            // время: пока ждёт оптовик, тандыр печёт в 4 раза быстрее
+            float perLavash = Meta.BakeTime(_bakeLvl) * 0.25f;
+            float patience = Mathf.Max(_patience, 25f + qty * perLavash * 1.6f);
             var c = new Customer(_slots[slot], CustType.Business, GameData.NewCounts(), Drink.None, patience, ServeMode.ToGo, true, false,
                 -1, 1, false, false, false, qty);
             _customers[slot] = c;

@@ -304,27 +304,39 @@ namespace ValourGames.Shawarma
             // табличка «мест: N из 4» под окном
             var tag = UIKit.Panel(s, "SeatsTag", UIKit.Alpha(UIKit.Dark, 0.85f), 0.43f, 0.495f, 0.57f, 0.535f);
             UIKit.FitLabel(tag.transform, L.T("Мест у прилавка: ", "Counter seats: ") + seats + "/4", 20, UIKit.Cream, 0.04f, 0.05f, 0.96f, 0.95f);
+            // боковые стенки мини-ларька по краям окна — на них зелёные плюсы
+            var kc = UIKit.Hex(_save.Loc.kiosk);
+            float[] xs = { 0.31f, 0.69f };
+            foreach (var x in xs)
+            {
+                var post = UIKit.Panel(s, "SideWall", kc, x - 0.018f, 0.56f, x + 0.018f, 0.845f);
+                UIKit.AddOutline(post, UIKit.Hex("#3E2723"), 3f);
+                UIKit.Panel(post.transform, "Shade", UIKit.Alpha(Color.black, 0.18f), 0.6f, 0f, 1f, 1f, false);
+            }
             if (lvl >= def.MaxLevel) return;
             bool open = UpOpen(Up.Seats);
-            bool can = open && _save.money >= UpCost(Up.Seats, lvl);
-            float[] xs = { 0.265f, 0.735f };
+            int cost = UpCost(Up.Seats, lvl);
+            bool can = open && _save.money >= cost;
             foreach (var x in xs)
             {
                 var h = UIKit.Rect(s, "SeatPlus");
-                UIKit.PlaceFixed(h, x, 0.795f, 96f, 96f);
+                UIKit.PlaceFixed(h, x, 0.71f, 110f, 150f);
                 var body = UIKit.Rect(h, "Body");
-                UIKit.PlaceFixed(body, 0.5f, 0.5f, 96f, 96f);
-                Color c = open ? UIKit.Green : UIKit.Hex("#78909C");
-                UIKit.Shape(body, UIKit.CircleHD, new Color(0, 0, 0, 0.3f), 0.52f, 0.45f, 92f, 92f);
-                UIKit.Shape(body, UIKit.CircleHD, UIKit.Hex("#1B3A1D"), 0.5f, 0.5f, 92f, 92f);
-                UIKit.Shape(body, UIKit.CircleHD, c, 0.5f, 0.5f, 80f, 80f);
-                UIKit.Shape(body, UIKit.CircleHD, UIKit.Alpha(Color.white, 0.2f), 0.5f, 0.64f, 56f, 30f);
-                UIKit.Shape(body, UIKit.RoundedSmall, Color.white, 0.5f, 0.5f, 48f, 13f);
-                UIKit.Shape(body, UIKit.RoundedSmall, Color.white, 0.5f, 0.5f, 13f, 48f);
+                UIKit.PlaceFixed(body, 0.5f, 0.62f, 90f, 90f);
+                Color c = open ? UIKit.Hex("#2ECC40") : UIKit.Hex("#90A4AE");
+                Color edge = open ? UIKit.Hex("#0B5D1E") : UIKit.Hex("#37474F");
+                // жирный зелёный крест с тёмной обводкой и бликом
+                UIKit.Shape(body, UIKit.RoundedSmall, new Color(0, 0, 0, 0.3f), 0.54f, 0.46f, 30f, 84f);
+                UIKit.Shape(body, UIKit.RoundedSmall, new Color(0, 0, 0, 0.3f), 0.54f, 0.46f, 84f, 30f);
+                UIKit.Shape(body, UIKit.RoundedSmall, edge, 0.5f, 0.5f, 34f, 88f);
+                UIKit.Shape(body, UIKit.RoundedSmall, edge, 0.5f, 0.5f, 88f, 34f);
+                UIKit.Shape(body, UIKit.RoundedSmall, c, 0.5f, 0.5f, 24f, 78f);
+                UIKit.Shape(body, UIKit.RoundedSmall, c, 0.5f, 0.5f, 78f, 24f);
+                UIKit.Shape(body, UIKit.RoundedSmall, UIKit.Alpha(Color.white, 0.35f), 0.44f, 0.62f, 6f, 26f);
                 if (!open)
                 {
                     var lk = UIKit.Rect(body, "Lock");
-                    UIKit.PlaceFixed(lk, 0.82f, 0.18f, 34f, 34f);
+                    UIKit.PlaceFixed(lk, 0.85f, 0.15f, 34f, 34f);
                     UIKit.Shape(lk, UIKit.Circle, UIKit.Alpha(UIKit.Dark, 0.9f), 0.5f, 0.5f, 34f, 34f);
                     UIKit.Shape(lk, UIKit.Circle, UIKit.Cream, 0.5f, 0.62f, 14f, 14f);
                     UIKit.Shape(lk, UIKit.Circle, UIKit.Alpha(UIKit.Dark, 0.95f), 0.5f, 0.62f, 8f, 8f);
@@ -333,11 +345,14 @@ namespace ValourGames.Shawarma
                 if (can)
                 {
                     var bob = body.gameObject.AddComponent<Bobber>();
-                    bob.amp = 5f;
-                    var glow = UIKit.Shape(h, UIKit.CircleHD, UIKit.Alpha(UIKit.Gold, 0.35f), 0.5f, 0.5f, 120f, 120f);
-                    glow.transform.SetAsFirstSibling();
-                    glow.gameObject.AddComponent<Blinker>().speed = 2f;
+                    bob.amp = 4f;
                 }
+                // ценник: «+1 место» и цена (или где откроется)
+                var pill = UIKit.Panel(h, "Price", UIKit.Alpha(UIKit.Dark, 0.9f), -0.25f, 0.0f, 1.25f, 0.26f);
+                UIKit.AddOutline(pill, open ? UIKit.Hex("#2ECC40") : UIKit.Gray, 2f);
+                string txt = open ? L.T("+1 место  ", "+1 seat  ") + GameData.Money(cost)
+                                  : L.T("лок. ", "loc. ") + (def.LocFor(lvl) + 1);
+                UIKit.FitLabel(pill.transform, txt, 20, can ? UIKit.Gold : UIKit.Cream, 0.05f, 0.08f, 0.95f, 0.92f);
                 UIKit.HitArea(h, "Tap", () =>
                 {
                     Sfx.Play(Sound.Click);
@@ -369,7 +384,7 @@ namespace ValourGames.Shawarma
             if (GameData.IngOpen(Ing.Cheese, _save.location)) { names.Add(L.T("С сыром", "Cheesy")); prices.Add(GameData.LavashPrice + meat + tom + GameData.Get(Ing.Cheese).price); }
             if (GameData.DrinkOpen(Drink.Fries, eday, _save.location)) { names.Add(L.T("Фри", "Fries")); prices.Add(GameData.Get(Drink.Fries).price); }
             if (GameData.DrinkOpen(Drink.Cola, eday, _save.location)) { names.Add(L.T("Кола", "Cola")); prices.Add(GameData.Get(Drink.Cola).price); }
-            if (GameData.DrinkOpen(Drink.Juice, eday, _save.location)) { names.Add(L.T("Апельс. сок", "Orange juice")); prices.Add(GameData.Get(Drink.Juice).price); }
+            if (GameData.DrinkOpen(Drink.Juice, eday, _save.location)) { names.Add(L.T("Апельсин", "Orange")); prices.Add(GameData.Get(Drink.Juice).price); }
             int n = Mathf.Min(names.Count, 6);
             float h = 0.74f / 6f;
             for (int i = 0; i < n; i++)

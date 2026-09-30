@@ -326,26 +326,40 @@ namespace ValourGames.Shawarma
                 default:
                     // второй ларёк: маленькая будка с навесом, наёмный повар и ящики с продуктами
                     UIKit.Panel(p, "Street", UIKit.Hex("#BCAAA4"), 0f, 0f, 1f, 0.2f, false);
+                    // ларёк стоит на тротуаре: низ будки ровно на линии улицы
                     var kb = UIKit.Rect(p, "Kiosk2");
-                    UIKit.PlaceFixed(kb, 0.42f, 0.5f, 220f, 190f);
-                    UIKit.Shape(kb, UIKit.RoundedSmall, UIKit.Hex("#E9D8B8"), 0.5f, 0.38f, 200f, 130f);
-                    UIKit.Shape(kb, UIKit.RoundedSmall, UIKit.Hex("#3B2A1E"), 0.5f, 0.46f, 130f, 70f);
-                    for (int k = 0; k < 6; k++)
-                        UIKit.Shape(kb, UIKit.RoundedSmall, k % 2 == 0 ? col : Color.white, 0.12f + k * 0.152f, 0.76f, 36f, 26f);
-                    UIKit.Shape(kb, UIKit.RoundedSmall, UIKit.Dark, 0.5f, 0.9f, 170f, 30f);
-                    UIKit.FitLabel(kb, L.T("ЛАРЁК №2", "KIOSK #2"), 20, UIKit.Gold, 0.12f, 0.82f, 0.88f, 0.98f);
+                    UIKit.PlaceFixed(kb, 0.42f, 0.2f, 220f, 200f);
+                    kb.pivot = new Vector2(0.5f, 0f);
+                    kb.anchoredPosition = Vector2.zero;
+                    UIKit.Shape(kb, UIKit.CircleHD, new Color(0, 0, 0, 0.25f), 0.5f, 0.0f, 230f, 26f);         // тень
+                    UIKit.Shape(kb, UIKit.RoundedSmall, UIKit.Hex("#8D6E63"), 0.5f, 0.04f, 206f, 16f);          // цоколь
+                    UIKit.Shape(kb, UIKit.RoundedSmall, UIKit.Hex("#E9D8B8"), 0.5f, 0.36f, 196f, 118f);         // корпус
+                    UIKit.Shape(kb, UIKit.RoundedSmall, UIKit.Hex("#3B2A1E"), 0.5f, 0.44f, 128f, 64f);          // окно
                     // повар в окне
-                    UIKit.Shape(kb, UIKit.Circle, UIKit.Hex("#F6D2B0"), 0.45f, 0.52f, 40f, 40f);
-                    UIKit.Shape(kb, UIKit.RoundedSmall, Color.white, 0.45f, 0.66f, 36f, 16f);
-                    UIKit.Shape(kb, UIKit.RoundedSmall, Color.white, 0.45f, 0.36f, 56f, 30f);
-                    UIKit.Shape(kb, UIKit.RoundedSmall, UIKit.Wood, 0.5f, 0.24f, 210f, 14f);
-                    // ящики с продуктами
+                    UIKit.Shape(kb, UIKit.Circle, UIKit.Hex("#F6D2B0"), 0.45f, 0.48f, 38f, 38f);
+                    UIKit.Shape(kb, UIKit.RoundedSmall, Color.white, 0.45f, 0.6f, 34f, 14f);
+                    UIKit.Shape(kb, UIKit.RoundedSmall, Color.white, 0.45f, 0.34f, 54f, 24f);
+                    UIKit.Shape(kb, UIKit.RoundedSmall, UIKit.Wood, 0.5f, 0.27f, 210f, 14f);                  // прилавок
+                    // навес и вывеска
+                    for (int k = 0; k < 6; k++)
+                        UIKit.Shape(kb, UIKit.RoundedSmall, k % 2 == 0 ? col : Color.white, 0.12f + k * 0.152f, 0.7f, 36f, 26f);
+                    UIKit.Shape(kb, UIKit.RoundedSmall, UIKit.Dark, 0.5f, 0.86f, 170f, 30f);
+                    UIKit.FitLabel(kb, L.T("ЛАРЁК №2", "KIOSK #2"), 20, UIKit.Gold, 0.12f, 0.79f, 0.88f, 0.93f);
+                    // ящики с продуктами — тоже на тротуаре
                     for (int k = 0; k < 2; k++)
                     {
-                        var cr = UIKit.Shape(p, UIKit.RoundedSmall, UIKit.Hex("#A1887F"), 0.82f, 0.22f + k * 0.16f, 70f, 40f);
-                        Icons.Ingredient(cr.transform, k == 0 ? Ing.Tomato : Ing.Meat, 0.5f, 0.8f, 30f);
+                        var cr = UIKit.Rect(p, "Crate");
+                        UIKit.PlaceFixed(cr, 0.82f, 0.2f, 70f, 40f);
+                        cr.pivot = new Vector2(0.5f, 0f);
+                        cr.anchoredPosition = new Vector2(0f, k * 40f);
+                        UIKit.Shape(cr, UIKit.RoundedSmall, UIKit.Hex(k == 0 ? "#A1887F" : "#8D6E63"), 0.5f, 0.5f, 70f, 38f);
+                        Icons.Ingredient(cr, k == 0 ? Ing.Tomato : Ing.Meat, 0.5f, 0.8f, 30f);
                     }
-                    if (owned) kb.gameObject.AddComponent<Bobber>().amp = 2f;
+                    if (owned)
+                    {
+                        var open = UIKit.Shape(kb, UIKit.RoundedSmall, UIKit.Hex("#2E7D32"), 0.88f, 0.44f, 30f, 44f);
+                        UIKit.Shape(open.transform, UIKit.Circle, UIKit.Hex("#B9F6CA"), 0.5f, 0.5f, 14f, 14f).gameObject.AddComponent<Blinker>().speed = 1.5f;
+                    }
                     break;
             }
             if (locked)
@@ -456,7 +470,7 @@ namespace ValourGames.Shawarma
             // правая панель
             var panel = UIKit.Panel(s, "Side", UIKit.Alpha(UIKit.Cream, 0.96f), 0.64f, 0.18f, 0.97f, 0.78f);
             UIKit.AddShadow(panel, 10f, 0.4f);
-            UIKit.Label(panel.transform, L.T("Призы: монеты до 2500 и бустеры на день", "Prizes: up to 2500 coins and day boosters"),
+            UIKit.Label(panel.transform, L.T("Призы: монеты до ", "Prizes: up to ") + GameData.Money(Meta.WheelCoins(_save, 7)) + L.T(" и бустеры на день", " coins and day boosters"),
                 28, UIKit.Dark, TextAnchor.MiddleCenter, 0.05f, 0.72f, 0.95f, 0.95f, true);
             var result = UIKit.Label(panel.transform, "", 40, UIKit.Green, TextAnchor.MiddleCenter, 0.05f, 0.42f, 0.95f, 0.7f, true);
 

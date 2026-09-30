@@ -51,27 +51,21 @@ namespace ValourGames.Shawarma
             UIKit.AddOutline(bgImg, UIKit.Alpha(Color.black, 0.35f), 4f);
 
             // табличка: закрыто + зелёный плюс
-            var sign = UIKit.Panel(w, "Sign", UIKit.Alpha(UIKit.Hex("#1A120C"), 0.88f), 0.08f, 0.36f, 0.92f, 0.66f);
+            var sign = UIKit.Panel(w, "Sign", UIKit.Alpha(UIKit.Hex("#1A120C"), 0.88f), 0.08f, 0.42f, 0.92f, 0.62f);
             UIKit.AddOutline(sign, UIKit.Gold, 2f);
-            UIKit.FitLabel(sign.transform, L.T("Место закрыто", "Seat closed"), 24, UIKit.Cream, 0.05f, 0.6f, 0.95f, 0.95f);
-            var plus = UIKit.Rect(sign.transform, "Plus");
-            UIKit.PlaceFixed(plus, 0.5f, 0.36f, 50f, 50f);
-            UIKit.Shape(plus, UIKit.CircleHD, UIKit.Green, 0.5f, 0.5f, 48f, 48f);
-            UIKit.Shape(plus, UIKit.RoundedSmall, Color.white, 0.5f, 0.5f, 28f, 8f);
-            UIKit.Shape(plus, UIKit.RoundedSmall, Color.white, 0.5f, 0.5f, 8f, 28f);
-            plus.gameObject.AddComponent<Bobber>().amp = 3f;
+            UIKit.FitLabel(sign.transform, L.T("Место закрыто", "Seat closed"), 26, UIKit.Cream, 0.05f, 0.5f, 0.95f, 0.94f);
             var def = GameData.Upgrades[(int)Up.Seats];
             int lvl = _save.Lvl(Up.Seats);
             bool reach = def.CanReach(lvl, _save.location);
             string hint = reach ? L.T("улучши «Места у прилавка»", "upgrade “Counter seats”")
                                 : L.T("откроется на локации ", "unlocks at location ") + (def.LocFor(lvl) + 1);
-            UIKit.FitLabel(sign.transform, hint, 16, UIKit.Alpha(UIKit.Gold, 0.9f), 0.04f, 0.02f, 0.96f, 0.16f);
+            UIKit.FitLabel(sign.transform, hint, 18, UIKit.Alpha(UIKit.Gold, 0.9f), 0.04f, 0.08f, 0.96f, 0.44f);
 
             UIKit.MakeButton(bgImg, () =>
             {
                 Sfx.Play(Sound.Click);
                 Juice.Punch(sign.rectTransform, 0.12f, 0.25f);
-                Toast(reach ? L.T("Больше мест — в «Моём ларьке»: зелёные плюсы на стенах у окна", "More seats — in “My kiosk”: green pluses on the walls by the window")
+                Toast(reach ? L.T("Больше мест — в «Моём ларьке»: зелёные плюсы прямо на ларьке", "More seats — in “My kiosk”: the green pluses right on the kiosk")
                             : L.T(lvl == 0 ? "Третье место откроется на локации " : "Четвёртое место откроется на локации ", "The next seat unlocks at location ") + (def.LocFor(lvl) + 1) + " — " + GameData.Locations[def.LocFor(lvl)].Name);
             });
         }

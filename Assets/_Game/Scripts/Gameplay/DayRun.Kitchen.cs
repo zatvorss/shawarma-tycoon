@@ -1666,7 +1666,7 @@ namespace ValourGames.Shawarma
 
             // краны
             _tapCola = DispenserCell(u, Drink.Cola, 0.04f, cola, L.T("Кола —\nлокация 3", "Cola —\nlocation 3"));
-            _tapJuice = DispenserCell(u, Drink.Juice, 0.52f, juice, L.T("Сок —\nлокация 6", "Juice —\nlocation 6"));
+            _tapJuice = DispenserCell(u, Drink.Juice, 0.52f, juice, L.T("Апельсин —\nлокация 6", "Orange —\nlocation 6"));
             if (GameData.CupTap(_lvDrinks) && (cola || juice)) StationLook.Auto(u, Up.Drinks, 0.93f, 0.5f, 34f);
         }
 

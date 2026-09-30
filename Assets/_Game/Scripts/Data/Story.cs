@@ -82,7 +82,8 @@ namespace ValourGames.Shawarma
                 };
                 case 8: return new[]
                 {
-                    R("Ночной центр не спит. И критики тоже...", "Downtown never sleeps. Neither do the critics..."),
+                    R("Ночной центр: неон, такси и толпы после смены. Ночью шаурма нужна всем.", "Downtown at night: neon, taxis and crowds after the shift. At night everyone wants shawarma."),
+                    M("Ночью ларьки мистера Меги закрыты. Весь город — наш!", "Mr. Mega's kiosks are closed at night. The whole city is ours!"),
                 };
                 case 9: return new[]
                 {
