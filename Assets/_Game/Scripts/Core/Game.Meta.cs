@@ -375,6 +375,8 @@ namespace ValourGames.Shawarma
                     }
                     break;
             }
+            // рисунок поверх фона (стена/пол/дорога рисуются уже после создания «Art» и закрывали его)
+            art.SetAsLastSibling();
             if (locked)
             {
                 UIKit.Panel(p, "Dim", new Color(0, 0, 0, 0.35f), 0, 0, 1, 1, false);

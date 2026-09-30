@@ -74,6 +74,8 @@ namespace ValourGames.Shawarma
         public float playSeconds = 0f;         // сколько всего сыграно
         public int[] playClaimed = new int[9];
         public bool goldAwning = false;
+        public bool feverSeen = false;         // большое объявление «ЖАРА» показывается один раз
+        public long xpAdTicks = 0;             // когда последний раз брали опыт пасса за рекламу
         public int[] staffHired = new int[12];
         public int[] staffStock = new int[12];
         public long[] staffCash = new long[12];

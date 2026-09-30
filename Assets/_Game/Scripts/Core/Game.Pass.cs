@@ -146,11 +146,17 @@ namespace ValourGames.Shawarma
             UIKit.AddOutline(top, UIKit.Gold, 2f);
             var tt = UIKit.Label(top.transform, L.T("ШАУРМА-ПАСС", "SHAWARMA PASS"), 42, UIKit.Gold, TextAnchor.MiddleLeft, 0.02f, 0, 0.28f, 1, true);
             UIKit.AddOutline(tt, UIKit.Hex("#1A0B2E"), 2f);
-            UIKit.Label(top.transform, L.T("Уровень ", "Level ") + lvl + " / " + Meta.PassLevels, 30, Color.white, TextAnchor.MiddleLeft, 0.28f, 0.45f, 0.5f, 1, true);
-            var bar = UIKit.Bar(top.transform, UIKit.Alpha(Color.white, 0.2f), UIKit.Gold, 0.28f, 0.14f, 0.55f, 0.42f);
+            UIKit.Label(top.transform, L.T("Уровень ", "Level ") + lvl + " / " + Meta.PassLevels, 30, Color.white, TextAnchor.MiddleLeft, 0.28f, 0.48f, 0.42f, 1, true);
+            var hint = UIKit.Panel(top.transform, "XpHint", UIKit.Hex("#FFD54F"), 0.42f, 0.56f, 0.585f, 0.92f);
+            UIKit.FitLabel(hint.transform, L.T("опыт = довольные клиенты", "XP = happy customers"), 16, UIKit.Hex("#3E1A00"), 0.04f, 0.08f, 0.96f, 0.92f);
+            var track = UIKit.Panel(top.transform, "XpTrack", UIKit.Hex("#1A0B2E"), 0.28f, 0.1f, 0.585f, 0.44f);
+            UIKit.AddOutline(track, UIKit.Gold, 1.5f);
+            var bar = UIKit.Bar(track.transform, new Color(0, 0, 0, 0), UIKit.Gold, 0.01f, 0.12f, 0.99f, 0.88f);
             UIKit.SetFill(bar, Meta.PassProgress(_save.passXp));
-            UIKit.Label(top.transform, L.T("опыт — за каждого довольного клиента", "XP for every happy customer"), 18, UIKit.Alpha(Color.white, 0.8f),
-                TextAnchor.MiddleLeft, 0.3f, 0.14f, 0.55f, 0.42f, false);
+            int xpIn = _save.passXp;
+            for (int k = 0; k < lvl && k < Meta.PassLevels; k++) xpIn -= Meta.PassXpFor(k);
+            var xt = UIKit.FitLabel(track.transform, lvl >= Meta.PassLevels ? L.T("МАКСИМУМ", "MAX") : xpIn + " / " + Meta.PassXpFor(lvl) + " XP", 18, Color.white, 0.02f, 0.05f, 0.98f, 0.95f);
+            UIKit.AddOutline(xt, Color.black, 2f);
             if (_save.passPlus)
             {
                 var ok = UIKit.Panel(top.transform, "PlusOn", UIKit.Hex("#FFB300"), 0.6f, 0.15f, 0.98f, 0.85f);
@@ -243,6 +249,32 @@ namespace ValourGames.Shawarma
             var cl = UIKit.FitLabel(cb.transform, L.T("Талисманы ", "Charms ") + got + "/" + Meta.Charms.Length, 26, UIKit.Gold, 0.6f, 0.1f, 0.98f, 0.9f);
             UIKit.AddShadow(cl, 2f, 0.6f);
             UIKit.Button(s, L.T("← Назад", "← Back"), UIKit.Steel, () => { Sfx.Play(Sound.Click); ShowMenu(); }, 0.02f, 0.02f, 0.2f, 0.11f, 36);
+
+            // опыт пасса за рекламу — раз в 10 минут
+            if (lvl < Meta.PassLevels)
+            {
+                long now = System.DateTime.UtcNow.Ticks;
+                long wait = System.TimeSpan.TicksPerMinute * 10;
+                long left = _save.xpAdTicks + wait - now;
+                bool ready = left <= 0;
+                int xp = Meta.PassXpFor(lvl) / 2;
+                var ab = UIKit.Button(s, ready ? L.T("+", "+") + xp + L.T(" опыта за рекламу", " XP for an ad") : L.T("Опыт за рекламу через ", "XP ad in ") + Mathf.CeilToInt(left / (float)System.TimeSpan.TicksPerMinute) + L.T(" мин", " min"),
+                    ready ? UIKit.Orange : UIKit.Gray, () =>
+                {
+                    if (System.DateTime.UtcNow.Ticks < _save.xpAdTicks + wait) { Sfx.Play(Sound.Error); return; }
+                    Platform.ShowRewarded("pass_xp", () =>
+                    {
+                        _save.passXp += xp;
+                        _save.xpAdTicks = System.DateTime.UtcNow.Ticks;
+                        SaveSystem.Save(_save);
+                        Sfx.Play(Sound.Fanfare);
+                        OnStatsChanged();
+                        ShowPass();
+                    }, null);
+                }, 0.22f, 0.02f, 0.44f, 0.11f, 24);
+                ab.interactable = ready;
+                if (ready) ab.gameObject.AddComponent<Bobber>().amp = 2f;
+            }
         }
 
         /// <summary>Карточка награды одной дорожки пасса.</summary>
@@ -378,8 +410,15 @@ namespace ValourGames.Shawarma
                 }
                 else
                 {
-                    var pb = UIKit.Bar(ct, UIKit.Alpha(Color.white, 0.2f), UIKit.Hex("#7986CB"), 0.08f, 0.05f, 0.92f, 0.16f);
+                    // полоска прогресса: тёмная дорожка с обводкой и яркое золотое заполнение
+                    var track = UIKit.Panel(ct, "Track", UIKit.Hex("#0B1033"), 0.07f, 0.04f, 0.93f, 0.17f);
+                    UIKit.AddOutline(track, UIKit.Hex("#9FA8DA"), 1.5f);
+                    var pb = UIKit.Bar(track.transform, new Color(0, 0, 0, 0), UIKit.Hex("#FFD54F"), 0.03f, 0.15f, 0.97f, 0.85f);
                     UIKit.SetFill(pb, Mathf.Clamp01(_save.playSeconds / need));
+                    int left = Mathf.Max(0, Mathf.CeilToInt((need - _save.playSeconds) / 60f));
+                    var lt = UIKit.FitLabel(track.transform, L.T("ещё ", "") + Meta.PlayTimeText(left) + L.T("", " left"), 12, Color.white, 0.03f, 0.05f, 0.97f, 0.95f);
+                    lt.resizeTextMinSize = 8;   // FitLabel ставит минимум 14 — больше максимума 12
+                    UIKit.AddOutline(lt, Color.black, 1.5f);
                 }
             }
         }

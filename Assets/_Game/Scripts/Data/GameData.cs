@@ -463,7 +463,8 @@ namespace ValourGames.Shawarma
         public static int IngCount { get { return Ingredients.Length; } }
 
         // ---------- параметры дня ----------
-        public static float DayDuration(int day)   { return Mathf.Min(100f + day * 4f, 160f); }
+        /// <summary>Первый день на любой локации — короткий «разогрев» (75 сек), дальше 108 → 160 сек.</summary>
+        public static float DayDuration(int day)   { return day <= 1 ? 75f : Mathf.Min(100f + day * 4f, 160f); }
         // =====================================================================
         //  ТЕМП ДНЯ. Всё считается от того, сколько секунд умелый игрок тратит на один заказ
         //  БЕЗ улучшений (BaseService): во дворе шаурма собирается моментально (≈5 сек) —
@@ -504,8 +505,9 @@ namespace ValourGames.Shawarma
             return t;
         }
 
-        static float Pressure(int day) { return Mathf.Max(0.75f, 1.05f - 0.025f * (day - 1)); }
-        static float PatienceFactor(int day) { return Mathf.Max(2.4f, 3.8f - 0.12f * (day - 1)); }
+        // первый день на локации — полегче: клиенты реже и терпеливее, чтобы освоиться с новинками
+        static float Pressure(int day) { return day <= 1 ? 1.35f : Mathf.Max(0.75f, 1.05f - 0.025f * (day - 1)); }
+        static float PatienceFactor(int day) { return day <= 1 ? 4.8f : Mathf.Max(2.4f, 3.8f - 0.12f * (day - 1)); }
 
         /// <summary>Интервал между клиентами (до множителя локации): ≈1.05 заказа в 1-й день → 0.75 к 13-му. Держит в напряжении.</summary>
         public static float SpawnInterval(int day, int loc) { return BaseService(loc, EffDay(day, loc)) * Pressure(day); }

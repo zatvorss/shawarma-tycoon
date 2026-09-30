@@ -31,6 +31,8 @@ namespace ValourGames.Shawarma
         int _tutorSlot = -1;
 
         bool TutorFrozen { get { return _tutor != null; } }
+        float _tutorAge;
+        bool _tutorNextShown;
 
         // =====================================================================
         //  БАЗОВОЕ ОБУЧЕНИЕ: первый день первой локации
@@ -195,7 +197,7 @@ namespace ValourGames.Shawarma
                 var c = _customers[i];
                 if (c == null || c.leaving) continue;
                 int si = i;
-                if (c.WantsDrink(Drink.Fries) && !_save.Tutored("friesbox") && _boxCell != null)
+                if (c.WantsDrink(Drink.Fries) && !_save.Tutored("friesbox") && _boxCell != null && _stock[(int)Ing.Fries] > 0)
                 {
                     Add("friesbox", L.T("Клиент хочет картошку фри отдельно. Возьми коробку и держи её над лотком «Картошка», пока не наполнится.",
                                         "The customer wants fries on the side. Take a box and hold it over the Fries bin until it fills."),
@@ -257,10 +259,20 @@ namespace ValourGames.Shawarma
                 _tutor = _tutorQueue[0];
                 _tutorQueue.RemoveAt(0);
                 BuildTutorUI();
+                _tutorAge = 0f;
+                _tutorNextShown = false;
                 if (_tutor.onStart != null) _tutor.onStart();
                 Sfx.Play(Sound.Tick);
             }
             LayoutTutor();
+            // страховка: если шаг долго не получается выполнить — появляется «Дальше»
+            _tutorAge += Time.unscaledDeltaTime;
+            if (_tutor != null && _tutor.done != null && !_tutorNextShown && _tutorAge > 15f && _tutorBubble != null)
+            {
+                _tutorNextShown = true;
+                var nb = UIKit.Button(_tutorBubble, L.T("Дальше →", "Next →"), UIKit.Steel, FinishTutor, 0.74f, -0.3f, 0.99f, -0.04f, 24);
+                Juice.Punch(nb.transform as RectTransform, 0.2f, 0.3f);
+            }
             if (_tutor != null && _tutor.done != null && _tutor.done()) FinishTutor();
         }
 

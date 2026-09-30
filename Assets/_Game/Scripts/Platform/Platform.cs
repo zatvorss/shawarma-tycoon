@@ -35,6 +35,27 @@ namespace ValourGames.Shawarma
             if (onClose != null) onClose();
         }
 
+        // ---------- лидерборды (в консоли Яндекса создать таблицы с такими именами) ----------
+        public const string LbMoney = "money";     // заработано за всё время
+        public const string LbServed = "served";   // обслужено клиентов
+
+        public class LeaderEntry { public int rank; public string name; public long score; public bool me; }
+
+        /// <summary>Отправить результат в таблицу (Яндекс: lb.setLeaderboardScore).</summary>
+        public static void SubmitLeader(string board, long score)
+        {
+            Debug.Log("[Platform] Leaderboard " + board + " = " + score + " (stub)");
+        }
+
+        /// <summary>
+        /// Загрузить топ (Яндекс: lb.getLeaderboardEntries). Пока SDK не подключён — null:
+        /// экран рекордов покажет только твой результат.
+        /// </summary>
+        public static void GetLeaderboard(string board, int top, Action<System.Collections.Generic.List<LeaderEntry>> onDone)
+        {
+            if (onDone != null) onDone(null);
+        }
+
         /// <summary>Лидерборд "лучший день".</summary>
         public static void SubmitScore(int score)
         {

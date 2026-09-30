@@ -117,6 +117,8 @@ namespace ValourGames.Shawarma
             var pl = UIKit.FitLabel(plate.transform, nm, 24, next ? UIKit.Gold : UIKit.Cream, 0.04f, 0.06f, 0.96f, 0.94f);
             pl.resizeTextMinSize = 12;
 
+            if (past && l.id < GameData.Locations.Length - 1) StaffPinTag(pin, l.id);
+
             if (here || next)
             {
                 var arrow = UIKit.Rect(pin, "Arrow");
@@ -169,7 +171,7 @@ namespace ValourGames.Shawarma
 
             if (past)
             {
-                UIKit.Label(c, L.T("Пройдено! Ты уже вырос из этой точки.", "Done! You've outgrown this spot."), 30, UIKit.Green, TextAnchor.MiddleCenter, 0f, 0f, 1f, 0.2f, true);
+                StaffPanel(c, l.id);
             }
             else if (here)
             {
@@ -368,6 +370,147 @@ namespace ValourGames.Shawarma
             UIKit.Label(c, "+" + GameData.Money(coins) + L.T(" монет и бустер «", " coins and booster “") + Meta.Boosts[b].Name + L.T("»!", "”!"),
                 32, UIKit.Green, TextAnchor.MiddleCenter, 0f, 0.12f, 1f, 0.32f, true);
             UIKit.Button(c, L.T("Отлично!", "Great!"), UIKit.Green, () => BuildMap(-1), 0.25f, 0f, 0.75f, 0.12f, 32);
+        }
+
+        // =====================================================================
+        //  СОТРУДНИКИ НА КАРТЕ: над пройденной локацией — ценник найма или статус повара
+        // =====================================================================
+        void StaffPinTag(RectTransform pin, int loc)
+        {
+            bool hired = Meta.StaffHired(_save, loc);
+            var tag = UIKit.Rect(pin, "StaffTag");
+            UIKit.PlaceFixed(tag, 0.5f, 1.2f, 146f, 52f);
+            if (!hired)
+            {
+                var bg = UIKit.Shape(tag, UIKit.RoundedSmall, UIKit.Hex("#FF8F00"), 0.5f, 0.5f, 146f, 52f);
+                UIKit.AddOutline(bg, UIKit.Hex("#FFF3C4"), 2f);
+                UIKit.AddShadow(bg, 4f, 0.35f);
+                // поварской колпак
+                UIKit.Shape(tag, UIKit.CircleHD, Color.white, 0.16f, 0.62f, 26f, 22f);
+                UIKit.Shape(tag, UIKit.RoundedSmall, Color.white, 0.16f, 0.38f, 22f, 10f);
+                UIKit.FitLabel(tag, L.T("Нанять повара", "Hire a cook"), 15, Color.white, 0.3f, 0.52f, 0.98f, 0.95f);
+                UIKit.FitLabel(tag, Payments.Price(Meta.StaffYan[Mathf.Clamp(loc, 0, Meta.StaffYan.Length - 1)]), 18, UIKit.Hex("#3E1A00"), 0.3f, 0.06f, 0.98f, 0.52f);
+                // хвостик-указатель к ларьку
+                UIKit.Shape(tag, UIKit.RoundedSmall, UIKit.Hex("#FF8F00"), 0.5f, -0.02f, 16f, 16f, 45f);
+                var bb = tag.gameObject.AddComponent<Bobber>(); bb.amp = 3f; bb.speed = 2f;
+            }
+            else
+            {
+                long cash = _save.staffCash[loc];
+                bool idle = _save.staffStock[loc] == 0;
+                var bg = UIKit.Shape(tag, UIKit.RoundedSmall, cash > 0 ? UIKit.Green : (idle ? UIKit.Red : UIKit.Hex("#1565C0")), 0.5f, 0.5f, 146f, 52f);
+                UIKit.AddOutline(bg, Color.white, 2f);
+                UIKit.Shape(tag, UIKit.CircleHD, UIKit.Hex("#F6D2B0"), 0.15f, 0.45f, 24f, 24f);
+                UIKit.Shape(tag, UIKit.CircleHD, Color.white, 0.15f, 0.78f, 24f, 16f);
+                string txt = cash > 0 ? "+" + GameData.Money(cash) : (idle ? L.T("Нет продуктов!", "No food!") : L.T("Повар работает", "Cook at work"));
+                UIKit.FitLabel(tag, txt, 18, Color.white, 0.28f, 0.1f, 0.97f, 0.9f);
+                UIKit.Shape(tag, UIKit.RoundedSmall, bg.color, 0.5f, -0.02f, 16f, 16f, 45f);
+                if (cash > 0 || idle) { var bb = tag.gameObject.AddComponent<Bobber>(); bb.amp = 3f; bb.speed = 2.5f; }
+            }
+        }
+
+        /// <summary>Нижняя часть карточки пройденной локации: найм повара или управление им.</summary>
+        void StaffPanel(RectTransform c, int loc)
+        {
+            var box = UIKit.Panel(c, "StaffBox", UIKit.Hex("#E3F2FD"), 0f, 0f, 1f, 0.24f);
+            UIKit.AddOutline(box, UIKit.Hex("#1565C0"), 2f);
+            var bt = box.transform;
+            if (loc >= GameData.Locations.Length - 1)
+            {
+                UIKit.Label(bt, L.T("Пройдено!", "Done!"), 30, UIKit.Green, TextAnchor.MiddleCenter, 0f, 0f, 1f, 1f, true);
+                return;
+            }
+            long price = Meta.StaffPrice(_save, loc), unit = Meta.StaffUnitCost(_save, loc);
+            long perDay = Meta.StaffPortions * (price - unit);
+            // повар
+            var chef = UIKit.Rect(bt, "Chef");
+            UIKit.PlaceFixed(chef, 0.06f, 0.5f, 90f, 90f);
+            UIKit.Shape(chef, UIKit.CircleHD, UIKit.Hex("#BBDEFB"), 0.5f, 0.5f, 90f, 90f);
+            UIKit.Shape(chef, UIKit.CircleHD, UIKit.Hex("#F6D2B0"), 0.5f, 0.42f, 44f, 44f);
+            UIKit.Shape(chef, UIKit.CircleHD, Color.white, 0.4f, 0.74f, 26f, 24f);
+            UIKit.Shape(chef, UIKit.CircleHD, Color.white, 0.6f, 0.74f, 26f, 24f);
+            UIKit.Shape(chef, UIKit.CircleHD, Color.white, 0.5f, 0.8f, 30f, 26f);
+            UIKit.Shape(chef, UIKit.RoundedSmall, Color.white, 0.5f, 0.64f, 44f, 12f);
+
+            if (!Meta.StaffHired(_save, loc))
+            {
+                UIKit.Label(bt, L.T("Найми повара — он будет торговать здесь без тебя", "Hire a cook — they'll sell here without you"), 24, UIKit.Dark, TextAnchor.MiddleLeft, 0.13f, 0.52f, 0.66f, 0.95f, true);
+                UIKit.Label(bt, L.T("Прибыль ≈ ", "Profit ≈ ") + GameData.Money(perDay) + L.T(" за каждый твой рабочий день (растёт с твоей локацией)", " per work day of yours (grows with your location)"),
+                    20, UIKit.Hex("#1565C0"), TextAnchor.MiddleLeft, 0.13f, 0.08f, 0.66f, 0.5f, false);
+                int yan = Meta.StaffYan[Mathf.Clamp(loc, 0, Meta.StaffYan.Length - 1)];
+                var hb = UIKit.Button(bt, "", UIKit.Hex("#FF8F00"), () =>
+                {
+                    Payments.Buy("staff_" + loc, yan, () =>
+                    {
+                        _save.staffHired[loc] = 1;
+                        _save.staffStock[loc] = Meta.StaffPortions;
+                        SaveSystem.Save(_save);
+                        Sfx.Play(Sound.Fanfare);
+                        Notify(L.T("Нанят повар", "Cook hired"), GameData.Locations[loc].Name);
+                        BuildMap(loc);
+                    });
+                }, 0.68f, 0.1f, 0.98f, 0.9f, 30);
+                UIKit.SetLabel(hb, "");
+                UIKit.FitLabel(hb.transform, L.T("Нанять", "Hire"), 32, Color.white, 0.05f, 0.45f, 0.95f, 0.95f);
+                UIKit.FitLabel(hb.transform, Payments.Price(yan) + (Payments.Free ? " • " + Payments.FreeNote : ""), 20, UIKit.Hex("#FFF3C4"), 0.05f, 0.06f, 0.95f, 0.45f);
+                hb.gameObject.AddComponent<Bobber>().amp = 2f;
+                return;
+            }
+
+            int stock = _save.staffStock[loc];
+            UIKit.Label(bt, L.T("Повар работает. Склад: ", "Cook at work. Stock: ") + stock + "/" + Meta.StaffStorage +
+                        (stock == 0 ? L.T("  — нет продуктов!", "  — no food!") : ""), 22, stock == 0 ? UIKit.Red : UIKit.Dark, TextAnchor.MiddleLeft, 0.13f, 0.55f, 0.52f, 0.95f, true);
+            var bar = UIKit.Bar(bt, UIKit.Alpha(UIKit.Dark, 0.15f), stock > 0 ? UIKit.Green : UIKit.Red, 0.13f, 0.38f, 0.52f, 0.52f);
+            UIKit.SetFill(bar, (float)stock / Meta.StaffStorage);
+            UIKit.Label(bt, L.T("Вчера продал: ", "Sold yesterday: ") + _save.staffSold[loc] + L.T(" • ≈", " • ≈") + GameData.Money(perDay) + L.T("/день", "/day"),
+                18, UIKit.Gray, TextAnchor.MiddleLeft, 0.13f, 0.05f, 0.52f, 0.36f, false);
+
+            int room = Mathf.Min(Meta.StaffPortions, Meta.StaffStorage - stock);
+            long cost = room * unit;
+            var fb = UIKit.PriceButton(bt, L.T("Закупить", "Buy food"), cost, UIKit.Blue, () =>
+            {
+                int r = Mathf.Min(Meta.StaffPortions, Meta.StaffStorage - _save.staffStock[loc]);
+                long cc = r * Meta.StaffUnitCost(_save, loc);
+                if (r <= 0 || _save.money < cc) { Sfx.Play(Sound.Error); return; }
+                _save.money -= cc;
+                _save.staffStock[loc] += r;
+                SaveSystem.Save(_save);
+                Sfx.Play(Sound.Coin);
+                BuildMap(loc);
+            }, 0.54f, 0.1f, 0.75f, 0.9f, 22);
+            fb.interactable = room > 0 && _save.money >= cost;
+            long cash = _save.staffCash[loc];
+            var cb = UIKit.Button(bt, cash > 0 ? L.T("Забрать +", "Collect +") + GameData.Money(cash) : L.T("Касса пуста", "No cash"), cash > 0 ? UIKit.Green : UIKit.Gray, () =>
+            {
+                long got = _save.staffCash[loc];
+                if (got <= 0) { Sfx.Play(Sound.Error); return; }
+                _save.money += got; _save.lifetime += got;
+                _save.staffCash[loc] = 0;
+                SaveSystem.Save(_save);
+                Sfx.Play(Sound.Coin);
+                CheckAchievements();
+                BuildMap(loc);
+            }, 0.77f, cash > 0 ? 0.52f : 0.1f, 0.98f, 0.9f, 22);
+            if (cash > 0)
+            {
+                cb.gameObject.AddComponent<Bobber>().amp = 2f;
+                // выручка ×2 за рекламу
+                UIKit.Button(bt, L.T("×2 за рекламу", "×2 for an ad"), UIKit.Orange, () =>
+                {
+                    Platform.ShowRewarded("staff_x2", () =>
+                    {
+                        long got = _save.staffCash[loc] * 2;
+                        if (got <= 0) return;
+                        _save.money += got; _save.lifetime += got;
+                        _save.staffCash[loc] = 0;
+                        SaveSystem.Save(_save);
+                        Sfx.Play(Sound.Coin);
+                        Notify(L.T("Выручка ×2", "Cash ×2"), "+" + GameData.Money(got));
+                        CheckAchievements();
+                        BuildMap(loc);
+                    }, null);
+                }, 0.77f, 0.1f, 0.98f, 0.48f, 20);
+            }
         }
     }
 }

@@ -335,16 +335,6 @@ namespace ValourGames.Shawarma
                 UIKit.Shape(card, UIKit.CircleHD, UIKit.Alpha(Color.white, 0.35f), 0.44f, 0.665f, 30f, 8f);
                 // заголовок
                 UIKit.FitLabel(card, L.T("+1 МЕСТО", "+1 SEAT"), 24, open ? UIKit.Hex("#1B5E20") : UIKit.Hex("#455A64"), 0.08f, 0.8f, 0.92f, 0.95f);
-                // зелёный значок «+» в углу
-                var badge = UIKit.Rect(card, "Plus");
-                UIKit.PlaceFixed(badge, 0.9f, 0.92f, 58f, 58f);
-                UIKit.Shape(badge, UIKit.CircleHD, UIKit.Hex("#1A0F08"), 0.5f, 0.5f, 58f, 58f);
-                UIKit.Shape(badge, UIKit.CircleHD, open ? UIKit.Hex("#2ECC40") : UIKit.Hex("#90A4AE"), 0.5f, 0.5f, 50f, 50f);
-                UIKit.Shape(badge, UIKit.CircleHD, UIKit.Alpha(Color.white, 0.3f), 0.5f, 0.66f, 32f, 16f);
-                UIKit.Shape(badge, UIKit.RoundedSmall, Color.white, 0.5f, 0.5f, 30f, 9f);
-                UIKit.Shape(badge, UIKit.RoundedSmall, Color.white, 0.5f, 0.5f, 9f, 30f);
-                if (can) { var bb = badge.gameObject.AddComponent<Bobber>(); bb.amp = 3f; bb.speed = 4f; }
-
                 // низ карточки: цена или когда откроется
                 if (open)
                 {
@@ -360,12 +350,21 @@ namespace ValourGames.Shawarma
                 }
                 else
                 {
-                    var lk = UIKit.Rect(card, "Lock");
-                    UIKit.PlaceFixed(lk, 0.5f, 0.35f, 30f, 30f);
-                    UIKit.Shape(lk, UIKit.Circle, UIKit.Hex("#455A64"), 0.5f, 0.66f, 18f, 18f);
-                    UIKit.Shape(lk, UIKit.Circle, UIKit.Hex("#CFD8DC"), 0.5f, 0.66f, 10f, 10f);
-                    UIKit.Shape(lk, UIKit.RoundedSmall, UIKit.Hex("#455A64"), 0.5f, 0.38f, 24f, 18f);
-                    UIKit.FitLabel(card, L.T("Откроется:\n", "Unlocks at:\n") + LocName(def.LocFor(lvl)), 18, UIKit.Hex("#37474F"), 0.06f, 0.04f, 0.94f, 0.26f);
+                    // серая плашка того же размера, что и цена: замок + название локации одной строкой
+                    var lb = UIKit.Rect(card, "LockBar");
+                    UIKit.Place(lb, 0.08f, 0.06f, 0.92f, 0.26f);
+                    var lbi = lb.gameObject.AddComponent<Image>();
+                    lbi.sprite = UIKit.RoundedSmall;
+                    lbi.type = Image.Type.Sliced;
+                    lbi.color = UIKit.Hex("#78909C");
+                    lbi.raycastTarget = false;
+                    var lk = UIKit.Rect(lb, "Lock");
+                    UIKit.PlaceFixed(lk, 0.15f, 0.5f, 26f, 30f);
+                    UIKit.Shape(lk, UIKit.Circle, UIKit.Hex("#ECEFF1"), 0.5f, 0.7f, 16f, 16f);
+                    UIKit.Shape(lk, UIKit.Circle, UIKit.Hex("#78909C"), 0.5f, 0.7f, 8f, 8f);
+                    UIKit.Shape(lk, UIKit.RoundedSmall, UIKit.Hex("#ECEFF1"), 0.5f, 0.36f, 22f, 16f);
+                    UIKit.FitLabel(lb, LocName(def.LocFor(lvl)), 20, Color.white, 0.28f, 0.1f, 0.96f, 0.9f);
+                    UIKit.FitLabel(card, L.T("откроется на локации", "unlocks at"), 14, UIKit.Hex("#546E7A"), 0.06f, 0.27f, 0.94f, 0.36f, false);
                 }
                 if (can)
                 {

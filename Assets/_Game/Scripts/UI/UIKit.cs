@@ -399,14 +399,29 @@ namespace ValourGames.Shawarma
         {
             var bg = Panel(parent, "Bar", back, x0, y0, x1, y1, true);
             bg.sprite = RoundedSmall;
-            var f = Panel(bg.transform, "Fill", fill, 0, 0, 1, 1, true);
+            // заполнение «обрезкой», а не сжатием: полоска во всю ширину, видна только часть слева —
+            // при малом значении она не превращается в кривой овал
+            var clip = Rect(bg.transform, "Clip");
+            Place(clip, 0, 0, 1, 1);
+            clip.gameObject.AddComponent<RectMask2D>();
+            var f = Panel(clip, "Fill", fill, 0, 0, 0, 1, true);
             f.sprite = RoundedSmall;
+            f.rectTransform.pivot = new Vector2(0f, 0.5f);
+            f.gameObject.AddComponent<MatchWidth>().target = bg.rectTransform;
             return f.rectTransform;
         }
 
         public static void SetFill(RectTransform fill, float v)
         {
             v = Mathf.Clamp01(v);
+            var clip = fill.parent as RectTransform;
+            if (clip != null && clip.name == "Clip")
+            {
+                clip.anchorMax = new Vector2(v, 1f);
+                clip.offsetMax = Vector2.zero;
+                fill.gameObject.SetActive(v > 0.001f);
+                return;
+            }
             fill.anchorMax = new Vector2(v, 1f);
             fill.offsetMax = Vector2.zero;
             fill.gameObject.SetActive(v > 0.001f);
@@ -446,6 +461,19 @@ namespace ValourGames.Shawarma
         {
             for (int i = t.childCount - 1; i >= 0; i--)
                 Object.Destroy(t.GetChild(i).gameObject);
+        }
+    }
+
+    /// <summary>Держит ширину элемента равной ширине другого (заполнение полосок).</summary>
+    public class MatchWidth : MonoBehaviour
+    {
+        public RectTransform target;
+        void LateUpdate()
+        {
+            if (target == null) return;
+            var rt = (RectTransform)transform;
+            float w = target.rect.width;
+            if (!Mathf.Approximately(rt.sizeDelta.x, w)) rt.sizeDelta = new Vector2(w, rt.sizeDelta.y);
         }
     }
 }

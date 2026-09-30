@@ -24,15 +24,17 @@ namespace ValourGames.Shawarma
             _banner = UIKit.Rect(_root, "Banner");
             UIKit.Place(_banner, 0.22f, 0.6f, 0.78f, 0.86f);
             _bannerGroup = _banner.gameObject.AddComponent<CanvasGroup>();
-            _bannerGroup.blocksRaycasts = false;
-            _bannerGroup.interactable = false;
+            _bannerGroup.blocksRaycasts = true;
+            _bannerGroup.interactable = true;
 
             _bannerCard = UIKit.Rect(_banner, "Card");
             UIKit.Place(_bannerCard, 0f, 0f, 1f, 1f);
             var shadow = UIKit.Panel(_bannerCard, "Shadow", new Color(0, 0, 0, 0.35f), 0.008f, -0.05f, 1.008f, 0.95f);
             shadow.raycastTarget = false;
             var body = UIKit.Panel(_bannerCard, "Body", UIKit.Hex("#2A1C13"), 0f, 0f, 1f, 1f);
-            body.raycastTarget = false;
+            body.raycastTarget = true;
+            // нажал на объявление — оно сразу уходит
+            UIKit.MakeButton(body, () => { if (_bannerT > 0.35f) _bannerT = 0.35f; });
             UIKit.AddOutline(body, UIKit.Gold, 3f);
             var sheen = UIKit.Rect(body.transform, "Sheen");
             UIKit.Place(sheen, 0f, 0.55f, 1f, 1f);
@@ -62,6 +64,12 @@ namespace ValourGames.Shawarma
             _bannerBody.resizeTextForBestFit = true;
             _bannerBody.resizeTextMinSize = 16;
             _bannerBody.resizeTextMaxSize = 28;
+            // крестик-подсказка «закрыть»
+            var x = UIKit.Rect(body.transform, "Close");
+            UIKit.PlaceFixed(x, 0.975f, 0.9f, 30f, 30f);
+            UIKit.Shape(x, UIKit.CircleHD, UIKit.Alpha(Color.white, 0.15f), 0.5f, 0.5f, 30f, 30f);
+            UIKit.Shape(x, UIKit.RoundedSmall, UIKit.Alpha(UIKit.Cream, 0.8f), 0.5f, 0.5f, 18f, 4f, 45f);
+            UIKit.Shape(x, UIKit.RoundedSmall, UIKit.Alpha(UIKit.Cream, 0.8f), 0.5f, 0.5f, 18f, 4f, -45f);
             _banner.gameObject.SetActive(false);
         }
 
