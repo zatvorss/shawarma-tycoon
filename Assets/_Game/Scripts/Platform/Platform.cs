@@ -117,6 +117,7 @@ namespace ValourGames.Shawarma
 
         // ---------------- реклама ----------------
         static Action _fullscreenClose;
+        static float _fullscreenAt;
         static readonly Dictionary<string, Action> _rewardOk = new Dictionary<string, Action>();
         static readonly Dictionary<string, Action> _rewardClose = new Dictionary<string, Action>();
         static readonly HashSet<string> _rewarded = new HashSet<string>();
@@ -125,7 +126,15 @@ namespace ValourGames.Shawarma
         public static void ShowFullscreen(Action onClose)
         {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            if (HasSdk) { _fullscreenClose = onClose; YG_ShowFullscreen(); return; }
+            if (HasSdk)
+            {
+                // повторное нажатие, пока реклама открывается, — игнорируем (иначе переход сработает дважды)
+                if (_fullscreenClose != null && Time.realtimeSinceStartup - _fullscreenAt < 60f) return;
+                _fullscreenClose = onClose;
+                _fullscreenAt = Time.realtimeSinceStartup;
+                YG_ShowFullscreen();
+                return;
+            }
 #endif
             if (onClose != null) onClose();
         }

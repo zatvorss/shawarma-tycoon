@@ -66,7 +66,7 @@ namespace ValourGames.Shawarma
             UIKit.Label(top.transform, "<size=15><color=#FFE9A8>" + L.T("слава", "fame") + "</color></size>\n" + _save.fame, 30, UIKit.Gold, TextAnchor.MiddleLeft, 0.765f, 0, 0.83f, 1, true).lineSpacing = 0.8f;
             Icons.Coin(top.transform, 0.84f, 0.5f, 44f);
             UIKit.Label(top.transform, GameData.Money(_save.money), 34, UIKit.Gold, TextAnchor.MiddleLeft, 0.86f, 0, 0.99f, 1, true);
-            UIKit.Button(s, L.T("Меню", "Menu"), UIKit.Steel, () => { Sfx.Play(Sound.Click); ShowMenu(); }, 0.005f, 0.915f, 0.115f, 0.99f, 32);
+            UIKit.Button(s, L.T("Меню", "Menu"), UIKit.Steel, () => { Sfx.Play(Sound.Click); Platform.ShowFullscreen(ShowMenu); }, 0.005f, 0.915f, 0.115f, 0.99f, 32);
             BuildChestButton(s);
 
             BuildBottomBar(s);

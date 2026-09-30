@@ -154,7 +154,7 @@ namespace ValourGames.Shawarma
             }
 
             // низ
-            UIKit.Button(s, L.T("← На карту", "← To the map"), UIKit.Steel, () => { Sfx.Play(Sound.Click); ShowMap(); }, 0.01f, 0.015f, 0.2f, 0.1f, 36);
+            UIKit.Button(s, L.T("← На карту", "← To the map"), UIKit.Steel, () => { Sfx.Play(Sound.Click); Platform.ShowFullscreen(ShowMap); }, 0.01f, 0.015f, 0.2f, 0.1f, 36);
             UIKit.Button(s, L.T("Начать день ", "Start day ") + _save.day, UIKit.Orange, () => { Sfx.Play(Sound.Click); StartDayCinematic(); },
                 0.78f, 0.015f, 0.99f, 0.1f, 42);
 
