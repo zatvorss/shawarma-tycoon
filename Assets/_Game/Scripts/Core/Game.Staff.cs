@@ -119,7 +119,13 @@ namespace ValourGames.Shawarma
                 UIKit.FitLabel(c, L.T("растёт с твоей локацией", "grows with your location"), 16, UIKit.Gray, 0.34f, 0.34f, 0.97f, 0.5f, false);
                 int yan = Meta.StaffYan[Mathf.Clamp(loc, 0, Meta.StaffYan.Length - 1)];
                 int li = loc;
-                var hb = UIKit.Button(c, L.T("Нанять · ", "Hire · ") + Payments.Price(yan), UIKit.Hex("#FF8F00"), () =>
+                if (!Payments.Available("staff_" + li))
+                {
+                    UIKit.FitLabel(c, Payments.Ready ? L.T("Найм пока недоступен", "Hiring is not available yet") : L.T("Загрузка магазина...", "Loading the shop..."),
+                        18, UIKit.Gray, 0.05f, 0.04f, 0.95f, 0.3f);
+                    return;
+                }
+                var hb = UIKit.Button(c, L.T("Нанять", "Hire"), UIKit.Hex("#FF8F00"), () =>
                 {
                     Payments.Buy("staff_" + li, yan, () =>
                     {
@@ -131,8 +137,9 @@ namespace ValourGames.Shawarma
                         ShowStaff();
                     });
                 }, 0.05f, 0.04f, 0.95f, 0.3f, 22);
-                if (Payments.Free)
-                    UIKit.FitLabel(c, Payments.FreeNote, 14, UIKit.Hex("#E65100"), 0.05f, 0.3f, 0.95f, 0.36f, false);
+                var hl = hb.GetComponentInChildren<Text>();
+                if (hl != null) { var hr = hl.rectTransform; hr.anchorMin = new Vector2(0.04f, 0.08f); hr.anchorMax = new Vector2(0.5f, 0.92f); }
+                Payments.PriceTag(hb.transform, "staff_" + li, yan, 0.5f, 0.08f, 0.97f, 0.92f, 22, UIKit.Hex("#FFF3C4"));
                 return;
             }
 

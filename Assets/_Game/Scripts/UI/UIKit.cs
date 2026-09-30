@@ -285,6 +285,7 @@ namespace ValourGames.Shawarma
             t.verticalOverflow = VerticalWrapMode.Overflow;
             t.supportRichText = true;
             if (bold) t.fontStyle = FontStyle.Bold;
+            rt.gameObject.AddComponent<WordFit>();
             return t;
         }
 
@@ -474,6 +475,61 @@ namespace ValourGames.Shawarma
             var rt = (RectTransform)transform;
             float w = target.rect.width;
             if (!Mathf.Approximately(rt.sizeDelta.x, w)) rt.sizeDelta = new Vector2(w, rt.sizeDelta.y);
+        }
+    }
+
+    /// <summary>
+    /// Не даёт Unity переносить слово по буквам («Предпринимател-ь»): если самое длинное слово
+    /// не влезает в ширину, шрифт уменьшается ровно настолько, чтобы слово встало целиком.
+    /// </summary>
+    public class WordFit : MonoBehaviour
+    {
+        static readonly System.Text.RegularExpressions.Regex Tags = new System.Text.RegularExpressions.Regex("<[^>]+>");
+        Text _t;
+        string _last;
+        float _lastW = -1f;
+        int _base = -1, _baseMin;
+        bool _bestFit;
+
+        void Awake() { _t = GetComponent<Text>(); }
+
+        void LateUpdate()
+        {
+            if (_t == null || _t.font == null) return;
+            if (_t.horizontalOverflow == HorizontalWrapMode.Overflow) return;
+            float w = ((RectTransform)transform).rect.width;
+            if (w <= 1f) return;
+            if (_t.text == _last && Mathf.Approximately(w, _lastW)) return;
+            _last = _t.text;
+            _lastW = w;
+            if (_base < 0)
+            {
+                _bestFit = _t.resizeTextForBestFit;
+                _base = _bestFit ? _t.resizeTextMaxSize : _t.fontSize;
+                _baseMin = _t.resizeTextMinSize;
+            }
+            if (string.IsNullOrEmpty(_last)) return;
+            string plain = _t.supportRichText ? Tags.Replace(_last, "") : _last;
+            var words = plain.Split(new[] { ' ', '\n', '\t' }, System.StringSplitOptions.RemoveEmptyEntries);
+            var st = _t.GetGenerationSettings(new Vector2(10000f, 10000f));
+            st.fontSize = _base;
+            st.resizeTextForBestFit = false;
+            st.horizontalOverflow = HorizontalWrapMode.Overflow;
+            st.verticalOverflow = VerticalWrapMode.Overflow;
+            st.richText = false;
+            st.scaleFactor = 1f;
+            float widest = 0f;
+            var gen = _t.cachedTextGeneratorForLayout;
+            foreach (var word in words)
+                widest = Mathf.Max(widest, gen.GetPreferredWidth(word, st));
+            int size = _base;
+            if (widest > w * 0.98f && widest > 0f) size = Mathf.Max(8, Mathf.FloorToInt(_base * w * 0.96f / widest));
+            if (_bestFit)
+            {
+                _t.resizeTextMaxSize = size;
+                _t.resizeTextMinSize = Mathf.Min(_baseMin, size);
+            }
+            else _t.fontSize = size;
         }
     }
 }

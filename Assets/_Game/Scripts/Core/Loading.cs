@@ -130,7 +130,8 @@ namespace ValourGames.Shawarma
                 _tip.text = arr[UnityEngine.Random.Range(0, arr.Length)];
             }
 
-            if (_t > Duration)
+            // не уходим с загрузки, пока не готов SDK Яндекса и облачное сохранение
+            if (_t > Duration && Platform.Initialized)
             {
                 float f = Mathf.Clamp01((_t - Duration) / 0.35f);
                 _fade.color = new Color(0, 0, 0, f);

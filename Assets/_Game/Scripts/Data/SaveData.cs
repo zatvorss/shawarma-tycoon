@@ -75,7 +75,7 @@ namespace ValourGames.Shawarma
         public int[] playClaimed = new int[9];
         public bool goldAwning = false;
         public bool feverSeen = false;         // большое объявление «ЖАРА» показывается один раз
-        public long xpAdTicks = 0;             // когда последний раз брали опыт пасса за рекламу
+        public long stamp = 0;                 // когда сохранено (UTC ticks) — выбор между облаком и локальным
         public int[] staffHired = new int[12];
         public int[] staffStock = new int[12];
         public long[] staffCash = new long[12];
@@ -161,28 +161,44 @@ namespace ValourGames.Shawarma
     {
         const string Key = "vg_shawarma_save_v3"; // v0.4 совместим с v0.3
 
+        /// <summary>Текущее сохранение игры (для выдачи покупок из SDK).</summary>
+        public static SaveData Current { get; private set; }
+
+        static SaveData Parse(string json)
+        {
+            if (string.IsNullOrEmpty(json)) return null;
+            try { return JsonUtility.FromJson<SaveData>(json); }
+            catch (Exception e) { Debug.LogWarning("Save corrupted: " + e.Message); return null; }
+        }
+
+        /// <summary>Локальное сохранение или облачное (Яндекс) — что свежее.</summary>
         public static SaveData Load()
         {
-            string json = Platform.LoadString(Key);
-            SaveData data = null;
-            if (!string.IsNullOrEmpty(json))
-            {
-                try { data = JsonUtility.FromJson<SaveData>(json); }
-                catch (Exception e) { Debug.LogWarning("Save corrupted: " + e.Message); }
-            }
+            var local = Parse(Platform.LoadString(Key));
+            var cloud = Parse(Platform.CloudJson);
+            SaveData data = local;
+            if (cloud != null && (local == null || cloud.stamp > local.stamp)) data = cloud;
             if (data == null) data = new SaveData();
             data.Fix();
+            Current = data;
             return data;
         }
 
         public static void Save(SaveData data)
         {
+            if (data == null) return;
+            data.stamp = DateTime.UtcNow.Ticks;
+            Current = data;
             Platform.SaveString(Key, JsonUtility.ToJson(data));
         }
 
+        /// <summary>Сброс прогресса: чистое сохранение (и локально, и в облаке).</summary>
         public static void Reset()
         {
-            Platform.SaveString(Key, "");
+            var fresh = new SaveData();
+            fresh.Fix();
+            Save(fresh);
+            Platform.FlushCloud(true);
         }
     }
 }

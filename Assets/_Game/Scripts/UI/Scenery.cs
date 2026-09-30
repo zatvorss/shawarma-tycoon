@@ -180,8 +180,9 @@ namespace ValourGames.Shawarma
 
             // электричка: пивот справа, чтобы она целиком выезжала из-за края и уезжала за другой
             var train = UIKit.Rect(area, "Train");
-            UIKit.PlaceFixed(train, 0.1f, 0.265f, 720f, 120f);
-            train.pivot = new Vector2(1f, 0.5f);
+            // стоит колёсами на рельсе: низ поезда = верх рельса (0.193), в любом размере окна
+            UIKit.PlaceFixed(train, 0.1f, 0.193f, 720f, 120f);
+            train.pivot = new Vector2(1f, 0.02f);
             train.anchoredPosition = Vector2.zero;
             var t = train.transform;
             for (int c = 0; c < 3; c++)
@@ -203,13 +204,8 @@ namespace ValourGames.Shawarma
             UIKit.Shape(t, UIKit.Circle, UIKit.Hex("#FFF59D"), 1.03f, 0.26f, 14f, 14f);
             // токоприёмник на крыше
             UIKit.Shape(t, UIKit.RoundedSmall, UIKit.Hex("#37474F"), 0.5f, 0.97f, 60f, 5f, 12f);
-            _clouds.Add(new Mover { rt = train, x = 0.1f, y = 0.265f, vx = 0.13f, x0 = -0.02f, x1 = 2.3f });
+            _clouds.Add(new Mover { rt = train, x = 0.1f, y = 0.193f, vx = 0.13f, x0 = -0.02f, x1 = 2.3f });
 
-            // табло отправления
-            var board = UIKit.Panel(area, "Board", UIKit.Hex("#1B2631"), 0.62f, 0.5f, 0.8f, 0.6f);
-            UIKit.AddOutline(board, UIKit.Hex("#455A64"), 3f);
-            UIKit.FitLabel(board.transform, L.T("ПУТЬ 1 → ЦЕНТР", "TRACK 1 → CENTER"), 20, UIKit.Hex("#FFB300"), 0.04f, 0.1f, 0.96f, 0.9f);
-            UIKit.Panel(area, "BoardLeg", UIKit.Hex("#37474F"), 0.707f, 0.44f, 0.713f, 0.5f, false);
         }
 
         /// <summary>Светофор вокзала — стоит на тротуаре на бетонной тумбе (рисуется поверх тротуара).</summary>
@@ -336,16 +332,37 @@ namespace ValourGames.Shawarma
             var plane = UIKit.Rect(area, "Plane");
             UIKit.PlaceFixed(plane, 0.2f, 0.86f, 240f, 90f);
             plane.SetAsLastSibling();
-            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#B0BEC5"), 0.56f, 0.62f, 56f, 12f, 18f);            // дальнее крыло
-            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#E53935"), 0.1f, 0.72f, 30f, 46f, -28f);            // киль
-            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#E53935"), 0.1f, 0.5f, 34f, 10f);                   // стабилизатор
+            // дальнее крыло: стреловидное, уходит назад-вверх за фюзеляж (набирается ровными «хордами»)
+            for (int k = 0; k < 6; k++)
+            {
+                float t = k / 5f;
+                UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#B0BEC5"), Mathf.Lerp(0.56f, 0.44f, t), Mathf.Lerp(0.6f, 0.86f, t), Mathf.Lerp(60f, 22f, t), 11f);
+            }
+            // киль и дальний стабилизатор
+            for (int k = 0; k < 5; k++)
+            {
+                float t = k / 4f;
+                UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#E53935"), Mathf.Lerp(0.13f, 0.05f, t), Mathf.Lerp(0.62f, 0.95f, t), Mathf.Lerp(40f, 18f, t), 12f);
+            }
             UIKit.Shape(plane, UIKit.Rounded, UIKit.Hex("#37474F"), 0.52f, 0.5f, 228f, 36f);                      // контур
             UIKit.Shape(plane, UIKit.Rounded, UIKit.Hex("#FAFAFA"), 0.52f, 0.52f, 222f, 30f);                     // фюзеляж
             UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#1E88E5"), 0.52f, 0.44f, 212f, 7f);                 // полоса
             for (int i = 0; i < 9; i++) UIKit.Shape(plane, UIKit.Circle, UIKit.Hex("#263238"), 0.3f + i * 0.065f, 0.56f, 7f, 8f);
             UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#263238"), 0.95f, 0.57f, 14f, 8f);                  // кабина
-            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#90A4AE"), 0.5f, 0.33f, 80f, 14f, -18f);             // ближнее крыло
-            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#607D8B"), 0.5f, 0.3f, 26f, 12f, -18f);              // двигатель
+            // ближний стабилизатор
+            for (int k = 0; k < 4; k++)
+            {
+                float t = k / 3f;
+                UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#C62828"), Mathf.Lerp(0.14f, 0.08f, t), Mathf.Lerp(0.44f, 0.3f, t), Mathf.Lerp(30f, 14f, t), 8f);
+            }
+            // ближнее крыло: стреловидное, уходит назад-вниз
+            for (int k = 0; k < 7; k++)
+            {
+                float t = k / 6f;
+                UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#90A4AE"), Mathf.Lerp(0.58f, 0.42f, t), Mathf.Lerp(0.4f, 0.06f, t), Mathf.Lerp(70f, 24f, t), 12f);
+            }
+            UIKit.Shape(plane, UIKit.RoundedSmall, UIKit.Hex("#607D8B"), 0.55f, 0.28f, 34f, 14f);                  // двигатель
+            UIKit.Shape(plane, UIKit.CircleHD, UIKit.Hex("#37474F"), 0.62f, 0.28f, 8f, 12f);
             _clouds.Add(new Mover { rt = plane, x = 0.2f, y = 0.86f, vx = 0.04f });
         }
 
@@ -556,7 +573,7 @@ namespace ValourGames.Shawarma
         }
 
         /// <summary>
-        /// Правительственная столовая: дубовые панели, мраморные колонны, флаги, люстры,
+        /// Бизнес-клуб: дубовые панели, мраморные колонны, картины, люстры,
         /// длинные столы с белыми скатертями и красная ковровая дорожка.
         /// </summary>
         void BuildGov(RectTransform area)
@@ -578,13 +595,14 @@ namespace ValourGames.Shawarma
                 UIKit.Panel(area, "Cap", UIKit.Hex("#E0D5B7"), x - 0.03f, 0.86f, x + 0.03f, 0.9f);
                 UIKit.Panel(area, "Base", UIKit.Hex("#E0D5B7"), x - 0.028f, 0.16f, x + 0.028f, 0.2f);
             }
-            // гербы между колоннами
+            // картины в золотых рамах между колоннами (пейзажи)
             for (int i = 0; i < 4; i++)
             {
                 float x = 0.2f + i * 0.2f;
-                var crest = UIKit.Shape(area, UIKit.CircleHD, UIKit.Hex("#FFC107"), x, 0.64f, 70f, 70f);
-                UIKit.Shape(crest.transform, UIKit.CircleHD, UIKit.Hex("#B71C1C"), 0.5f, 0.5f, 52f, 52f);
-                UIKit.Shape(crest.transform, UIKit.RoundedSmall, UIKit.Hex("#FFC107"), 0.5f, 0.5f, 18f, 30f);
+                var fr = UIKit.Shape(area, UIKit.RoundedSmall, UIKit.Hex("#C9A227"), x, 0.62f, 96f, 72f);
+                var pic = UIKit.Shape(fr.transform, UIKit.RoundedSmall, UIKit.Hex(i % 2 == 0 ? "#81D4FA" : "#FFCC80"), 0.5f, 0.5f, 82f, 58f);
+                UIKit.Shape(pic.transform, UIKit.CircleHD, UIKit.Hex(i % 2 == 0 ? "#66BB6A" : "#8D6E63"), 0.5f, 0.1f, 90f, 34f);
+                UIKit.Shape(pic.transform, UIKit.CircleHD, UIKit.Hex("#FFF59D"), 0.78f, 0.72f, 14f, 14f);
             }
             // люстры
             for (int i = 0; i < 3; i++)

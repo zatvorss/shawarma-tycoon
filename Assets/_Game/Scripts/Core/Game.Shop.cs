@@ -44,7 +44,7 @@ namespace ValourGames.Shawarma
             new Spot { id = Up.Drinks,    x = 0.83f,  y = 0.33f, size = 180f },
         };
 
-        // экран «Люкс»: улучшения для Правительственной столовой и Дубая
+        // экран «Люкс»: улучшения для Бизнес-клуба и Дубая
         static readonly Spot[] Spots4 =
         {
             new Spot { id = Up.Premium,    x = 0.3f, y = 0.33f, size = 200f },
@@ -130,7 +130,7 @@ namespace ValourGames.Shawarma
             string sub = _shopTab == 0 ? L.T("Нажми на предмет — откроется улучшение", "Tap an item to upgrade it")
                 : (_shopTab == 1 ? L.T("Мухи, грязь, пожары, очередь и грили", "Flies, dirt, fires, queue and grills")
                 : (_shopTab == 2 ? L.T("Помощники, напитки и коробки фри", "Helpers, drinks and fries boxes")
-                                 : L.T("Роскошь для министров и шейхов", "Luxury for ministers and sheikhs")));
+                                 : L.T("Роскошь для бизнес-клуба и Дубая", "Luxury for the business club and Dubai")));
             UIKit.Label(top.transform, sub +
                     "\n<size=18><color=#FFE082>" + L.T("На этой локации — максимум до ур. ", "Max level at this location: ") + cap + "</color></size>",
                 22, UIKit.Gold, TextAnchor.MiddleCenter, 0.46f, 0, 0.81f, 1, true);

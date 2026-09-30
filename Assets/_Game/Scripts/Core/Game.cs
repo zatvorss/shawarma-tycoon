@@ -30,6 +30,7 @@ namespace ValourGames.Shawarma
         void Awake()
         {
             Application.targetFrameRate = 60;
+            Platform.Boot();   // SDK Яндекса и облачное сохранение (загрузочный экран дождётся)
             _save = SaveSystem.Load();
             _passSeen = Meta.PassLevel(_save.passXp);
             L.Init(_save.lang);
@@ -75,11 +76,25 @@ namespace ValourGames.Shawarma
         void OnApplicationFocus(bool focus)
         {
             _focused = focus;
-            AudioListener.pause = !focus;
+            // звук и время останавливает Platform (YandexBridge); здесь — ставим день на паузу
             if (!focus && _run != null) _run.SetPaused(true);
         }
 
         void OnApplicationPause(bool paused) { OnApplicationFocus(!paused); }
+
+        /// <summary>Покупка восстановилась / загрузился значок валюты — перерисовать экран (не во время дня).</summary>
+        void RefreshAfterPurchase()
+        {
+            _save = SaveSystem.Current ?? _save;
+            if (_run != null || _screen == null) return;
+            switch (_screen.name)
+            {
+                case "Menu": ShowMenu(); break;
+                case "Pass": ShowPass(); break;
+                case "Staff": ShowStaff(); break;
+                case "Map": if (_screen.transform.Find("Popup") == null) BuildMap(-1); break;
+            }
+        }
 
         void ApplyAudio()
         {
@@ -231,7 +246,20 @@ namespace ValourGames.Shawarma
         // =====================================================================
         void ShowMenu()
         {
-            if (!_readySent) { _readySent = true; Platform.GameReady(); }
+            if (!_readySent)
+            {
+                _readySent = true;
+                // SDK готов: берём свежее сохранение (облако/локальное), язык площадки, покупки
+                string keepLang = _save.lang;
+                _save = SaveSystem.Load();
+                if (string.IsNullOrEmpty(_save.lang)) _save.lang = keepLang;
+                L.Init(_save.lang);
+                ApplyAudio();
+                _passSeen = Meta.PassLevel(_save.passXp);
+                Payments.OnRestored = RefreshAfterPurchase;
+                Payments.Init();
+                Platform.GameReady();
+            }
             var s = NewScreen("Menu");
             Backdrop(s, false);
 
@@ -278,7 +306,7 @@ namespace ValourGames.Shawarma
             SideButton(s, 0.83f, 0.22f, L.T("Колесо удачи", "Lucky wheel"), UIKit.Purple, 2, Meta.WheelFree(_save) ? 1 : 0, () => ShowWheel());
             int passReady = Meta.PassReadyCount(_save);
             SideButton(s, 0.01f, 0.46f, L.T("Шаурма-Пасс", "Shawarma Pass"), UIKit.Hex("#6A1B9A"), 3, passReady, () => ShowPass());
-            SideButton(s, 0.01f, 0.34f, L.T("Рекорды", "Leaderboard"), UIKit.Hex("#00838F"), 5, 0, () => ShowLeaders());
+            SideButton(s, 0.01f, 0.34f, L.T("Лидерборд", "Leaderboard"), UIKit.Hex("#00838F"), 5, 0, () => ShowLeaders());
             AdminButton(s);
 
             Button soundBtn = null, musicBtn = null;
@@ -311,9 +339,15 @@ namespace ValourGames.Shawarma
                     return;
                 }
                 string lang = _save.lang;
+                // купленное за яны остаётся навсегда
+                bool plus = _save.passPlus;
+                var staff = (int[])_save.staffHired.Clone();
                 SaveSystem.Reset();
                 _save = SaveSystem.Load();
                 _save.lang = lang;
+                _save.passPlus = plus;
+                for (int i = 0; i < staff.Length && i < _save.staffHired.Length; i++) _save.staffHired[i] = staff[i];
+                SaveSystem.Save(_save);
                 ShowMenu();
             }, 0.8f, 0.03f, 0.98f, 0.11f, 26);
 

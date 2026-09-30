@@ -380,6 +380,7 @@ namespace ValourGames.Shawarma
             bool hired = Meta.StaffHired(_save, loc);
             var tag = UIKit.Rect(pin, "StaffTag");
             UIKit.PlaceFixed(tag, 0.5f, 1.2f, 146f, 52f);
+            if (!hired && !Payments.Available("staff_" + loc)) { Destroy(tag.gameObject); return; }
             if (!hired)
             {
                 var bg = UIKit.Shape(tag, UIKit.RoundedSmall, UIKit.Hex("#FF8F00"), 0.5f, 0.5f, 146f, 52f);
@@ -389,7 +390,7 @@ namespace ValourGames.Shawarma
                 UIKit.Shape(tag, UIKit.CircleHD, Color.white, 0.16f, 0.62f, 26f, 22f);
                 UIKit.Shape(tag, UIKit.RoundedSmall, Color.white, 0.16f, 0.38f, 22f, 10f);
                 UIKit.FitLabel(tag, L.T("Нанять повара", "Hire a cook"), 15, Color.white, 0.3f, 0.52f, 0.98f, 0.95f);
-                UIKit.FitLabel(tag, Payments.Price(Meta.StaffYan[Mathf.Clamp(loc, 0, Meta.StaffYan.Length - 1)]), 18, UIKit.Hex("#3E1A00"), 0.3f, 0.06f, 0.98f, 0.52f);
+                Payments.PriceTag(tag, "staff_" + loc, Meta.StaffYan[Mathf.Clamp(loc, 0, Meta.StaffYan.Length - 1)], 0.3f, 0.04f, 0.98f, 0.54f, 18, UIKit.Hex("#3E1A00"));
                 // хвостик-указатель к ларьку
                 UIKit.Shape(tag, UIKit.RoundedSmall, UIKit.Hex("#FF8F00"), 0.5f, -0.02f, 16f, 16f, 45f);
                 var bb = tag.gameObject.AddComponent<Bobber>(); bb.amp = 3f; bb.speed = 2f;
@@ -438,6 +439,12 @@ namespace ValourGames.Shawarma
                 UIKit.Label(bt, L.T("Прибыль ≈ ", "Profit ≈ ") + GameData.Money(perDay) + L.T(" за каждый твой рабочий день (растёт с твоей локацией)", " per work day of yours (grows with your location)"),
                     20, UIKit.Hex("#1565C0"), TextAnchor.MiddleLeft, 0.13f, 0.08f, 0.66f, 0.5f, false);
                 int yan = Meta.StaffYan[Mathf.Clamp(loc, 0, Meta.StaffYan.Length - 1)];
+                if (!Payments.Available("staff_" + loc))
+                {
+                    UIKit.FitLabel(bt, Payments.Ready ? L.T("Найм пока недоступен", "Hiring is not available yet") : L.T("Загрузка магазина...", "Loading the shop..."),
+                        22, UIKit.Gray, 0.68f, 0.1f, 0.98f, 0.9f);
+                    return;
+                }
                 var hb = UIKit.Button(bt, "", UIKit.Hex("#FF8F00"), () =>
                 {
                     Payments.Buy("staff_" + loc, yan, () =>
@@ -452,7 +459,7 @@ namespace ValourGames.Shawarma
                 }, 0.68f, 0.1f, 0.98f, 0.9f, 30);
                 UIKit.SetLabel(hb, "");
                 UIKit.FitLabel(hb.transform, L.T("Нанять", "Hire"), 32, Color.white, 0.05f, 0.45f, 0.95f, 0.95f);
-                UIKit.FitLabel(hb.transform, Payments.Price(yan) + (Payments.Free ? " • " + Payments.FreeNote : ""), 20, UIKit.Hex("#FFF3C4"), 0.05f, 0.06f, 0.95f, 0.45f);
+                Payments.PriceTag(hb.transform, "staff_" + loc, yan, 0.1f, 0.04f, 0.9f, 0.46f, 24, UIKit.Hex("#FFF3C4"));
                 hb.gameObject.AddComponent<Bobber>().amp = 2f;
                 return;
             }

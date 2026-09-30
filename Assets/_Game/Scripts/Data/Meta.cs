@@ -350,7 +350,7 @@ namespace ValourGames.Shawarma
         public const int StaffStorage = 30;
 
         /// <summary>Доля твоего дневного дохода, которую приносит сотрудник при полном складе (выручка).</summary>
-        public static float StaffShare(int loc) { return 0.1f + 0.025f * loc; }
+        public static float StaffShare(int loc) { return (0.1f + 0.025f * loc) * 1.5f; }
 
         public static long StaffPrice(SaveData s, int loc)
         {
@@ -785,9 +785,9 @@ namespace ValourGames.Shawarma
             new[] { "Санитарная проверка!", "Покажите руки. Хм.", "Где журнал уборки?", "Проверим вашу доску" },
             new[] { "А подешевле?", "Давай скидку, брат!", "На рынке дешевле было", "Торг уместен?" },
             new[] { "Только без мяса!", "Я веган, запомните", "Побольше овощей", "Мясо — ни кусочка!" },
-            new[] { "Самую лучшую шаурму!", "Деньги не проблема", "Удиви меня, друг", "Золотой лаваш есть?" },
-            new[] { "Мне как обычно, без очереди", "Я на заседании через 10 минут", "Народу нравится шаурма!", "Запишите в протокол: вкусно" },
-            new[] { "Министр проголодался", "Быстро и по регламенту", "Это пойдёт в госзаказ", "Подайте, как положено" },
+            new[] { "Самую лучшую шаурму!", "Деньги не проблема", "Удиви меня, друг", "Яхта подождёт!" },
+            new[] { "Мне как обычно, без очереди", "Через 10 минут совещание", "Инвестирую в шаурму!", "Проценты растут — аппетит тоже" },
+            new[] { "Директор проголодался", "Быстро и по регламенту", "Подпишу контракт после обеда", "Подайте, как положено" },
             new[] { "Деньги — не вопрос!", "Мне всё самое лучшее", "Сдачу оставьте себе", "Удивите миллионера!" },
             new[] { "Сделайте красиво, я сниму", "Только самое свежее, дорогой", "Это будет в моём блоге", "Шаурма — новый тренд!" },
         };
@@ -822,9 +822,9 @@ namespace ValourGames.Shawarma
             new[] { "Health inspection!", "Show me your hands. Hm.", "Where's the cleaning log?", "Let's check your board" },
             new[] { "Any cheaper?", "Give me a discount!", "It was cheaper at the market", "Can we haggle?" },
             new[] { "No meat please!", "I'm vegan, remember", "Extra veggies", "Not a single piece of meat!" },
-            new[] { "Your very best shawarma!", "Money is no problem", "Impress me, friend", "Is there a golden lavash?" },
-            new[] { "The usual, skip the line", "I have a session in 10 minutes", "The people love shawarma!", "For the record: tasty" },
-            new[] { "The minister is hungry", "Quick and by the rules", "This goes into a state order", "Serve it properly" },
+            new[] { "Your very best shawarma!", "Money is no problem", "Impress me, friend", "The yacht can wait!" },
+            new[] { "The usual, skip the line", "Meeting in 10 minutes", "I'm investing in shawarma!", "Interest is up — so is my appetite" },
+            new[] { "The CEO is hungry", "Quick and by the rules", "I'll sign the contract after lunch", "Serve it properly" },
             new[] { "Money is no issue!", "Only the best for me", "Keep the change", "Impress a millionaire!" },
             new[] { "Make it pretty, I'm filming", "Only the freshest, darling", "It'll be on my blog", "Shawarma is the new trend!" },
         };

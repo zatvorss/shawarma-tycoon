@@ -97,13 +97,13 @@ namespace ValourGames.Shawarma
                 };
                 case 11: return new[]
                 {
-                    R("Вас пригласили кормить правительство! Депутаты и министры — народ капризный.", "You've been invited to feed the government! Deputies and ministers are picky."),
-                    K("Даже здесь мои связи... Министры едят только МегаШаурму!", "Even here I have connections... Ministers eat only MegaShawarma!"),
-                    A("Министры тоже люди. Накорми их честно — и связи не понадобятся.", "Ministers are people too. Feed them honestly — no connections needed."),
+                    R("Вас пригласили в закрытый бизнес-клуб! Банкиры и директора — народ капризный.", "You've been invited to an exclusive business club! Bankers and CEOs are picky."),
+                    K("Даже здесь мои связи... Директора едят только МегаШаурму!", "Even here I have connections... CEOs eat only MegaShawarma!"),
+                    A("Директора тоже люди. Накорми их честно — и связи не понадобятся.", "CEOs are people too. Feed them honestly — no connections needed."),
                 };
                 case 12: return new[]
                 {
-                    A("Дубай, сынок! Здесь шейхи платят золотом за настоящий вкус.", "Dubai, son! Here sheikhs pay in gold for real taste."),
+                    A("Дубай, сынок! Здесь миллионеры платят золотом за настоящий вкус.", "Dubai, son! Here millionaires pay in gold for real taste."),
                     K("Это мой последний рубеж. Я построил здесь МегаБашню!", "This is my last stand. I built the MegaTower here!"),
                     M("Ещё немного — и миллиард наш!", "Just a bit more — and the billion is ours!"),
                 };

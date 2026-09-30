@@ -163,6 +163,13 @@ namespace ValourGames.Shawarma
                 Crown(ok.transform, 0.1f, 0.5f, 50f);
                 UIKit.FitLabel(ok.transform, L.T("ШАУРМА-ПАСС+ АКТИВЕН", "SHAWARMA PASS+ ACTIVE"), 28, UIKit.Dark, 0.2f, 0.1f, 0.97f, 0.9f);
             }
+            else if (!Payments.Available("pass_plus"))
+            {
+                var na = UIKit.Panel(top.transform, "PlusNA", UIKit.Alpha(Color.black, 0.3f), 0.6f, 0.15f, 0.98f, 0.85f);
+                Crown(na.transform, 0.1f, 0.5f, 44f);
+                UIKit.FitLabel(na.transform, Payments.Ready ? L.T("Шаурма-Пасс+ пока недоступен", "Shawarma Pass+ is not available yet") : L.T("Загрузка магазина...", "Loading the shop..."),
+                    24, UIKit.Cream, 0.2f, 0.1f, 0.97f, 0.9f);
+            }
             else
             {
                 var buy = UIKit.Button(top.transform, "", UIKit.Hex("#FF8F00"), () =>
@@ -179,7 +186,7 @@ namespace ValourGames.Shawarma
                 Crown(buy.transform, 0.09f, 0.5f, 50f);
                 UIKit.SetLabel(buy, "");
                 UIKit.FitLabel(buy.transform, L.T("Купить Шаурма-Пасс+", "Get Shawarma Pass+"), 28, Color.white, 0.18f, 0.42f, 0.98f, 0.95f);
-                UIKit.FitLabel(buy.transform, Payments.Price(Meta.PassPlusYan) + (Payments.Free ? "  •  " + Payments.FreeNote : ""), 20, UIKit.Hex("#FFF3C4"), 0.18f, 0.06f, 0.98f, 0.45f);
+                Payments.PriceTag(buy.transform, "pass_plus", Meta.PassPlusYan, 0.18f, 0.04f, 0.98f, 0.46f, 24, UIKit.Hex("#FFF3C4"));
                 buy.gameObject.AddComponent<Bobber>().amp = 2f;
             }
 
@@ -250,30 +257,26 @@ namespace ValourGames.Shawarma
             UIKit.AddShadow(cl, 2f, 0.6f);
             UIKit.Button(s, L.T("← Назад", "← Back"), UIKit.Steel, () => { Sfx.Play(Sound.Click); ShowMenu(); }, 0.02f, 0.02f, 0.2f, 0.11f, 36);
 
-            // опыт пасса за рекламу — раз в 10 минут
+            // +1 уровень пасса за рекламу — без ожидания
             if (lvl < Meta.PassLevels)
             {
-                long now = System.DateTime.UtcNow.Ticks;
-                long wait = System.TimeSpan.TicksPerMinute * 10;
-                long left = _save.xpAdTicks + wait - now;
-                bool ready = left <= 0;
-                int xp = Meta.PassXpFor(lvl) / 2;
-                var ab = UIKit.Button(s, ready ? L.T("+", "+") + xp + L.T(" опыта за рекламу", " XP for an ad") : L.T("Опыт за рекламу через ", "XP ad in ") + Mathf.CeilToInt(left / (float)System.TimeSpan.TicksPerMinute) + L.T(" мин", " min"),
-                    ready ? UIKit.Orange : UIKit.Gray, () =>
+                var ab = UIKit.Button(s, L.T("+1 уровень за рекламу", "+1 level for an ad"), UIKit.Orange, () =>
                 {
-                    if (System.DateTime.UtcNow.Ticks < _save.xpAdTicks + wait) { Sfx.Play(Sound.Error); return; }
-                    Platform.ShowRewarded("pass_xp", () =>
+                    Platform.ShowRewarded("pass_level", () =>
                     {
-                        _save.passXp += xp;
-                        _save.xpAdTicks = System.DateTime.UtcNow.Ticks;
+                        int cur = Meta.PassLevel(_save.passXp);
+                        if (cur >= Meta.PassLevels) return;
+                        // добираем опыт ровно до начала следующего уровня
+                        int need = 0;
+                        for (int k = 0; k <= cur; k++) need += Meta.PassXpFor(k);
+                        _save.passXp = Mathf.Max(_save.passXp, need);
                         SaveSystem.Save(_save);
                         Sfx.Play(Sound.Fanfare);
                         OnStatsChanged();
                         ShowPass();
                     }, null);
-                }, 0.22f, 0.02f, 0.44f, 0.11f, 24);
-                ab.interactable = ready;
-                if (ready) ab.gameObject.AddComponent<Bobber>().amp = 2f;
+                }, 0.22f, 0.02f, 0.44f, 0.11f, 26);
+                ab.gameObject.AddComponent<Bobber>().amp = 2f;
             }
         }
 

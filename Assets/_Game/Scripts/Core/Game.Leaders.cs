@@ -18,7 +18,7 @@ namespace ValourGames.Shawarma
             var top = UIKit.Panel(s, "Top", UIKit.Hex("#006064"), 0.02f, 0.84f, 0.98f, 0.94f);
             UIKit.AddShadow(top, 8f, 0.4f);
             UIKit.AddOutline(top, UIKit.Gold, 2f);
-            var t = UIKit.Label(top.transform, L.T("РЕКОРДЫ", "LEADERBOARD"), 46, UIKit.Gold, TextAnchor.MiddleLeft, 0.03f, 0, 0.4f, 1, true);
+            var t = UIKit.Label(top.transform, L.T("ЛИДЕРБОРД", "LEADERBOARD"), 46, UIKit.Gold, TextAnchor.MiddleLeft, 0.03f, 0, 0.4f, 1, true);
             UIKit.AddOutline(t, UIKit.Hex("#00262A"), 2f);
             UIKit.Label(top.transform, L.T("Лучшие шаурмичные магнаты всех игроков", "The best shawarma tycoons among all players"), 24, Color.white, TextAnchor.MiddleRight, 0.4f, 0, 0.97f, 1, false);
 
@@ -26,6 +26,26 @@ namespace ValourGames.Shawarma
             LeaderColumn(s, 0.51f, 0.98f, Platform.LbServed, L.T("Обслужено клиентов", "Customers served"), UIKit.Hex("#4DD0E1"), _save.totalServed, false);
 
             UIKit.Button(s, L.T("← Назад", "← Back"), UIKit.Steel, () => { Sfx.Play(Sound.Click); ShowMenu(); }, 0.02f, 0.02f, 0.2f, 0.11f, 36);
+
+            // вход с Яндекс ID — только по кнопке и с понятной выгодой
+            if (Platform.HasSdk && !Platform.Authorized)
+            {
+                var auth = UIKit.Button(s, "", UIKit.Hex("#FC3F1D"), () =>
+                {
+                    Sfx.Play(Sound.Click);
+                    Platform.OpenAuth(() =>
+                    {
+                        if (Platform.Authorized)
+                        {
+                            Platform.SubmitLeader(Platform.LbMoney, _save.lifetime);
+                            Platform.SubmitLeader(Platform.LbServed, _save.totalServed);
+                        }
+                        if (_screen != null && _screen.name == "Leaders") ShowLeaders();
+                    });
+                }, 0.3f, 0.02f, 0.98f, 0.11f, 26);
+                UIKit.SetLabel(auth, L.T("Войти с Яндекс ID — попасть в таблицу и сохранять прогресс на всех устройствах",
+                                         "Sign in with Yandex ID — get on the board and keep progress on all devices"));
+            }
         }
 
         void LeaderColumn(RectTransform s, float x0, float x1, string board, string title, Color accent, long mine, bool money)
@@ -50,10 +70,16 @@ namespace ValourGames.Shawarma
             Platform.GetLeaderboard(board, 10, entries =>
             {
                 if (list == null) return;
-                if (entries == null || entries.Count == 0)
+                if (entries != null && entries.Count == 0)
                 {
-                    loading.text = L.T("Таблица рекордов появится,\nкогда игра выйдет на Яндекс Играх.\n\nТвой результат уже считается!",
-                                       "The leaderboard appears\nonce the game is live on Yandex Games.\n\nYour score is already counted!");
+                    loading.text = L.T("Пока пусто — стань первым!", "Empty so far — be the first!");
+                    return;
+                }
+                if (entries == null)
+                {
+                    loading.text = Platform.HasSdk
+                        ? L.T("Не удалось загрузить таблицу.\nПроверь интернет и зайди сюда ещё раз.", "Couldn't load the table.\nCheck your connection and try again.")
+                        : L.T("Таблица загружается только в Яндекс Играх.", "The table loads only on Yandex Games.");
                     return;
                 }
                 loading.gameObject.SetActive(false);
