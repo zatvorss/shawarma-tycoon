@@ -94,7 +94,21 @@ namespace ValourGames.Shawarma.EditorTools
             }
             else
             {
-                EditorUtility.DisplayDialog("Valour Games", "Сборка не удалась. Смотри Console.", "Ок");
+                // собираем реальные причины из отчёта сборки — они не всегда попадают в Console
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine("Результат: " + report.summary.result + ", ошибок: " + report.summary.totalErrors);
+                foreach (var step in report.steps)
+                    foreach (var m in step.messages)
+                        if (m.type == LogType.Error || m.type == LogType.Exception)
+                        {
+                            sb.AppendLine("• " + m.content);
+                            Debug.LogError("[Valour Games] " + step.name + ": " + m.content);
+                        }
+                string text = sb.ToString();
+                if (text.Length > 1500) text = text.Substring(0, 1500) + "...";
+                Debug.LogError("[Valour Games] Сборка не удалась.\n" + text);
+                EditorUtility.DisplayDialog("Valour Games", "Сборка не удалась.\n\n" + text +
+                    "\nПопробуй собрать через File → Build Profiles → Build (папка Builds/WebGL).", "Ок");
             }
         }
     }
