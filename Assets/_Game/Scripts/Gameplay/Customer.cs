@@ -458,8 +458,12 @@ namespace ValourGames.Shawarma
                     UIKit.Shape(body, R, Color.white, 0.5f, 0.8f, 36f, 50f);
                     break;
                 case CustType.Stewardess:
-                    UIKit.Shape(body, R, Color.white, 0.5f, 0.82f, 40f, 40f);
-                    UIKit.Shape(body, C, UIKit.Gold, 0.3f, 0.65f, 14f, 14f);
+                    // белый воротник-стойка, аккуратный синий бантик и золотой значок-крылышки
+                    UIKit.Shape(body, R, Color.white, 0.5f, 0.9f, 48f, 22f);
+                    UIKit.Shape(body, R, UIKit.Hex("#1565C0"), 0.43f, 0.86f, 20f, 12f, 20f);
+                    UIKit.Shape(body, R, UIKit.Hex("#1565C0"), 0.57f, 0.86f, 20f, 12f, -20f);
+                    UIKit.Shape(body, C, UIKit.Hex("#0D47A1"), 0.5f, 0.86f, 10f, 10f);
+                    UIKit.Shape(body, R, UIKit.Gold, 0.28f, 0.66f, 24f, 5f);
                     break;
                 case CustType.Fan:
                     UIKit.Shape(body, C, Color.white, 0.5f, 0.55f, 60f, 60f);
@@ -730,11 +734,6 @@ namespace ValourGames.Shawarma
                     for (int k = 0; k < 3; k++) UIKit.Shape(tail, R, Color.white, 0.2f + k * 0.3f, -0.08f, 3f, 10f);
                     UIKit.Shape(_char, R, UIKit.Hex("#FFEB3B"), 0.9f, 0.5f, 40f, 96f);
                     UIKit.Shape(_char, R, UIKit.Hex("#FFEB3B"), 0.92f, 0.66f, 18f, 44f);
-                    break;
-                case CustType.Stewardess:
-                    // шейный платок стюардессы — на шее, ниже лица
-                    UIKit.Shape(_char, R, UIKit.Hex("#FFEB3B"), 0.5f, 0.375f, 56f, 16f);
-                    UIKit.Shape(_char, R, UIKit.Hex("#FFEB3B"), 0.56f, 0.34f, 16f, 26f, -25f);
                     break;
                 case CustType.Musician:
                     UIKit.Shape(_char, C, UIKit.Hex("#D84315"), 0.3f, 0.18f, 96f, 84f);
