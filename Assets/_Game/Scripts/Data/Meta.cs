@@ -266,8 +266,8 @@ namespace ValourGames.Shawarma
             new BizDef { ru = "Тандыр-пекарня", en = "Tandoor bakery", color = "#E65100", unlockLoc = 5,
                 descRu = "Свой тандыр печёт лаваш прямо в ларьке. Шаурма на горячем лаваше стоит дороже, а соседние кафе приходят покупать его оптом.",
                 descEn = "Your own tandoor bakes lavash right in the kiosk. Shawarma on hot lavash costs more, and nearby cafes come to buy it in bulk.",
-                lvRu = new[] { "Лаваш за 14 сек, шаурма +20%, 1 оптовик в день", "12 сек, шаурма +25%", "10 сек, +30%, 2 лаваша сразу, 2 оптовика", "8 сек, шаурма +40%", "6 сек, +50%, 3 лаваша сразу" },
-                lvEn = new[] { "Lavash in 14 s, shawarma +20%, 1 bulk buyer a day", "12 s, shawarma +25%", "10 s, +30%, 2 at once, 2 buyers", "8 s, shawarma +40%", "6 s, +50%, 3 at once" },
+                lvRu = new[] { "Лаваш за 14 сек, шаурма +20%, 1 оптовик в день (3–6 лавашей)", "12 сек, шаурма +25%, заказы до 8 лавашей", "10 сек, +30%, 2 лаваша сразу, 2 оптовика до 12", "8 сек, шаурма +40%, заказы до 18", "6 сек, +50%, 3 лаваша сразу, заказы до 25" },
+                lvEn = new[] { "Lavash in 14 s, shawarma +20%, 1 bulk buyer a day (3–6 lavash)", "12 s, shawarma +25%, orders up to 8", "10 s, +30%, 2 at once, 2 buyers up to 12", "8 s, shawarma +40%, orders up to 18", "6 s, +50%, 3 at once, orders up to 25" },
                 costs = new[] { 40000, 100000, 250000, 600000, 1500000 } },
             new BizDef { ru = "Второй ларёк", en = "Second kiosk", color = "#2E7D32", unlockLoc = 8,
                 descRu = "Свой второй ларёк с наёмным поваром. Работать не нужно: закупай продукты — каждый день он сам продаёт порции, а ты забираешь выручку.",
@@ -284,11 +284,13 @@ namespace ValourGames.Shawarma
         public static int BakeCap(int l) { return l >= 5 ? 3 : (l >= 3 ? 2 : 1); }
         public const float LavashHot = 14f;
         // ---------------- второй ларёк ----------------
-        // Экономика: порция стоит 100 × «масштаб» текущей локации; закупка — 55%…45% от цены.
-        // На 5-м уровне ларёк приносит примерно 3/4 того, что ты сам зарабатываешь за день.
+        // Экономика: порция ≈ 1/40 дневного дохода; закупка — 55%…45% от цены.
+        // На 5-м уровне ларёк приносит ≈ 40% того, что ты сам зарабатываешь за день.
+        // Каждый уровень стоит 10 дней его прибавки к прибыли (см. BizCost).
         public static int Kiosk2Cap(int l) { int[] c = { 0, 6, 10, 15, 22, 30 }; return c[Mathf.Clamp(l, 0, 5)]; }
         public static int Kiosk2Storage(int l) { return Kiosk2Cap(l) * 3; }
-        public static long Kiosk2Price(int loc) { return (long)Mathf.Max(20f, Mathf.Round(100f * GameData.EconScale(loc) / 10f) * 10f); }
+        /// <summary>Цена порции во втором ларьке ≈ 1/40 твоего дневного дохода на текущей локации.</summary>
+        public static long Kiosk2Price(int loc) { return (long)Mathf.Max(20f, Mathf.Round(GameData.ExpectedDayIncome(loc, 5) / 40f / 10f) * 10f); }
         public static float Kiosk2CostShare(int l) { return l >= 4 ? 0.45f : (l >= 2 ? 0.5f : 0.55f); }
         public static long Kiosk2UnitCost(int l, int loc) { return (long)Mathf.Max(10f, Mathf.Round(Kiosk2Price(loc) * Kiosk2CostShare(l) / 10f) * 10f); }
 
@@ -304,13 +306,44 @@ namespace ValourGames.Shawarma
             return sold;
         }
 
-        /// <summary>Цена бизнеса растёт вместе с доходами: чем дальше локация, тем дороже.</summary>
+        // сколько дневных доходов (на локации, где покупаешь) стоит уровень бизнеса
+        static readonly float[] _courierDays = { 1.2f, 3f, 6f, 12f, 24f };
+        static readonly float[] _bakeryDays  = { 2f, 4f, 8f, 15f, 28f };
+
+        /// <summary>
+        /// Цена бизнеса растёт вместе с доходами. Курьеры и тандыр — в «днях работы» на текущей локации.
+        /// Второй ларёк: каждый уровень окупается за 10 дней его работы (по прибавке к выручке).
+        /// </summary>
         public static long BizCost(int biz, int lvl, int loc)
         {
             var b = Businesses[biz];
-            float k = GameData.EconScale(loc) / GameData.EconScale(b.unlockLoc);
-            return (long)(Mathf.Max(1f, k) * b.Cost(lvl) / 10f) * 10;
+            loc = Mathf.Max(loc, b.unlockLoc);
+            if (biz == BizKiosk2)
+            {
+                long gain = Kiosk2Profit(lvl + 1, loc) - Kiosk2Profit(lvl, loc);
+                return RoundCost(10.0 * System.Math.Max(1L, gain));
+            }
+            float day = GameData.ExpectedDayIncome(loc, 5);
+            float[] k = biz == BizCourier ? _courierDays : _bakeryDays;
+            return RoundCost(day * k[Mathf.Clamp(lvl, 0, k.Length - 1)]);
         }
+
+        static long RoundCost(double v)
+        {
+            long step = v >= 1e6 ? 10000 : (v >= 10000 ? 100 : 10);
+            return System.Math.Max(step, (long)System.Math.Round(v / step) * step);
+        }
+
+        /// <summary>Чистая прибыль второго ларька за день при полном складе.</summary>
+        public static long Kiosk2Profit(int l, int loc)
+        {
+            if (l <= 0) return 0;
+            return Kiosk2Cap(l) * (Kiosk2Price(loc) - Kiosk2UnitCost(l, loc));
+        }
+
+        /// <summary>Оптовик за лавашом: сколько лавашей просит (по силам тандыра).</summary>
+        public static int BulkMin(int l) { int[] m = { 3, 3, 4, 5, 6, 8 }; return m[Mathf.Clamp(l, 0, 5)]; }
+        public static int BulkMax(int l) { int[] m = { 6, 6, 8, 12, 18, 25 }; return m[Mathf.Clamp(l, 0, 5)]; }
 
         // ---------------- талисманы Шаурма-Пасса ----------------
         public const int CharmCoin = 0, CharmBell = 1, CharmBowl = 2, CharmSpatula = 3, CharmMagnet = 4, CharmCrown = 5;

@@ -376,9 +376,9 @@ namespace ValourGames.Shawarma
             bool special = false;
             var order = MakeOrder(type);
             int qty = type == CustType.Glutton ? 2 : 1;
-            // терпение: база + 4 сек за каждый пункт заказа; даже самые торопливые ждут не меньше 80% от обычного
+            // терпение: база + 2 сек за каждый пункт заказа; даже самые торопливые ждут не меньше 80% от обычного
             int items = GameData.Total(order) * qty + (drink != Drink.None ? 1 : 0);
-            float patience = (_patience + 4f * items) * Mathf.Max(0.8f, def.patienceMult) * Random.Range(0.92f, 1.08f);
+            float patience = (_patience + GameData.PatiencePerItem * items) * Mathf.Max(0.8f, def.patienceMult) * Random.Range(0.92f, 1.08f);
             patience = Mathf.Max(patience * 0.5f, patience - waited * 0.4f);
             var c = new Customer(_slots[slot], type, order, drink, patience, mode, known, golden, -1, qty, special);
             _customers[slot] = c;

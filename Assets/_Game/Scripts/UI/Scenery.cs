@@ -13,6 +13,7 @@ namespace ValourGames.Shawarma
         {
             public RectTransform rt;
             public float x, y, vx, vy;
+            public float x0 = -0.15f, x1 = 1.15f;   // где исчезает и откуда появляется снова
         }
 
         readonly List<Mover> _clouds = new List<Mover>();
@@ -87,6 +88,7 @@ namespace ValourGames.Shawarma
             else
             {
                 BuildCity(area, night, rain, loc.id == 2, loc.id);
+                if (loc.id == 2) BuildStation(area);
                 if (loc.scene == "market") BuildMarket(area);
                 if (loc.scene == "stadium") BuildStadium(area);
                 if (loc.scene == "airport") BuildAirport(area);
@@ -155,16 +157,65 @@ namespace ValourGames.Shawarma
                     var nt = UIKit.FitLabel(sign.transform, words[(n / 2 + id) % words.Length], 24, nc, 0.06f, 0.08f, 0.94f, 0.92f);
                     UIKit.AddOutline(nt, UIKit.Alpha(nc, 0.4f), 2f);
                 }
-                if (station && n == 2)
-                {
-                    // часы вокзала
-                    UIKit.Shape(house.transform, UIKit.Circle, UIKit.Cream, 0.5f, 0.8f, 70f, 70f);
-                    UIKit.Shape(house.transform, UIKit.RoundedSmall, UIKit.Dark, 0.5f, 0.82f, 5f, 28f);
-                    UIKit.Shape(house.transform, UIKit.RoundedSmall, UIKit.Dark, 0.54f, 0.8f, 22f, 5f);
-                }
                 px += w;
                 n++;
             }
+        }
+
+        /// <summary>Вокзал: перрон с навесом, контактная сеть, табло и электричка, которая проезжает мимо.</summary>
+        void BuildStation(RectTransform area)
+        {
+            // насыпь и рельсы
+            UIKit.Panel(area, "Ballast", UIKit.Hex("#8D8176"), 0f, 0.17f, 1f, 0.2f, false);
+            for (int i = 0; i < 40; i++)
+                UIKit.Panel(area, "Sleeper", UIKit.Hex("#5D4037"), i / 40f + 0.004f, 0.172f, i / 40f + 0.016f, 0.19f, false);
+            UIKit.Panel(area, "Rail", UIKit.Hex("#9E9E9E"), 0f, 0.188f, 1f, 0.193f, false);
+            // опоры контактной сети и провод
+            for (int i = 0; i < 4; i++)
+            {
+                float x = 0.1f + i * 0.27f;
+                UIKit.Panel(area, "Pole", UIKit.Hex("#546E7A"), x - 0.003f, 0.19f, x + 0.003f, 0.47f, false);
+                UIKit.Panel(area, "Arm", UIKit.Hex("#546E7A"), x - 0.003f, 0.455f, x + 0.04f, 0.462f, false);
+            }
+            UIKit.Panel(area, "Wire", UIKit.Hex("#37474F"), 0f, 0.44f, 1f, 0.443f, false);
+
+            // электричка: пивот справа, чтобы она целиком выезжала из-за края и уезжала за другой
+            var train = UIKit.Rect(area, "Train");
+            UIKit.PlaceFixed(train, 0.1f, 0.265f, 720f, 120f);
+            train.pivot = new Vector2(1f, 0.5f);
+            train.anchoredPosition = Vector2.zero;
+            var t = train.transform;
+            for (int c = 0; c < 3; c++)
+            {
+                float x0 = c / 3f + 0.004f, x1 = (c + 1) / 3f - 0.004f;
+                var car = UIKit.Panel(t, "Car", UIKit.Hex("#ECEFF1"), x0, 0.12f, x1, 0.86f);
+                UIKit.Panel(car.transform, "Stripe", UIKit.Hex("#E53935"), 0f, 0.2f, 1f, 0.32f, false);
+                UIKit.Panel(car.transform, "Stripe2", UIKit.Hex("#1E88E5"), 0f, 0.32f, 1f, 0.37f, false);
+                for (int w = 0; w < 4; w++)
+                    UIKit.Panel(car.transform, "Win", UIKit.Hex("#455A64"), 0.06f + w * 0.235f, 0.5f, 0.24f + w * 0.235f, 0.82f, false);
+                UIKit.Panel(car.transform, "Door", UIKit.Hex("#B0BEC5"), 0.46f, 0.08f, 0.54f, 0.84f, false);
+                // колёса
+                UIKit.Shape(t, UIKit.CircleHD, UIKit.Hex("#263238"), x0 + 0.05f, 0.1f, 26f, 26f);
+                UIKit.Shape(t, UIKit.CircleHD, UIKit.Hex("#263238"), x1 - 0.05f, 0.1f, 26f, 26f);
+            }
+            // скошенная кабина машиниста справа
+            UIKit.Shape(t, UIKit.RoundedSmall, UIKit.Hex("#ECEFF1"), 1.01f, 0.5f, 60f, 88f);
+            UIKit.Shape(t, UIKit.RoundedSmall, UIKit.Hex("#263238"), 1.02f, 0.64f, 40f, 30f);
+            UIKit.Shape(t, UIKit.Circle, UIKit.Hex("#FFF59D"), 1.03f, 0.26f, 14f, 14f);
+            // токоприёмник на крыше
+            UIKit.Shape(t, UIKit.RoundedSmall, UIKit.Hex("#37474F"), 0.5f, 0.97f, 60f, 5f, 12f);
+            _clouds.Add(new Mover { rt = train, x = 0.1f, y = 0.265f, vx = 0.13f, x0 = -0.02f, x1 = 2.3f });
+
+            // табло отправления
+            var board = UIKit.Panel(area, "Board", UIKit.Hex("#1B2631"), 0.62f, 0.5f, 0.8f, 0.6f);
+            UIKit.AddOutline(board, UIKit.Hex("#455A64"), 3f);
+            UIKit.FitLabel(board.transform, L.T("ПУТЬ 1 → ЦЕНТР", "TRACK 1 → CENTER"), 20, UIKit.Hex("#FFB300"), 0.04f, 0.1f, 0.96f, 0.9f);
+            UIKit.Panel(area, "BoardLeg", UIKit.Hex("#37474F"), 0.707f, 0.44f, 0.713f, 0.5f, false);
+            // светофор
+            UIKit.Panel(area, "Signal", UIKit.Hex("#263238"), 0.045f, 0.2f, 0.05f, 0.36f, false);
+            var head = UIKit.Panel(area, "SignalHead", UIKit.Hex("#212121"), 0.037f, 0.33f, 0.058f, 0.41f);
+            UIKit.Shape(head.transform, UIKit.Circle, UIKit.Hex("#43A047"), 0.5f, 0.3f, 16f, 16f).gameObject.AddComponent<Blinker>().speed = 1f;
+            UIKit.Shape(head.transform, UIKit.Circle, UIKit.Hex("#5D1A1A"), 0.5f, 0.72f, 16f, 16f);
         }
 
         void BuildMarket(RectTransform area)
@@ -565,7 +616,7 @@ namespace ValourGames.Shawarma
             foreach (var c in _clouds)
             {
                 c.x += c.vx * dt;
-                if (c.x > 1.15f) c.x = -0.15f;
+                if (c.x > c.x1) c.x = c.x0;
                 SetPos(c);
             }
             foreach (var d in _drops)
