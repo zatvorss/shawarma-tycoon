@@ -123,7 +123,9 @@ mergeInto(LibraryManager.library, {
     ysdk.getPayments({ signed: false }).then(function (pay) {
       window.ygPay = pay;
       return pay.getCatalog().then(function (cat) {
-        return pay.getPurchases().then(function (pur) { return { cat: cat, pur: pur }; });
+        // если список покупок не получен (например, игрок не вошёл) — каталог всё равно показываем
+        return pay.getPurchases().then(function (pur) { return { cat: cat, pur: pur }; },
+                                       function () { return { cat: cat, pur: [] }; });
       });
     }).then(function (r) {
       var catalog = [], purchases = [];
