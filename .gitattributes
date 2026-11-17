@@ -1,0 +1,12 @@
+# Текст — UTF-8, переводы строк LF
+* text=auto eol=lf
+*.cs      text diff=csharp
+*.jslib   text
+*.html    text
+*.md      text
+*.txt     text
+*.json    text
+# Бинарные
+*.ttf     binary
+*.png     binary
+*.pdf     binary

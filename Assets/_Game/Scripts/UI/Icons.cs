@@ -415,7 +415,7 @@ namespace ValourGames.Shawarma
             h2.rectTransform.pivot = new Vector2(0.5f, 0f);
             return b;
         }
-    
+
         // ---------------- v0.6 ----------------
         /// <summary>Дисковая пила (для автоматики). Вращать — через Spinner.</summary>
         public static RectTransform Saw(Transform parent, float ax, float ay, float size)

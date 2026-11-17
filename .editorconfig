@@ -1,0 +1,64 @@
+# Единый стиль кода проекта «Шаурма Магнат».
+# Применяется автоматически в Visual Studio, Rider и VS Code (C# Dev Kit);
+# базовые правила дополнительно проверяет tools/lint.py (см. README).
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.cs]
+max_line_length = 200
+
+# Скобки — с новой строки (стиль Allman), как во всём проекте
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+
+# Отступы
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+
+# Пробелы
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_after_cast = false
+csharp_space_around_binary_operators = before_and_after
+
+# using — System первыми
+dotnet_sort_system_directives_first = true
+
+# var — где тип очевиден
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_for_built_in_types = false:none
+
+# Именование: типы и публичные члены — PascalCase, приватные поля — _camelCase
+dotnet_naming_rule.types_pascal.symbols = types
+dotnet_naming_rule.types_pascal.style = pascal
+dotnet_naming_rule.types_pascal.severity = warning
+dotnet_naming_symbols.types.applicable_kinds = class, struct, enum, interface, delegate
+dotnet_naming_style.pascal.capitalization = pascal_case
+
+dotnet_naming_rule.methods_pascal.symbols = methods
+dotnet_naming_rule.methods_pascal.style = pascal
+dotnet_naming_rule.methods_pascal.severity = warning
+dotnet_naming_symbols.methods.applicable_kinds = method, property, event
+dotnet_naming_symbols.methods.applicable_accessibilities = *
+
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_camel
+dotnet_naming_rule.private_fields_underscore.severity = suggestion
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_style.underscore_camel.capitalization = camel_case
+dotnet_naming_style.underscore_camel.required_prefix = _

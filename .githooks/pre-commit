@@ -1,0 +1,5 @@
+#!/bin/sh
+# Проверка стиля перед коммитом. Включение: git config core.hooksPath .githooks
+files=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(cs|jslib|html)$')
+[ -z "$files" ] && exit 0
+python3 tools/lint.py $files
